@@ -15,6 +15,7 @@
  */
 package de.cuioss.jwt.integration.endpoint;
 
+import de.cuioss.jwt.quarkus.annotation.BearerAuth;
 import de.cuioss.jwt.quarkus.annotation.BearerToken;
 import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
 import de.cuioss.jwt.validation.TokenValidator;
@@ -219,6 +220,120 @@ public class JwtValidationEndpoint {
     @Path("/bearer-token/basic")
     public Response testBasicToken() {
         return processBearerTokenResult(basicToken.get(), "Basic token");
+    }
+
+    /**
+     * Tests interceptor-based validation without requirements.
+     * Demonstrates declarative security - no manual validation needed.
+     */
+    @GET
+    @Path("/interceptor/basic")
+    @BearerAuth
+    public Response testInterceptorBasic() {
+        LOGGER.debug("testInterceptorBasic - business logic executed (token already validated by interceptor)");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (basic)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with scope requirements.
+     */
+    @GET
+    @Path("/interceptor/with-scopes")
+    @BearerAuth(requiredScopes = {"read"})
+    public Response testInterceptorWithScopes() {
+        LOGGER.debug("testInterceptorWithScopes - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with scopes)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with role requirements.
+     */
+    @GET
+    @Path("/interceptor/with-roles")
+    @BearerAuth(requiredRoles = {"user"})
+    public Response testInterceptorWithRoles() {
+        LOGGER.debug("testInterceptorWithRoles - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with roles)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with group requirements.
+     */
+    @GET
+    @Path("/interceptor/with-groups")
+    @BearerAuth(requiredGroups = {"test-group"})
+    public Response testInterceptorWithGroups() {
+        LOGGER.debug("testInterceptorWithGroups - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with groups)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with all requirements (scopes, roles, groups).
+     */
+    @GET
+    @Path("/interceptor/with-all")
+    @BearerAuth(requiredScopes = {"read"}, requiredRoles = {"user"}, requiredGroups = {"test-group"})
+    public Response testInterceptorWithAll() {
+        LOGGER.debug("testInterceptorWithAll - business logic executed");
+        return Response.ok(new ValidationResponse(true, "Interceptor validation successful (with all requirements)")).build();
+    }
+
+    /**
+     * Tests interceptor-based validation with parameter injection to access token details.
+     * Demonstrates how to access validated token content using @BearerToken parameter injection.
+     */
+    @GET
+    @Path("/interceptor/with-token-access")
+    @BearerAuth(requiredScopes = {"read"})
+    public Response testInterceptorWithTokenAccess(@BearerToken BearerTokenResult tokenResult) {
+        LOGGER.debug("testInterceptorWithTokenAccess - accessing token details via parameter injection");
+
+        AccessTokenContent token = tokenResult.getAccessTokenContent()
+                .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
+
+        String userId = token.getSubject().orElse("unknown");
+        LOGGER.debug("Token subject: %s", userId);
+
+        var data = new HashMap<String, Object>();
+        data.put("userId", userId);
+        data.put("scopes", token.getScopes());
+        data.put("roles", token.getRoles());
+        data.put("groups", token.getGroups());
+
+        return Response.ok(new ValidationResponse(true, "Token access successful", data)).build();
+    }
+
+    /**
+     * Test endpoint with String return type to verify WebApplicationException handling.
+     * This tests the fix for the ClassCastException bug - when validation fails,
+     * the interceptor should throw WebApplicationException instead of trying to cast
+     * the error Response to String.
+     *
+     * @return String message on success
+     */
+    @GET
+    @Path("/interceptor/string-return")
+    @BearerAuth(requiredScopes = {"read"})
+    @Produces(MediaType.TEXT_PLAIN)
+    public String testInterceptorWithStringReturn() {
+        LOGGER.debug("testInterceptorWithStringReturn - business logic executed");
+        return "String return type validation successful";
+    }
+
+    /**
+     * Test endpoint with String return type requiring non-existent scope.
+     * This will always fail validation, testing the WebApplicationException path.
+     *
+     * @return Never returns - should always throw WebApplicationException
+     */
+    @GET
+    @Path("/interceptor/string-return-fail")
+    @BearerAuth(requiredScopes = {"non-existent-scope"})
+    @Produces(MediaType.TEXT_PLAIN)
+    public String testInterceptorWithStringReturnFailure() {
+        // cui-rewrite:disable CuiLogRecordPatternRecipe
+        LOGGER.error("testInterceptorWithStringReturnFailure - this should never execute!");
+        throw new IllegalStateException("This method should never be reached due to failed validation");
     }
 
     /**

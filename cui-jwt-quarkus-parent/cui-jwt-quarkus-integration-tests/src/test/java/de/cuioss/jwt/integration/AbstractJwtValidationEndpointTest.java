@@ -191,6 +191,170 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         }
     }
 
+    @Nested
+    @DisplayName("Bearer Token Interceptor Tests")
+    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+    class BearerTokenInterceptorTests {
+
+        @Test
+        @DisplayName("Interceptor validation - basic (no requirements)")
+        void interceptorValidationBasic() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/basic")
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("Interceptor validation successful (basic)"));
+        }
+
+        @Test
+        @DisplayName("Interceptor validation - with scopes")
+        void interceptorValidationWithScopes() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/with-scopes")
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("Interceptor validation successful (with scopes)"));
+        }
+
+        @Test
+        @DisplayName("Interceptor validation - with roles")
+        void interceptorValidationWithRoles() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/with-roles")
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("Interceptor validation successful (with roles)"));
+        }
+
+        @Test
+        @DisplayName("Interceptor validation - with groups")
+        void interceptorValidationWithGroups() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/with-groups")
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("Interceptor validation successful (with groups)"));
+        }
+
+        @Test
+        @DisplayName("Interceptor validation - with all requirements")
+        void interceptorValidationWithAll() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidTokenWithAllScopes();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/with-all")
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("Interceptor validation successful (with all requirements)"));
+        }
+
+        @Test
+        @DisplayName("Interceptor validation - missing token returns 401")
+        void interceptorValidationMissingToken() {
+            given()
+                    .when()
+                    .get("/jwt/interceptor/basic")
+                    .then()
+                    .statusCode(401);
+        }
+
+        @Test
+        @DisplayName("Interceptor validation - invalid token returns 401")
+        void interceptorValidationInvalidToken() {
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + "invalid.token.here")
+                    .when()
+                    .get("/jwt/interceptor/basic")
+                    .then()
+                    .statusCode(401);
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"/jwt/interceptor/with-scopes", "/jwt/interceptor/with-roles", "/jwt/interceptor/with-groups"})
+        @DisplayName("Interceptor validation - token with default scopes/roles/groups succeeds")
+        void interceptorValidationWithDefaultPermissions(String endpoint) {
+            // Note: obtainValidToken() gets a token with default scopes ("read"), roles, and groups ("/test-group")
+            // as configured in the Keycloak realm. These match the requirements of the test endpoints.
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get(endpoint)
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true));
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with String return type - success")
+        void interceptorValidationWithStringReturnSuccess() {
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+
+            String response = given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/string-return")
+                    .then()
+                    .statusCode(200)
+                    .contentType("text/plain")
+                    .extract()
+                    .asString();
+
+            assertEquals("String return type validation successful", response);
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with String return type - failure throws WebApplicationException")
+        void interceptorValidationWithStringReturnFailure() {
+            // This tests the critical ClassCastException fix:
+            // When validation fails and method returns String (not Response),
+            // the interceptor should throw WebApplicationException, not try to cast Response to String
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/string-return-fail")
+                    .then()
+                    .statusCode(401); // Constraint violation - missing required scope (scopes return 401)
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with String return type - missing token")
+        void interceptorValidationWithStringReturnMissingToken() {
+            // Test that missing token also properly throws WebApplicationException for String return type
+            given()
+                    .when()
+                    .get("/jwt/interceptor/string-return")
+                    .then()
+                    .statusCode(401); // No token given
+        }
+    }
+
     @Test
     @Order(99)
     @DisplayName("Verify SecurityEventCounter metrics have sensible bounds after all tests")

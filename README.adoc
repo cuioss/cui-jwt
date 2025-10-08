@@ -113,6 +113,43 @@ if (tokenResult.isSuccessfullyAuthorized()) {
 }
 ----
 
+==== Declarative Security with Interceptors
+
+For a more declarative approach, use the `@BearerAuth` interceptor annotation:
+
+[source,java]
+----
+@GET
+@Path("/data")
+@BearerAuth(requiredScopes = {"read"}, requiredRoles = {"user"})
+public Response getData() {
+    // Only business logic - security handled automatically by interceptor
+    // If validation fails, error response is returned automatically
+    return Response.ok(data).build();
+}
+----
+
+Access the validated token using parameter injection:
+
+[source,java]
+----
+@GET
+@BearerAuth(requiredScopes = {"read"})
+public Response getData(@BearerToken BearerTokenResult tokenResult) {
+    AccessTokenContent token = tokenResult.getAccessTokenContent()
+        .orElseThrow(() -> new IllegalStateException("Token not available"));
+
+    String userId = token.getSubject().orElse("unknown");
+
+    return Response.ok(data).build();
+}
+----
+
+**When to use which approach:**
+
+* **Producer pattern (`@BearerToken`)**: Explicit validation control, custom error handling, complex authorization logic
+* **Interceptor pattern (`@BearerAuth`)**: Declarative security, automatic error responses, clean separation of concerns
+
 For a complete working example, see the xref:cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/README.adoc[integration tests module].
 
 === Standalone Library

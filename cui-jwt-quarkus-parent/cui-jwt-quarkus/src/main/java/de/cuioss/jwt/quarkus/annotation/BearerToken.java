@@ -32,7 +32,10 @@ import java.lang.annotation.Target;
  * object containing the validation status, the validated token (if successful), and detailed
  * error information (if validation failed).
  * <p>
- * Example usage in JAX-RS endpoint:
+ * <strong>Note:</strong> For declarative security with automatic validation, use {@link BearerAuth} instead.
+ *
+ * <h2>Usage Pattern: CDI Producer Pattern (Explicit Validation)</h2>
+ * Inject {@link de.cuioss.jwt.quarkus.producer.BearerTokenResult} and manually check authorization:
  * <pre>{@code
  * @RequestScoped
  * @Path("/api")
@@ -54,8 +57,8 @@ import java.lang.annotation.Target;
  *     }
  * }
  * }</pre>
- * <p>
- * <strong>Constructor Injection (Recommended):</strong>
+ *
+ * <h2>Constructor Injection (Recommended for Producer Pattern):</h2>
  * <pre>{@code
  * @RequestScoped
  * public class SecureService {
@@ -67,8 +70,8 @@ import java.lang.annotation.Target;
  *     }
  * }
  * }</pre>
- * <p>
- * <strong>For Application-Scoped beans, use Provider:</strong>
+ *
+ * <h2>For Application-Scoped beans, use Provider:</h2>
  * <pre>{@code
  * @ApplicationScoped
  * public class GlobalService {
@@ -85,16 +88,19 @@ import java.lang.annotation.Target;
  *     }
  * }
  * }</pre>
- * <p>
- * The producer validates the bearer token by:
+ *
+ * <h2>Token Validation Process:</h2>
  * <ul>
- *   <li>Extracting the token from the HTTP Authorization header</li>
- *   <li>Validating the JWT signature and claims using the configured TokenValidator</li>
- *   <li>Checking that all required scopes, roles, and groups are present</li>
- *   <li>Returning a BearerTokenResult with detailed status information</li>
+ *   <li>Extracts the token from the HTTP Authorization header</li>
+ *   <li>Validates the JWT signature and claims using the configured TokenValidator</li>
+ *   <li>Checks that all required scopes, roles, and groups are present</li>
+ *   <li>Returns a BearerTokenResult with detailed status information</li>
  * </ul>
+ * <p>
+ * <strong>Declarative Alternative:</strong> For automatic validation without manual checks, use {@link BearerAuth} annotation.
  *
  * @author Oliver Wolff
+ * @see BearerAuth
  * @since 1.0
  */
 @Qualifier
