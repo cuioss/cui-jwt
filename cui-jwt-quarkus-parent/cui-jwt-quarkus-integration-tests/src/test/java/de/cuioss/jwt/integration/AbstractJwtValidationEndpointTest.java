@@ -340,7 +340,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .when()
                     .get("/jwt/interceptor/string-return-fail")
                     .then()
-                    .statusCode(403); // Constraint violation - missing required scope
+                    .statusCode(401); // Constraint violation - missing required scope (scopes return 401)
         }
 
         @Test
