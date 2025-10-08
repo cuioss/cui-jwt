@@ -167,9 +167,10 @@
                             <skip>${skip.benchmark}</skip>
                             <executable>bash</executable>
                             <arguments>
+                                <argument>-x</argument>
                                 <argument>${wrk.script.dir}/health_live_benchmark.sh</argument>
                             </arguments>
-                            <outputFile>${wrk.output.dir}/wrk-health-live-results.txt</outputFile>
+                            <!--<outputFile>${wrk.output.dir}/wrk-health-live-results.txt</outputFile>-->
                             <timeout>240000</timeout> <!-- 4 minute timeout for 3 minute benchmark -->
                             <environmentVariables>
                                 <SERVICE_URL>${integration.service.url}</SERVICE_URL>
