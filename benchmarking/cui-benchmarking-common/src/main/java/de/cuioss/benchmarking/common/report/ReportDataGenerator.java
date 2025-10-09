@@ -177,9 +177,9 @@ public class ReportDataGenerator {
             return new BenchmarkMetrics("N/A", "N/A", 0.0, 0.0, 0, "F");
         }
 
-        // Extract numeric values from formatted strings
-        double throughput = parseNumericValue(overview.getThroughput());
-        double latency = parseNumericValue(overview.getLatency());
+        // Use numeric values directly from overview (no parsing needed!)
+        double throughput = overview.getThroughputOpsPerSec() != null ? overview.getThroughputOpsPerSec() : 0.0;
+        double latency = overview.getLatencyMs() != null ? overview.getLatencyMs() : 0.0;
 
         return new BenchmarkMetrics(
                 overview.getThroughputBenchmarkName() != null ? overview.getThroughputBenchmarkName() : "N/A",
@@ -191,20 +191,6 @@ public class ReportDataGenerator {
         );
     }
 
-    private double parseNumericValue(String formatted) {
-        if (formatted == null || "N/A".equals(formatted)) {
-            return 0.0;
-        }
-        String numeric = formatted.replaceAll("[^0-9.]", "");
-        if (formatted.contains("K")) {
-            return Double.parseDouble(numeric) * 1000;
-        }
-        try {
-            return Double.parseDouble(numeric);
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
-    }
 
     private List<Map<String, Object>> convertBenchmarks(List<BenchmarkData.Benchmark> benchmarks) {
         if (benchmarks == null) {

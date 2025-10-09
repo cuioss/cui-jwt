@@ -235,19 +235,24 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
             return BenchmarkData.Overview.builder()
                     .throughput("N/A")
                     .latency("N/A")
+                    .throughputOpsPerSec(0.0)
+                    .latencyMs(0.0)
                     .performanceScore(0)
                     .performanceGrade("F")
                     .performanceGradeClass("grade-f")
                     .build();
         }
 
-        int score = calculatePerformanceScore(primary.getRawScore(),
-                primary.getPercentiles().getOrDefault("50.0", 100.0));
+        double throughput = primary.getRawScore();
+        double latencyMs = primary.getPercentiles().getOrDefault("50.0", 100.0);
+        int score = calculatePerformanceScore(throughput, latencyMs);
         String grade = calculatePerformanceGrade(score);
 
         return BenchmarkData.Overview.builder()
                 .throughput(primary.getThroughput())
                 .latency(primary.getLatency())
+                .throughputOpsPerSec(throughput)  // Store numeric value used for score calculation
+                .latencyMs(latencyMs)             // Store numeric value used for score calculation
                 .throughputBenchmarkName(primary.getName())
                 .latencyBenchmarkName(primary.getName())
                 .performanceScore(score)

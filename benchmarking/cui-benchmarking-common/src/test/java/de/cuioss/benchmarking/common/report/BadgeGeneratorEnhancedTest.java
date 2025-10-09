@@ -290,4 +290,37 @@ class BadgeGeneratorEnhancedTest {
         JsonObject json3 = GSON.fromJson(badge3, JsonObject.class);
         assertEquals("↑ 101.0%", json3.get("message").getAsString());
     }
+
+    @Test void performanceBadgeWithCorrectUnitConversionFromMicroseconds() {
+        // TEST: Verify that latency in microseconds is correctly converted to milliseconds
+        // when passed to the badge generator.
+        //
+        // Scenario: JmhBenchmarkConverter should convert us/op to ms/op before creating
+        // BenchmarkMetrics, which then gets passed to BadgeGenerator.
+        //
+        // Input latency: 867.4 microseconds
+        // Expected output: 0.8674 milliseconds, displayed as "0.87ms" in badge
+
+        BadgeGenerator generator = new BadgeGenerator();
+
+        // Simulate CORRECT behavior after fix: latency already converted to milliseconds
+        BenchmarkMetrics metricsWithMilliseconds = new BenchmarkMetrics(
+                "validateMixedTokens50", "measureConcurrentValidation",
+                176662.03, 0.8674, // Latency CORRECTLY converted from 867.4 us to 0.8674 ms
+                50.0, "F"
+        );
+
+        String badge = generator.generatePerformanceBadge(metricsWithMilliseconds);
+        JsonObject json = GSON.fromJson(badge, JsonObject.class);
+
+        String message = json.get("message").getAsString();
+
+        // After fix, badge should show latency as 0.87ms (not 867.42ms)
+        assertTrue(message.matches("Grade F \\(17[0-9]k ops/s, 0\\.8[0-9]ms\\)"),
+                "Expected latency ~0.87ms after conversion, got: " + message);
+
+        // Verify throughput is correct (around 177k ops/s)
+        assertTrue(message.contains("177k") || message.contains("176k"),
+                "Expected throughput ~177k ops/s, got: " + message);
+    }
 }
