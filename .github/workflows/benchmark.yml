@@ -157,13 +157,14 @@ jobs:
                benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
           fi
 
-          # Enforce retention policy (keep only 10 most recent)
+          # Enforce retention policy (keep only 10 most recent by filename/date)
           for dir in benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history \
                      benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history; do
             if [ -d "$dir" ]; then
               echo "🧹 Enforcing retention policy in $dir"
               cd "$dir"
-              ls -t *.json 2>/dev/null | tail -n +11 | xargs rm -f 2>/dev/null || true
+              # Sort by filename (date) in reverse, keep newest 10, delete the rest
+              ls -1 *.json 2>/dev/null | sort -r | tail -n +11 | xargs rm -f 2>/dev/null || true
               cd - > /dev/null
             fi
           done
