@@ -21,7 +21,6 @@ import de.cuioss.benchmarking.common.model.BenchmarkData;
 import de.cuioss.benchmarking.common.util.JsonSerializationHelper;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -36,8 +35,7 @@ class ReportDataGeneratorTest {
 
     private static final Gson GSON = new Gson();
 
-    @Test
-    void testChartDataGenerationWithRealIntegrationBenchmarks() throws Exception {
+    @Test void chartDataGenerationWithRealIntegrationBenchmarks() throws Exception {
         // TEST: Reproduce the issue where latency and percentiles are missing from chart data
         // Uses REAL benchmark data from integration tests that has thrpt mode WITH latency/percentiles
 
@@ -78,20 +76,17 @@ class ReportDataGeneratorTest {
                 "createChartData", List.class);
         createChartDataMethod.setAccessible(true);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> chartData = (Map<String, Object>) createChartDataMethod.invoke(
+        @SuppressWarnings("unchecked") Map<String, Object> chartData = (Map<String, Object>) createChartDataMethod.invoke(
                 generator, benchmarkData.getBenchmarks());
 
         assertNotNull(chartData, "Chart data should be generated");
 
         // AFTER FIX: The latency array should have actual values
-        @SuppressWarnings("unchecked")
-        List<Double> latencyList = (List<Double>) chartData.get("latency");
+        @SuppressWarnings("unchecked") List<Double> latencyList = (List<Double>) chartData.get("latency");
         assertNotNull(latencyList, "Latency list should exist");
 
         // Find the jwtValidation index
-        @SuppressWarnings("unchecked")
-        List<String> labelsList = (List<String>) chartData.get("labels");
+        @SuppressWarnings("unchecked") List<String> labelsList = (List<String>) chartData.get("labels");
         int jwtIndex = labelsList.indexOf("jwtValidation");
         assertTrue(jwtIndex >= 0, "jwtValidation should be in labels");
 
@@ -101,20 +96,17 @@ class ReportDataGeneratorTest {
         assertTrue(latencyValue > 0, "Latency value should be positive, got: " + latencyValue);
 
         // AFTER FIX: jwtValidation should be in percentiles data
-        @SuppressWarnings("unchecked")
-        Map<String, Object> percentilesData = (Map<String, Object>) chartData.get("percentilesData");
+        @SuppressWarnings("unchecked") Map<String, Object> percentilesData = (Map<String, Object>) chartData.get("percentilesData");
         assertNotNull(percentilesData, "Percentiles data should exist");
 
-        @SuppressWarnings("unchecked")
-        List<String> benchmarkNames = (List<String>) percentilesData.get("benchmarks");
+        @SuppressWarnings("unchecked") List<String> benchmarkNames = (List<String>) percentilesData.get("benchmarks");
 
         // FIXED: jwtValidation should be in the percentiles benchmarks list
         assertTrue(benchmarkNames.contains("jwtValidation"),
                 "FIXED: jwtValidation should be in percentiles data when it has percentile info");
 
         // Verify percentile values are actually present
-        @SuppressWarnings("unchecked")
-        Map<String, List<Double>> datasets = (Map<String, List<Double>>) percentilesData.get("datasets");
+        @SuppressWarnings("unchecked") Map<String, List<Double>> datasets = (Map<String, List<Double>>) percentilesData.get("datasets");
         assertNotNull(datasets, "Datasets should exist");
 
         List<Double> p50Values = datasets.get("50.0th");

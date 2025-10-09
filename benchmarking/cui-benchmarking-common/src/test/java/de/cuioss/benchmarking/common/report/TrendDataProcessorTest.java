@@ -318,7 +318,7 @@ class TrendDataProcessorTest {
         // Change should be significantly positive (at least 10%)
         assertTrue(trends.changePercentage() > 10.0,
                 "Change percentage should be >10% when comparing 79 vs EWMA baseline, got: "
-                + trends.changePercentage());
+                        + trends.changePercentage());
 
         // Verify it's not the old buggy behavior (0% when comparing 79 vs 79)
         assertNotEquals(0.0, trends.changePercentage(), 0.1,
