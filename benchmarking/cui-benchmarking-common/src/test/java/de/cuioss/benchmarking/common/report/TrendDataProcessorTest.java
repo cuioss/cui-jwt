@@ -23,6 +23,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -246,6 +247,82 @@ class TrendDataProcessorTest {
         // Verify it's the 10 newest
         assertEquals(85.0, data.getFirst().performanceScore()); // Day 15: 70+15=85
         assertEquals(84.0, data.get(1).performanceScore()); // Day 14: 70+14=84
+    }
+
+    @Test void calculateTrendsWithEWMAAfterMajorImprovement(@TempDir Path tempDir) throws IOException {
+        // TEST: Verify EWMA detects improvement even when current score equals most recent history
+        // Uses REAL benchmark data from /private/tmp/benchmark-verify/integration/history
+        // Real scenario: scores were 28 for many runs, then jumped to 79, then stayed at 79
+        // Previous logic: compared 79 vs 79 = 0% (misleading)
+        // EWMA logic: compares 79 vs weighted average of (79, 28, 28, 28...) = significant improvement
+
+        TrendDataProcessor processor = new TrendDataProcessor();
+        Path historyDir = tempDir.resolve("history");
+        Files.createDirectories(historyDir);
+
+        // Copy REAL history data from the downloaded benchmark files
+        Path sourceHistoryDir = Path.of("/private/tmp/benchmark-verify/integration/history");
+
+        // Load real history data if available, otherwise create test data
+        List<TrendDataProcessor.HistoricalDataPoint> history;
+        if (Files.exists(sourceHistoryDir)) {
+            // Use real data from downloaded benchmarks
+            Files.list(sourceHistoryDir)
+                    .filter(p -> p.toString().endsWith(".json"))
+                    .sorted(Comparator.reverseOrder())
+                    .limit(9) // Take 9 history files (most recent will be the one with score 79)
+                    .forEach(source -> {
+                        try {
+                            Files.copy(source, historyDir.resolve(source.getFileName()));
+                        } catch (IOException e) {
+                            // Ignore copy errors in test
+                        }
+                    });
+
+            history = processor.loadHistoricalData(historyDir);
+        } else {
+            // Fallback: Create test data matching the real scenario
+            createTestHistoryFile(historyDir, "2025-10-09-T0606Z-e0fe8c83.json", 6700.0, 7.8, 79.0);
+            createTestHistoryFile(historyDir, "2025-09-22-T1118Z-8547e8f3.json", 4000.0, 6.1, 28.0);
+            createTestHistoryFile(historyDir, "2025-09-22-T0918Z-6e566f79.json", 3900.0, 6.1, 28.0);
+            createTestHistoryFile(historyDir, "2025-09-22-T0856Z-139691b1.json", 3900.0, 6.2, 28.0);
+            createTestHistoryFile(historyDir, "2025-09-22-T0819Z-1ade5619.json", 3800.0, 6.2, 27.0);
+            createTestHistoryFile(historyDir, "2025-09-22-T0646Z-d9421a39.json", 3900.0, 6.1, 28.0);
+            createTestHistoryFile(historyDir, "2025-09-22-T0606Z-bee5486d.json", 4000.0, 6.0, 28.0);
+            createTestHistoryFile(historyDir, "2025-09-21-T2013Z-2085f04e.json", 4000.0, 6.1, 28.0);
+            createTestHistoryFile(historyDir, "2025-09-20-T1434Z-adf2010b.json", 3900.0, 6.1, 28.0);
+
+            history = processor.loadHistoricalData(historyDir);
+        }
+
+        // Current run: score 79 (same as most recent history)
+        BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
+                "jwtValidation", "jwtValidation", 6634.17, 6.81, 79.0, "C"
+        );
+
+        TrendDataProcessor.TrendMetrics trends = processor.calculateTrends(
+                currentMetrics, history
+        );
+
+        // With EWMA (λ=0.25), the baseline should be weighted heavily toward recent 79 but still
+        // consider the older 28s:
+        // EWMA baseline ≈ (79×1.0 + 28×0.25 + 28×0.0625 + 28×0.015625 + ...) / (1.0 + 0.25 + ...)
+        //               ≈ (79 + 7 + 1.75 + 0.44 + ...) / (1.0 + 0.25 + 0.0625 + ...)
+        //               ≈ 88 / 1.33 ≈ 66
+        // Change: (79 - 66) / 66 ≈ +19.7%
+
+        // The trend should show improvement, NOT stable at 0%
+        assertEquals("up", trends.direction(),
+                "EWMA should detect improvement comparing 79 vs weighted baseline of 28s");
+
+        // Change should be significantly positive (at least 10%)
+        assertTrue(trends.changePercentage() > 10.0,
+                "Change percentage should be >10% when comparing 79 vs EWMA baseline, got: "
+                + trends.changePercentage());
+
+        // Verify it's not the old buggy behavior (0% when comparing 79 vs 79)
+        assertNotEquals(0.0, trends.changePercentage(), 0.1,
+                "EWMA should NOT return 0% when history contains lower scores");
     }
 
     private void createTestHistoryFile(Path historyDir, String filename,

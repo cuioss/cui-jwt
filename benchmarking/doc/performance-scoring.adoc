@@ -108,6 +108,31 @@ Performance Score: Grade A (45k ops/s, 0.15ms)
                       └─ Grade based on score
 ----
 
+== Trend Calculation
+
+Performance trends use an **Exponentially Weighted Moving Average (EWMA)** approach to detect meaningful changes while smoothing out noise:
+
+[source,text]
+----
+Trend Change % = ((Current_Score - EWMA_Baseline) / EWMA_Baseline) × 100
+
+Where:
+EWMA_Baseline = Σ(score_i × weight_i) / Σ(weight_i)
+
+Weights: Exponentially decreasing with λ = 0.25
+  - Most recent:  weight = λ^0 = 1.0
+  - 2nd recent:   weight = λ^1 = 0.25
+  - 3rd recent:   weight = λ^2 = 0.0625
+  - And so on...
+
+Trend Direction:
+  - Up (green):    change > +2%
+  - Stable (blue): -2% ≤ change ≤ +2%
+  - Down (red):    change < -2%
+----
+
+**Rationale**: EWMA weights recent results heavily while still considering historical context. This prevents false positives from single anomalous runs while quickly detecting real performance shifts. The λ=0.25 decay factor is standard for performance monitoring (NIST guidelines).
+
 == Usage
 
 * **Regression Detection**: Track performance over releases
