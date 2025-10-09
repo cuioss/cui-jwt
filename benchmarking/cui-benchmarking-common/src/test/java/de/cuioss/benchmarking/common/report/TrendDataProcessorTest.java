@@ -23,7 +23,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -260,40 +259,19 @@ class TrendDataProcessorTest {
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
 
-        // Copy REAL history data from the downloaded benchmark files
-        Path sourceHistoryDir = Path.of("/private/tmp/benchmark-verify/integration/history");
+        // Create test data matching the real scenario from actual production benchmarks
+        // This data represents: scores at 28 for many runs, then jumped to 79
+        createTestHistoryFile(historyDir, "2025-10-09-T0606Z-e0fe8c83.json", 6700.0, 7.8, 79.0);
+        createTestHistoryFile(historyDir, "2025-09-22-T1118Z-8547e8f3.json", 4000.0, 6.1, 28.0);
+        createTestHistoryFile(historyDir, "2025-09-22-T0918Z-6e566f79.json", 3900.0, 6.1, 28.0);
+        createTestHistoryFile(historyDir, "2025-09-22-T0856Z-139691b1.json", 3900.0, 6.2, 28.0);
+        createTestHistoryFile(historyDir, "2025-09-22-T0819Z-1ade5619.json", 3800.0, 6.2, 27.0);
+        createTestHistoryFile(historyDir, "2025-09-22-T0646Z-d9421a39.json", 3900.0, 6.1, 28.0);
+        createTestHistoryFile(historyDir, "2025-09-22-T0606Z-bee5486d.json", 4000.0, 6.0, 28.0);
+        createTestHistoryFile(historyDir, "2025-09-21-T2013Z-2085f04e.json", 4000.0, 6.1, 28.0);
+        createTestHistoryFile(historyDir, "2025-09-20-T1434Z-adf2010b.json", 3900.0, 6.1, 28.0);
 
-        // Load real history data if available, otherwise create test data
-        List<TrendDataProcessor.HistoricalDataPoint> history;
-        if (Files.exists(sourceHistoryDir)) {
-            // Use real data from downloaded benchmarks
-            Files.list(sourceHistoryDir)
-                    .filter(p -> p.toString().endsWith(".json"))
-                    .sorted(Comparator.reverseOrder())
-                    .limit(9) // Take 9 history files (most recent will be the one with score 79)
-                    .forEach(source -> {
-                        try {
-                            Files.copy(source, historyDir.resolve(source.getFileName()));
-                        } catch (IOException e) {
-                            // Ignore copy errors in test
-                        }
-                    });
-
-            history = processor.loadHistoricalData(historyDir);
-        } else {
-            // Fallback: Create test data matching the real scenario
-            createTestHistoryFile(historyDir, "2025-10-09-T0606Z-e0fe8c83.json", 6700.0, 7.8, 79.0);
-            createTestHistoryFile(historyDir, "2025-09-22-T1118Z-8547e8f3.json", 4000.0, 6.1, 28.0);
-            createTestHistoryFile(historyDir, "2025-09-22-T0918Z-6e566f79.json", 3900.0, 6.1, 28.0);
-            createTestHistoryFile(historyDir, "2025-09-22-T0856Z-139691b1.json", 3900.0, 6.2, 28.0);
-            createTestHistoryFile(historyDir, "2025-09-22-T0819Z-1ade5619.json", 3800.0, 6.2, 27.0);
-            createTestHistoryFile(historyDir, "2025-09-22-T0646Z-d9421a39.json", 3900.0, 6.1, 28.0);
-            createTestHistoryFile(historyDir, "2025-09-22-T0606Z-bee5486d.json", 4000.0, 6.0, 28.0);
-            createTestHistoryFile(historyDir, "2025-09-21-T2013Z-2085f04e.json", 4000.0, 6.1, 28.0);
-            createTestHistoryFile(historyDir, "2025-09-20-T1434Z-adf2010b.json", 3900.0, 6.1, 28.0);
-
-            history = processor.loadHistoricalData(historyDir);
-        }
+        List<TrendDataProcessor.HistoricalDataPoint> history = processor.loadHistoricalData(historyDir);
 
         // Current run: score 79 (same as most recent history)
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(

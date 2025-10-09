@@ -251,9 +251,9 @@ public class ReportDataGenerator {
             // Extract latency: WRK benchmarks have percentiles, use P50 (median) as representative latency
             // JMH latency benchmarks use rawScore
             Double latencyValue = null;
-            if (benchmark.getPercentiles() != null && benchmark.getPercentiles().containsKey("50.0")) {
+            if (benchmark.getPercentiles() != null && benchmark.getPercentiles().containsKey(P_50)) {
                 // WRK benchmarks have percentiles - use median (P50) as latency
-                latencyValue = benchmark.getPercentiles().get("50.0");
+                latencyValue = benchmark.getPercentiles().get(P_50);
             } else if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode()) ||
                     (benchmark.getScoreUnit() != null && benchmark.getScoreUnit().contains(SUFFIX_OP))) {
                 // JMH latency benchmarks use rawScore
