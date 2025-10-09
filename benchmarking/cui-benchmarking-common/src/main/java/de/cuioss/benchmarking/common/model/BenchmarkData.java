@@ -41,8 +41,10 @@ import java.util.Map;
      * Overview metrics for quick summary
      */
     @Data @Builder public static class Overview {
-        private String throughput;
-        private String latency;
+        private String throughput;              // Formatted display value (e.g., "140,0K ops/s")
+        private String latency;                 // Formatted display value (e.g., "952,0 us/op")
+        private Double throughputOpsPerSec;     // Numeric value: operations per second
+        private Double latencyMs;               // Numeric value: latency in milliseconds
         private String throughputBenchmarkName;
         private String latencyBenchmarkName;
         private int performanceScore;

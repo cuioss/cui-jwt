@@ -177,9 +177,9 @@ public class ReportDataGenerator {
             return new BenchmarkMetrics("N/A", "N/A", 0.0, 0.0, 0, "F");
         }
 
-        // Extract numeric values from formatted strings
-        double throughput = parseNumericValue(overview.getThroughput());
-        double latency = parseLatencyValue(overview.getLatency());
+        // Use numeric values directly from overview (no parsing needed!)
+        double throughput = overview.getThroughputOpsPerSec() != null ? overview.getThroughputOpsPerSec() : 0.0;
+        double latency = overview.getLatencyMs() != null ? overview.getLatencyMs() : 0.0;
 
         return new BenchmarkMetrics(
                 overview.getThroughputBenchmarkName() != null ? overview.getThroughputBenchmarkName() : "N/A",
@@ -191,65 +191,6 @@ public class ReportDataGenerator {
         );
     }
 
-    /**
-     * Parses latency value from formatted string and converts to milliseconds.
-     * Handles units: us/op (microseconds), ns/op (nanoseconds), ms/op (milliseconds), s/op (seconds)
-     *
-     * @param formatted formatted latency string (e.g., "811,1 us/op", "2,5 ms/op")
-     * @return latency value in milliseconds
-     */
-    private double parseLatencyValue(String formatted) {
-        if (formatted == null || "N/A".equals(formatted)) {
-            return 0.0;
-        }
-
-        // Check for K suffix (means × 1000)
-        boolean hasKSuffix = formatted.contains("K");
-
-        // Extract numeric value (removing non-numeric characters except decimal point/comma)
-        String numeric = formatted.replaceAll("[^0-9,.]", "").replace(',', '.');
-        double value;
-        try {
-            value = Double.parseDouble(numeric);
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
-
-        // Apply K multiplier if present
-        if (hasKSuffix) {
-            value = value * 1000.0;
-        }
-
-        // Isolate unit for robust conversion
-        String[] parts = formatted.trim().split("\\s+");
-        String unit = parts.length > 1 ? parts[parts.length - 1] : "";
-
-        // Convert based on unit to milliseconds
-        if (unit.startsWith("us") || unit.startsWith("μs")) {
-            return value / 1000.0; // microseconds to milliseconds
-        } else if (unit.startsWith("ns")) {
-            return value / 1_000_000.0; // nanoseconds to milliseconds
-        } else if (unit.startsWith("s")) {
-            return value * 1000.0; // seconds to milliseconds
-        }
-        // else: ms/op or no unit - assume already in milliseconds
-        return value;
-    }
-
-    private double parseNumericValue(String formatted) {
-        if (formatted == null || "N/A".equals(formatted)) {
-            return 0.0;
-        }
-        String numeric = formatted.replaceAll("[^0-9.]", "");
-        if (formatted.contains("K")) {
-            return Double.parseDouble(numeric) * 1000;
-        }
-        try {
-            return Double.parseDouble(numeric);
-        } catch (NumberFormatException e) {
-            return 0.0;
-        }
-    }
 
     private List<Map<String, Object>> convertBenchmarks(List<BenchmarkData.Benchmark> benchmarks) {
         if (benchmarks == null) {

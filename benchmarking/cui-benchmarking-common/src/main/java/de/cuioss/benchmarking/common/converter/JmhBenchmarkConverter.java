@@ -157,6 +157,8 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
         return BenchmarkData.Overview.builder()
                 .throughput(bestThroughput.map(BenchmarkData.Benchmark::getScore).orElse("N/A"))
                 .latency(bestLatency.map(BenchmarkData.Benchmark::getScore).orElse("N/A"))
+                .throughputOpsPerSec(throughput)  // Store numeric value used for score calculation
+                .latencyMs(latency)               // Store numeric value used for score calculation
                 .throughputBenchmarkName(bestThroughput.map(BenchmarkData.Benchmark::getName).orElse(""))
                 .latencyBenchmarkName(bestLatency.map(BenchmarkData.Benchmark::getName).orElse(""))
                 .performanceScore(score)
