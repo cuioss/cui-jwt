@@ -136,7 +136,23 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
                 .min(Comparator.comparing(BenchmarkData.Benchmark::getRawScore));
 
         double throughput = bestThroughput.map(BenchmarkData.Benchmark::getRawScore).orElse(0.0);
-        double latency = bestLatency.map(BenchmarkData.Benchmark::getRawScore).orElse(0.0);
+        // IMPORTANT: Convert latency to milliseconds using the benchmark's unit
+        // The rawScore is in the original unit (us/op, ms/op, etc.)
+        // We need to convert to milliseconds per operation for consistent reporting
+        double latency = bestLatency.map(b -> {
+            double rawLatency = b.getRawScore();
+            String unit = b.getScoreUnit();
+            // Convert from various time units to milliseconds
+            if ("us/op".equals(unit)) {
+                return rawLatency / 1000.0; // microseconds to milliseconds
+            } else if ("ns/op".equals(unit)) {
+                return rawLatency / 1_000_000.0; // nanoseconds to milliseconds
+            } else if ("s/op".equals(unit)) {
+                return rawLatency * 1000.0; // seconds to milliseconds
+            }
+            // "ms/op" or unknown - assume already in milliseconds
+            return rawLatency;
+        }).orElse(0.0);
 
         int score = calculatePerformanceScore(throughput, latency);
         String grade = calculatePerformanceGrade(score);
@@ -165,17 +181,24 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
     }
 
     private int calculatePerformanceScore(double throughput, double latency) {
-        // Simple scoring: higher throughput and lower latency = better score
-        double throughputScore = Math.min(100, throughput / 100);
-        double latencyScore = Math.max(0, 100 - latency);
-        return (int) ((throughputScore + latencyScore) / 2);
+        // Performance scoring per benchmarking/doc/performance-scoring.adoc
+        // Performance Score = (Throughput_Score × 0.5) + (Latency_Score × 0.5)
+        // Where:
+        // - Throughput_Score = Throughput ÷ 100
+        // - Latency_Score = 100 ÷ Latency_ms
+        // Scores are NOT capped - exceptional performance can exceed 100
+        double throughputScore = throughput / 100.0;
+        double latencyScore = latency > 0 ? 100.0 / latency : 0.0;
+        double rawScore = (throughputScore * 0.5) + (latencyScore * 0.5);
+        return (int) Math.round(rawScore);
     }
 
     private String calculatePerformanceGrade(int score) {
+        if (score >= 95) return "A+";
         if (score >= 90) return "A";
-        if (score >= 80) return "B";
-        if (score >= 70) return "C";
-        if (score >= 60) return "D";
+        if (score >= 75) return "B";
+        if (score >= 60) return "C";
+        if (score >= 40) return "D";
         return "F";
     }
 }

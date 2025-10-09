@@ -179,7 +179,7 @@ public class ReportDataGenerator {
 
         // Extract numeric values from formatted strings
         double throughput = parseNumericValue(overview.getThroughput());
-        double latency = parseNumericValue(overview.getLatency());
+        double latency = parseLatencyValue(overview.getLatency());
 
         return new BenchmarkMetrics(
                 overview.getThroughputBenchmarkName() != null ? overview.getThroughputBenchmarkName() : "N/A",
@@ -189,6 +189,47 @@ public class ReportDataGenerator {
                 overview.getPerformanceScore(),
                 overview.getPerformanceGrade() != null ? overview.getPerformanceGrade() : "F"
         );
+    }
+
+    /**
+     * Parses latency value from formatted string and converts to milliseconds.
+     * Handles units: us/op (microseconds), ns/op (nanoseconds), ms/op (milliseconds), s/op (seconds)
+     *
+     * @param formatted formatted latency string (e.g., "811,1 us/op", "2,5 ms/op")
+     * @return latency value in milliseconds
+     */
+    private double parseLatencyValue(String formatted) {
+        if (formatted == null || "N/A".equals(formatted)) {
+            return 0.0;
+        }
+
+        // Check for K suffix (means × 1000)
+        boolean hasKSuffix = formatted.contains("K");
+
+        // Extract numeric value (removing non-numeric characters except decimal point/comma)
+        String numeric = formatted.replaceAll("[^0-9,.]", "").replace(',', '.');
+        double value;
+        try {
+            value = Double.parseDouble(numeric);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
+
+        // Apply K multiplier if present
+        if (hasKSuffix) {
+            value = value * 1000.0;
+        }
+
+        // Convert based on unit to milliseconds
+        if (formatted.contains("us/op") || formatted.contains("μs/op")) {
+            return value / 1000.0; // microseconds to milliseconds
+        } else if (formatted.contains("ns/op")) {
+            return value / 1_000_000.0; // nanoseconds to milliseconds
+        } else if (formatted.contains("s/op") && !formatted.contains("us/op") && !formatted.contains("ms/op") && !formatted.contains("ns/op")) {
+            return value * 1000.0; // seconds to milliseconds
+        }
+        // else: ms/op or no unit - assume already in milliseconds
+        return value;
     }
 
     private double parseNumericValue(String formatted) {

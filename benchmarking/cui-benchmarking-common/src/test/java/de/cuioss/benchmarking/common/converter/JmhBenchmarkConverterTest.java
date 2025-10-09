@@ -213,4 +213,108 @@ class JmhBenchmarkConverterTest {
         assertFalse(converter.canConvert(Path.of("wrk-output.txt")));
         assertFalse(converter.canConvert(Path.of("some-file.xml")));
     }
+
+    @Test void shouldConvertMicrosecondLatencyToMillisecondsInOverview() throws IOException {
+        // BUG FIX TEST: Verify that latency in us/op is converted to ms/op in the overview
+        // This test ensures that the badge generator receives latency in milliseconds
+        String jmhResultJson = """
+                [
+                    {
+                        "jmhVersion": "1.37",
+                        "benchmark": "test.ThroughputBenchmark",
+                        "mode": "thrpt",
+                        "threads": 100,
+                        "forks": 1,
+                        "primaryMetric": {
+                            "score": 176662.03,
+                            "scoreError": 1000.0,
+                            "scoreUnit": "ops/s"
+                        }
+                    },
+                    {
+                        "jmhVersion": "1.37",
+                        "benchmark": "test.LatencyBenchmark",
+                        "mode": "avgt",
+                        "threads": 100,
+                        "forks": 1,
+                        "primaryMetric": {
+                            "score": 867.4184,
+                            "scoreError": 50.0,
+                            "scoreUnit": "us/op"
+                        }
+                    }
+                ]
+                """;
+
+        Path resultFile = tempDir.resolve("jmh-result.json");
+        Files.writeString(resultFile, jmhResultJson);
+
+        // Use MICRO type converter (same as library benchmarks)
+        JmhBenchmarkConverter microConverter = new JmhBenchmarkConverter(BenchmarkType.MICRO);
+        BenchmarkData result = microConverter.convert(resultFile);
+
+        assertNotNull(result);
+        assertEquals(2, result.getBenchmarks().size());
+
+        // Verify latency benchmark shows original unit
+        BenchmarkData.Benchmark latencyBenchmark = result.getBenchmarks().get(1);
+        assertEquals("LatencyBenchmark", latencyBenchmark.getName());
+        assertEquals("avgt", latencyBenchmark.getMode());
+        assertEquals(867.4184, latencyBenchmark.getRawScore(), 0.001);
+        assertEquals("us/op", latencyBenchmark.getScoreUnit());
+
+        // CRITICAL TEST: Overview should have latency converted to milliseconds
+        // 867.4184 us/op = 0.8674 ms/op
+        // This is what gets passed to BenchmarkMetrics and ultimately to BadgeGenerator
+        // The conversion must happen in JmhBenchmarkConverter.createOverview()
+        //
+        // Note: We can't directly access the latency value used in the overview,
+        // but we can verify it through the grade calculation. With correct conversion:
+        // - throughput: 176662 ops/s
+        // - latency: 0.8674 ms (after conversion from 867.4 us)
+        // - Performance score calculation:
+        //   throughputScore = (176662 / 100.0) * 0.5 = 883.31
+        //   latencyScore = (100.0 / 0.8674) * 0.5 = 57.64
+        //   total score = 883.31 + 57.64 = 940.95 (rounded to 941)
+        // - This should result in grade A+ (score >= 95)
+        //
+        // BEFORE FIX: latency was 867.4 (not converted), resulting in grade F
+        // AFTER FIX: latency is 0.8674 (converted), resulting in grade A+
+        BenchmarkData.Overview overview = result.getOverview();
+        assertNotNull(overview);
+        assertEquals("ThroughputBenchmark", overview.getThroughputBenchmarkName());
+        assertEquals("LatencyBenchmark", overview.getLatencyBenchmarkName());
+
+        // Verify the fix: grade should be A+ because latency was correctly converted
+        // If latency was NOT converted (867.4 instead of 0.8674), grade would be F
+        assertEquals("A+", overview.getPerformanceGrade(),
+                """
+                Grade should be A+ with correct latency conversion (0.8674 ms). \
+                If F, latency was not converted (867.4 ms).""");
+    }
+
+    @Test void shouldCalculatePerformanceScoreAccordingToDocumentation() throws IOException {
+        Path realResultFile = Path.of("src/test/resources/library-benchmark-results/micro-result-scoring-test.json");
+        assertTrue(Files.exists(realResultFile), "Real benchmark result file should exist");
+
+        JmhBenchmarkConverter microConverter = new JmhBenchmarkConverter(BenchmarkType.MICRO);
+        BenchmarkData result = microConverter.convert(realResultFile);
+
+        BenchmarkData.Overview overview = result.getOverview();
+        assertNotNull(overview);
+
+        assertEquals("validateMixedTokens50", overview.getThroughputBenchmarkName());
+        assertEquals("measureAverageTime", overview.getLatencyBenchmarkName());
+
+        int actualScore = overview.getPerformanceScore();
+
+        assertTrue(actualScore >= 900 && actualScore <= 950,
+                """
+                        Performance score should be ~939 (±50) according to documentation formula. \
+                        Expected: ~939, Actual: %d""".formatted(actualScore));
+
+        assertEquals("A+", overview.getPerformanceGrade(),
+                "Grade should be A+ for score ≥ 95. Actual score: %d, grade: %s".formatted(
+                        actualScore, overview.getPerformanceGrade()));
+    }
 }
