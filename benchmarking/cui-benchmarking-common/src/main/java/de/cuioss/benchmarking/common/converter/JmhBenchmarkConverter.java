@@ -143,15 +143,12 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
             double rawLatency = b.getRawScore();
             String unit = b.getScoreUnit();
             // Convert from various time units to milliseconds
-            if ("us/op".equals(unit)) {
-                return rawLatency / 1000.0; // microseconds to milliseconds
-            } else if ("ns/op".equals(unit)) {
-                return rawLatency / 1_000_000.0; // nanoseconds to milliseconds
-            } else if ("s/op".equals(unit)) {
-                return rawLatency * 1000.0; // seconds to milliseconds
-            }
-            // "ms/op" or unknown - assume already in milliseconds
-            return rawLatency;
+            return switch (unit) {
+                case "us/op" -> rawLatency / 1000.0; // microseconds to milliseconds
+                case "ns/op" -> rawLatency / 1_000_000.0; // nanoseconds to milliseconds
+                case "s/op" -> rawLatency * 1000.0; // seconds to milliseconds
+                default -> rawLatency; // "ms/op" or unknown - assume already in milliseconds
+            };
         }).orElse(0.0);
 
         int score = calculatePerformanceScore(throughput, latency);

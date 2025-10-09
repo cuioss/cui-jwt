@@ -220,12 +220,16 @@ public class ReportDataGenerator {
             value = value * 1000.0;
         }
 
+        // Isolate unit for robust conversion
+        String[] parts = formatted.trim().split("\\s+");
+        String unit = parts.length > 1 ? parts[parts.length - 1] : "";
+
         // Convert based on unit to milliseconds
-        if (formatted.contains("us/op") || formatted.contains("μs/op")) {
+        if (unit.startsWith("us") || unit.startsWith("μs")) {
             return value / 1000.0; // microseconds to milliseconds
-        } else if (formatted.contains("ns/op")) {
+        } else if (unit.startsWith("ns")) {
             return value / 1_000_000.0; // nanoseconds to milliseconds
-        } else if (formatted.contains("s/op") && !formatted.contains("us/op") && !formatted.contains("ms/op") && !formatted.contains("ns/op")) {
+        } else if (unit.startsWith("s")) {
             return value * 1000.0; // seconds to milliseconds
         }
         // else: ms/op or no unit - assume already in milliseconds
