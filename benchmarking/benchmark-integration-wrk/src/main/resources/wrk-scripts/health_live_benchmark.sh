@@ -5,18 +5,18 @@
 set -e
 
 # Verify required environment variables are set by Maven
-: "${SERVICE_URL:?ERROR: SERVICE_URL environment variable is not set}"
 : "${WRK_THREADS:?ERROR: WRK_THREADS environment variable is not set}"
 : "${WRK_CONNECTIONS:?ERROR: WRK_CONNECTIONS environment variable is not set}"
 : "${WRK_DURATION:?ERROR: WRK_DURATION environment variable is not set}"
 : "${WRK_TIMEOUT:?ERROR: WRK_TIMEOUT environment variable is not set}"
 BENCHMARK_NAME="healthLiveCheck"
 
-# Get script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Service URL uses Docker service name (configured in docker-compose.yml)
+SERVICE_URL="https://cui-jwt-integration-tests:8443"
 
-# Use Docker-based wrk wrapper (supports ARM64 + x86_64)
-WRK_CMD="${SCRIPT_DIR}/wrk-docker-wrapper.sh"
+# Get compose file directory (integration-tests directory)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+COMPOSE_DIR="$SCRIPT_DIR/../../../../../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
 
 # Record benchmark start time
 BENCHMARK_START_TIME=$(date +%s)
@@ -30,9 +30,10 @@ echo "start_time_iso: $BENCHMARK_START_ISO"
 echo "=== WRK OUTPUT ==="
 echo ""
 
-# Run wrk health check benchmark (via Docker wrapper)
-# Lua script is embedded in Docker image at /scripts/
-"$WRK_CMD" \
+# Run wrk health check benchmark using docker compose
+# Network and service topology managed by docker-compose.yml
+cd "$COMPOSE_DIR"
+docker compose run --rm wrk \
     -t"$WRK_THREADS" \
     -c"$WRK_CONNECTIONS" \
     -d"$WRK_DURATION" \

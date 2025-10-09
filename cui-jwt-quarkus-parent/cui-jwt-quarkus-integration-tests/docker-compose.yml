@@ -130,6 +130,21 @@ services:
     # Production restart policy
     restart: unless-stopped
 
+  # WRK HTTP benchmarking tool - used by integration benchmarks
+  # Usage: docker compose run --rm wrk -t5 -c50 -d30s --latency https://cui-jwt-integration-tests:8443/q/health/live
+  wrk:
+    build:
+      context: ../..
+      dockerfile: benchmarking/benchmark-integration-wrk/Dockerfile.wrk
+    image: wrk:local
+    networks:
+      - jwt-integration
+    # Only start for benchmarks
+    profiles:
+      - benchmark
+    # No restart policy - this is a run-once service
+    restart: "no"
+
 networks:
   jwt-integration:
     driver: bridge

@@ -12,18 +12,18 @@ set -e
 : "${USERNAME:?ERROR: USERNAME environment variable is not set}"
 : "${PASSWORD:?ERROR: PASSWORD environment variable is not set}"
 : "${TOKEN_COUNT:?ERROR: TOKEN_COUNT environment variable is not set}"
-: "${SERVICE_URL:?ERROR: SERVICE_URL environment variable is not set}"
 : "${WRK_THREADS:?ERROR: WRK_THREADS environment variable is not set}"
 : "${WRK_CONNECTIONS:?ERROR: WRK_CONNECTIONS environment variable is not set}"
 : "${WRK_DURATION:?ERROR: WRK_DURATION environment variable is not set}"
 : "${WRK_TIMEOUT:?ERROR: WRK_TIMEOUT environment variable is not set}"
 BENCHMARK_NAME="jwtValidation"
 
-# Get script directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Service URL uses Docker service name (configured in docker-compose.yml)
+SERVICE_URL="https://cui-jwt-integration-tests:8443"
 
-# Use Docker-based wrk wrapper (supports ARM64 + x86_64)
-WRK_CMD="${SCRIPT_DIR}/wrk-docker-wrapper.sh"
+# Get script and compose directories
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+COMPOSE_DIR="$SCRIPT_DIR/../../../../../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
 
 # Record benchmark start time
 BENCHMARK_START_TIME=$(date +%s)
@@ -58,12 +58,11 @@ TOKEN_LINE_COUNT=$(echo "$TOKEN_DATA" | wc -l | xargs)
 echo "Successfully loaded $TOKEN_LINE_COUNT tokens in memory"
 echo ""
 
-# Export token data for the Lua script
-export TOKEN_DATA
-
-# Run wrk with the optimized script (output goes to stdout for Maven, via Docker wrapper)
-# Lua script is embedded in Docker image at /scripts/
-"$WRK_CMD" \
+# Run wrk with the optimized script using docker compose
+# Token data passed as environment variable to the container
+# Network and service topology managed by docker-compose.yml
+cd "$COMPOSE_DIR"
+docker compose run --rm -e TOKEN_DATA="$TOKEN_DATA" wrk \
     -t"$WRK_THREADS" \
     -c"$WRK_CONNECTIONS" \
     -d"$WRK_DURATION" \
