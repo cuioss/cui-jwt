@@ -24,6 +24,9 @@
         <!-- Scripts location -->
         <integration.scripts.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts</integration.scripts.dir>
 
+        <!-- Docker compose directory for WRK benchmarks -->
+        <integration.compose.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</integration.compose.dir>
+
         <!-- Integration test service URLs (host access via published ports) -->
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
@@ -180,6 +183,8 @@
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
                                 <WRK_DURATION>${wrk.duration}</WRK_DURATION>
                                 <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                                <!-- Docker compose directory -->
+                                <COMPOSE_DIR>${integration.compose.dir}</COMPOSE_DIR>
                                 <!-- Service URL and network topology managed by docker-compose.yml -->
                             </environmentVariables>
                         </configuration>
@@ -214,6 +219,8 @@
                                 <WRK_CONNECTIONS>${wrk.connections}</WRK_CONNECTIONS>
                                 <WRK_DURATION>${wrk.duration}</WRK_DURATION>
                                 <WRK_TIMEOUT>${wrk.timeout}</WRK_TIMEOUT>
+                                <!-- Docker compose directory -->
+                                <COMPOSE_DIR>${integration.compose.dir}</COMPOSE_DIR>
                                 <!-- Service URL and network topology managed by docker-compose.yml -->
                             </environmentVariables>
                         </configuration>

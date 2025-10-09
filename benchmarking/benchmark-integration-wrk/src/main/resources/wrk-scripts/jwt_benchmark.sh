@@ -21,9 +21,11 @@ BENCHMARK_NAME="jwtValidation"
 # Service URL uses Docker service name (configured in docker-compose.yml)
 SERVICE_URL="https://cui-jwt-integration-tests:8443"
 
-# Get script and compose directories
+# Get script directory for fetch_tokens.sh
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-COMPOSE_DIR="$SCRIPT_DIR/../../../../../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
+
+# Get compose file directory from environment variable (passed by Maven)
+: "${COMPOSE_DIR:?ERROR: COMPOSE_DIR environment variable is not set}"
 
 # Record benchmark start time
 BENCHMARK_START_TIME=$(date +%s)
