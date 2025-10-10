@@ -322,7 +322,8 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                         } else if (result.getHttpStatus().map(s -> s == 304).orElse(false)) {
                             LOGGER.debug("Background refresh: keys unchanged (304)");
                         } else {
-                            String statusDesc = result.isSuccess() ? "success" : "failure";
+                            String statusDesc = result.getErrorMessage()
+                                    .orElseGet(() -> "HTTP status: " + result.getHttpStatus().map(String::valueOf).orElse("N/A"));
                             LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED, statusDesc);
                         }
                     } catch (IllegalArgumentException e) {
