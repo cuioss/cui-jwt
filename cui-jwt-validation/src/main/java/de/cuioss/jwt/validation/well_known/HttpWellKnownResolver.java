@@ -18,7 +18,7 @@ package de.cuioss.jwt.validation.well_known;
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.http.client.ResilientHttpHandler;
-import de.cuioss.http.client.result.HttpResultObject;
+import de.cuioss.http.client.result.HttpResult;
 import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.jwt.validation.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
@@ -44,7 +44,7 @@ public class HttpWellKnownResolver implements LoadingStatusProvider {
     private static final CuiLogger LOGGER = new CuiLogger(HttpWellKnownResolver.class);
 
     private final ResilientHttpHandler<WellKnownResult> wellKnownHandler;
-    private HttpResultObject<WellKnownResult> cachedResult;
+    private HttpResult<WellKnownResult> cachedResult;
 
     /**
      * Creates a new HttpWellKnownResolver with the specified configuration.
@@ -66,8 +66,8 @@ public class HttpWellKnownResolver implements LoadingStatusProvider {
         if (cachedResult == null) {
             cachedResult = wellKnownHandler.load();
         }
-        if (cachedResult.isValid()) {
-            return Optional.of(cachedResult.getResult());
+        if (cachedResult.isSuccess()) {
+            return cachedResult.getContent();
         }
         return Optional.empty();
     }
