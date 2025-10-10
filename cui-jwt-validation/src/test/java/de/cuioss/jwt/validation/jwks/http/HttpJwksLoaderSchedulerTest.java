@@ -15,7 +15,6 @@
  */
 package de.cuioss.jwt.validation.jwks.http;
 
-import de.cuioss.http.client.HttpLogMessages;
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.jwt.validation.JWTValidationLogMessages;
 import de.cuioss.jwt.validation.jwks.key.KeyInfo;
@@ -219,34 +218,25 @@ class HttpJwksLoaderSchedulerTest {
         assertTrue(keyInfo.isPresent(), "Initial load should work");
         assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should be healthy after initial load");
 
-        // Make subsequent requests fail
-        moduleDispatcher.returnError();
+        // Make dispatcher return invalid JSON to trigger content conversion error
+        // Invalid JSON causes ResilientHttpHandler to return failure result
+        moduleDispatcher.returnInvalidJson();
 
-        // Wait for background refresh to encounter errors - scheduler runs every 1 second
-        await("Scheduler to execute at least one background refresh cycle")
-                .atMost(3000, MILLISECONDS)
-                .pollDelay(1500, MILLISECONDS) // Give scheduler time to run at least once
-                .until(() -> true); // Just wait for the time period
+        // Wait for background refresh to encounter the error and log BACKGROUND_REFRESH_FAILED
+        // Content conversion errors result in HttpResult with isSuccess()=false,
+        // which triggers the else branch (lines 324-327) in startBackgroundRefresh()
+        await("Background refresh to encounter error and log BACKGROUND_REFRESH_FAILED")
+                .atMost(3, SECONDS)
+                .pollInterval(100, MILLISECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    LogAsserts.assertLogMessagePresentContaining(
+                            TestLogLevel.WARN,
+                            JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.resolveIdentifierString());
+                });
 
         // Loader should still be healthy if it has existing keys
         assertEquals(LoaderStatus.OK, loader.getLoaderStatus(), "Loader should remain healthy with cached keys even if background refresh fails");
-
-        // Verify HTTP error logging occurred
-        LogAsserts.assertLogMessagePresentContaining(
-                TestLogLevel.WARN,
-                "HTTP 500 (Server Error (500-599))");
-
-        // Verify background refresh failure was logged (might also log HTTP fetch failure)
-        try {
-            LogAsserts.assertLogMessagePresentContaining(
-                    TestLogLevel.WARN,
-                    JWTValidationLogMessages.WARN.BACKGROUND_REFRESH_FAILED.resolveIdentifierString());
-        } catch (AssertionError e) {
-            // Might log HTTP_STATUS_WARNING instead when connection fails with 500 error
-            LogAsserts.assertLogMessagePresentContaining(
-                    TestLogLevel.WARN,
-                    HttpLogMessages.WARN.HTTP_STATUS_WARNING.resolveIdentifierString());
-        }
 
         loader.close();
     }
