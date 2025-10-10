@@ -241,18 +241,27 @@ public class ReportDataGenerator {
         for (BenchmarkData.Benchmark benchmark : benchmarks) {
             labels.add(benchmark.getName());
 
+            // Extract throughput: use rawScore if mode is thrpt or scoreUnit contains "ops"
+            Double throughputValue = null;
             if (BenchmarkConstants.Metrics.Modes.THROUGHPUT.equals(benchmark.getMode()) ||
                     (benchmark.getScoreUnit() != null && benchmark.getScoreUnit().contains(OPS))) {
-                throughput.add(benchmark.getRawScore());
-                latency.add(null);
+                throughputValue = benchmark.getRawScore();
+            }
+
+            // Extract latency: WRK benchmarks have percentiles, use P50 (median) as representative latency
+            // JMH latency benchmarks use rawScore
+            Double latencyValue = null;
+            if (benchmark.getPercentiles() != null && benchmark.getPercentiles().containsKey(P_50)) {
+                // WRK benchmarks have percentiles - use median (P50) as latency
+                latencyValue = benchmark.getPercentiles().get(P_50);
             } else if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode()) ||
                     (benchmark.getScoreUnit() != null && benchmark.getScoreUnit().contains(SUFFIX_OP))) {
-                throughput.add(null);
-                latency.add(benchmark.getRawScore());
-            } else {
-                throughput.add(null);
-                latency.add(null);
+                // JMH latency benchmarks use rawScore
+                latencyValue = benchmark.getRawScore();
             }
+
+            throughput.add(throughputValue);
+            latency.add(latencyValue);
         }
 
         chartData.put(LABELS, labels);
@@ -289,7 +298,9 @@ public class ReportDataGenerator {
         }
 
         for (BenchmarkData.Benchmark benchmark : benchmarks) {
-            if (AVERAGE_TIME.equals(benchmark.getMode()) || SAMPLE.equals(benchmark.getMode())) {
+            // Include benchmark if it has percentile data, regardless of mode
+            // WRK benchmarks have thrpt mode but also include percentiles
+            if (benchmark.getPercentiles() != null && !benchmark.getPercentiles().isEmpty()) {
                 benchmarkNames.add(benchmark.getName());
                 List<Double> benchmarkData = extractPercentileValues(benchmark.getPercentiles(), percentileKeys);
                 dataByBenchmark.put(benchmark.getName(), benchmarkData);

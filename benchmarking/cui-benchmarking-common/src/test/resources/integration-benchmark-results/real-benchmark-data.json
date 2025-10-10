@@ -1,0 +1,177 @@
+{
+  "metadata": {
+    "timestamp": "2025-10-09T06:06:17.126478792Z",
+    "displayTimestamp": "2025-10-09 06:06:17 UTC",
+    "benchmarkType": "Integration Performance",
+    "reportVersion": "2.0"
+  },
+  "overview": {
+    "throughput": "6.7K ops/s",
+    "latency": "7.8ms",
+    "throughputBenchmarkName": "jwtValidation",
+    "latencyBenchmarkName": "jwtValidation",
+    "performanceScore": 79,
+    "performanceGrade": "C",
+    "performanceGradeClass": "grade-c"
+  },
+  "benchmarks": [
+    {
+      "name": "healthLiveCheck",
+      "fullName": "wrk.healthLiveCheck",
+      "mode": "thrpt",
+      "score": "16.0K ops/s",
+      "scoreUnit": "ops/s",
+      "throughput": "16.0K ops/s",
+      "latency": "3.2ms",
+      "error": 2.12,
+      "variabilityCoefficient": 66.87697160883282,
+      "confidenceLow": 1.0499999999999998,
+      "confidenceHigh": 5.29,
+      "percentiles": {
+        "50.0": 2.77,
+        "75.0": 3.73,
+        "90.0": 4.94,
+        "99.0": 8.34,
+        "0.0": 1.0499999999999998,
+        "95.0": 6.986000000000001,
+        "99.9": 7.4015200000000005,
+        "99.99": 7.409152,
+        "100.0": 7.41
+      }
+    },
+    {
+      "name": "jwtValidation",
+      "fullName": "wrk.jwtValidation",
+      "mode": "thrpt",
+      "score": "6.7K ops/s",
+      "scoreUnit": "ops/s",
+      "throughput": "6.7K ops/s",
+      "latency": "7.8ms",
+      "error": 5.19,
+      "variabilityCoefficient": 66.36828644501279,
+      "confidenceLow": 2.63,
+      "confidenceHigh": 13.010000000000002,
+      "percentiles": {
+        "50.0": 6.76,
+        "75.0": 9.86,
+        "90.0": 13.75,
+        "99.0": 23.51,
+        "0.0": 2.63,
+        "95.0": 17.162,
+        "99.9": 18.17924,
+        "99.99": 18.197924,
+        "100.0": 18.200000000000003
+      }
+    }
+  ],
+  "chartData": {
+    "labels": [
+      "healthLiveCheck",
+      "jwtValidation"
+    ],
+    "throughput": [
+      16043.5,
+      6663.97
+    ],
+    "latency": [
+      null,
+      null
+    ],
+    "percentilesData": {
+      "percentileLabels": [
+        "P0",
+        "P50",
+        "P90",
+        "P95",
+        "P99",
+        "P99.9",
+        "P99.99",
+        "P100"
+      ],
+      "benchmarks": [],
+      "data": {},
+      "labels": [],
+      "datasets": {
+        "0.0th": [],
+        "50.0th": [],
+        "90.0th": [],
+        "95.0th": [],
+        "99.0th": [],
+        "99.9th": [],
+        "99.99th": [],
+        "100.0th": []
+      }
+    }
+  },
+  "trends": {
+    "available": true,
+    "direction": "up",
+    "changePercentage": 182.14285714285714,
+    "movingAverage": 38,
+    "throughputTrend": 67.5,
+    "latencyTrend": 27.868852459016395,
+    "chartData": {
+      "timestamps": [
+        "2025-09-20T13:31:24.870879292Z",
+        "2025-09-20T14:13:11.097304371Z",
+        "2025-09-20T14:34:45.992474464Z",
+        "2025-09-21T20:13:49.738421601Z",
+        "2025-09-22T06:06:07.345692601Z",
+        "2025-09-22T06:46:08.058149699Z",
+        "2025-09-22T08:19:50.842443442Z",
+        "2025-09-22T08:56:55.944701716Z",
+        "2025-09-22T09:18:48.636999069Z",
+        "2025-09-22T11:18:19.371135651Z",
+        "Current"
+      ],
+      "throughput": [
+        3900,
+        3900,
+        3900,
+        4000,
+        4000,
+        3900,
+        3800,
+        3900,
+        3900,
+        4000,
+        6700
+      ],
+      "latency": [
+        6.1,
+        6.2,
+        6.1,
+        6.1,
+        6,
+        6.1,
+        6.2,
+        6.2,
+        6.1,
+        6.1,
+        7.8
+      ],
+      "performanceScores": [
+        28,
+        28,
+        28,
+        28,
+        28,
+        28,
+        27,
+        28,
+        28,
+        28,
+        79
+      ],
+      "statistics": {
+        "throughputMin": 3800,
+        "throughputMax": 6700,
+        "throughputAvg": 4172.727272727273,
+        "latencyMin": 6,
+        "latencyMax": 7.8,
+        "latencyAvg": 6.2727272727272725
+      }
+    },
+    "summary": "Performance improved by 182.1%"
+  }
+}

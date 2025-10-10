@@ -53,6 +53,7 @@ public class TrendDataProcessor {
     private static final CuiLogger LOGGER = new CuiLogger(TrendDataProcessor.class);
     private static final int MAX_HISTORY_ENTRIES = 10;
     private static final double STABILITY_THRESHOLD = 0.02; // 2% change threshold for "stable"
+    private static final double EWMA_LAMBDA = 0.25; // Decay factor for exponential weighting (standard for performance monitoring)
     private static final String KEY_THROUGHPUT = "throughput";
     private static final String KEY_LATENCY = "latency";
 
@@ -126,10 +127,14 @@ public class TrendDataProcessor {
     }
 
     /**
-     * Calculates trend metrics from historical data.
-     * 
+     * Calculates trend metrics from historical data using EWMA (Exponentially Weighted Moving Average).
+     * <p>
+     * EWMA provides a weighted baseline that emphasizes recent performance while still considering
+     * historical context. This prevents false negatives when comparing identical consecutive runs
+     * after a major performance shift.
+     *
      * @param currentMetrics current benchmark metrics
-     * @param historicalData previous benchmark results
+     * @param historicalData previous benchmark results (ordered newest first)
      * @return trend metrics with analysis
      */
     public TrendMetrics calculateTrends(BenchmarkMetrics currentMetrics,
@@ -138,17 +143,24 @@ public class TrendDataProcessor {
             return new TrendMetrics(STABLE, 0.0, currentMetrics.performanceScore(), 0.0, 0.0);
         }
 
-        // Compare with most recent historical data
-        HistoricalDataPoint previousRun = historicalData.getFirst();
+        // Extract historical performance scores (newest first)
+        List<Double> historicalScores = historicalData.stream()
+                .map(HistoricalDataPoint::performanceScore)
+                .toList();
+
+        // Calculate EWMA baseline from historical data
+        double ewmaBaseline = StatisticsCalculator.calculateEWMA(historicalScores, EWMA_LAMBDA);
+
+        // Compare current score against EWMA baseline instead of just most recent run
         double changePercentage = StatisticsCalculator.calculatePercentageChange(
-                previousRun.performanceScore(),
+                ewmaBaseline,
                 currentMetrics.performanceScore());
 
         // Determine trend direction
         String direction = StatisticsCalculator.determineTrendDirection(
                 changePercentage, STABILITY_THRESHOLD * 100);
 
-        // Calculate moving average (last 5 runs)
+        // Calculate simple moving average for compatibility (last 5 runs including current)
         List<Double> recentScores = new ArrayList<>();
         recentScores.add(currentMetrics.performanceScore());
         historicalData.stream()
@@ -157,13 +169,23 @@ public class TrendDataProcessor {
                 .forEach(recentScores::add);
         double movingAverage = StatisticsCalculator.calculateMovingAverage(recentScores, 5);
 
-        // Calculate throughput and latency trends
+        // Calculate throughput and latency trends using EWMA
+        List<Double> historicalThroughput = historicalData.stream()
+                .map(HistoricalDataPoint::throughput)
+                .toList();
+        List<Double> historicalLatency = historicalData.stream()
+                .map(HistoricalDataPoint::latency)
+                .toList();
+
+        double throughputBaseline = StatisticsCalculator.calculateEWMA(historicalThroughput, EWMA_LAMBDA);
+        double latencyBaseline = StatisticsCalculator.calculateEWMA(historicalLatency, EWMA_LAMBDA);
+
         double throughputTrend = StatisticsCalculator.calculatePercentageChange(
-                previousRun.throughput(),
+                throughputBaseline,
                 currentMetrics.throughput()
         );
         double latencyTrend = StatisticsCalculator.calculatePercentageChange(
-                previousRun.latency(),
+                latencyBaseline,
                 currentMetrics.latency()
         );
 

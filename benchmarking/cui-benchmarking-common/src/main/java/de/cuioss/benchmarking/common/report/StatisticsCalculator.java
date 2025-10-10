@@ -193,6 +193,50 @@ public final class StatisticsCalculator {
     }
 
     /**
+     * Calculates an Exponentially Weighted Moving Average (EWMA) baseline from historical values.
+     * <p>
+     * EWMA gives more weight to recent values while still considering historical context,
+     * making it ideal for performance monitoring and trend detection. The decay factor (lambda)
+     * determines how quickly older values lose influence.
+     * <p>
+     * Formula: EWMA = Σ(value_i × λ^i) / Σ(λ^i)
+     * where i=0 is the most recent value, i=1 is second most recent, etc.
+     *
+     * @param values list of historical values, ordered from newest to oldest
+     * @param lambda decay factor (typically 0.2-0.3 for performance monitoring).
+     *               Smaller values = more weight on recent data.
+     * @return the weighted baseline value
+     * @throws NullPointerException if values is null
+     * @throws IllegalArgumentException if lambda is not in (0, 1] range
+     */
+    public static double calculateEWMA(List<Double> values, double lambda) {
+        Objects.requireNonNull(values, "Values list cannot be null");
+        if (lambda <= 0 || lambda > 1) {
+            throw new IllegalArgumentException("Lambda must be in range (0, 1], got: " + lambda);
+        }
+
+        if (values.isEmpty()) {
+            return 0.0;
+        }
+
+        if (values.size() == 1) {
+            return values.getFirst();
+        }
+
+        double weightedSum = 0.0;
+        double weightSum = 0.0;
+        double currentWeight = 1.0; // Start with weight = λ^0 = 1.0
+
+        for (Double value : values) {
+            weightedSum += value * currentWeight;
+            weightSum += currentWeight;
+            currentWeight *= lambda; // Exponential decay: next weight = current × λ
+        }
+
+        return weightedSum / weightSum;
+    }
+
+    /**
      * Determines the trend direction based on percentage change and a stability threshold.
      *
      * @param percentageChange the percentage change value
