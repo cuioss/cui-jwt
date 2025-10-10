@@ -19,7 +19,7 @@ import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.http.client.ResilientHttpHandler;
 import de.cuioss.http.client.handler.HttpHandler;
-import de.cuioss.http.client.result.HttpResultObject;
+import de.cuioss.http.client.result.HttpResult;
 import de.cuioss.jwt.validation.json.Jwks;
 import de.cuioss.jwt.validation.jwks.JwksLoader;
 import de.cuioss.jwt.validation.jwks.JwksType;
@@ -118,7 +118,7 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
             httpHandler.set(handler);
 
             // Load JWKS via ResilientHttpHandler
-            HttpResultObject<Jwks> result = handler.load();
+            HttpResult<Jwks> result = handler.load();
 
             // Start background refresh if configured (regardless of initial load status to enable retries)
             boolean backgroundRefreshEnabled = config.isBackgroundRefreshEnabled();
@@ -126,8 +126,8 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                 startBackgroundRefresh();
             }
 
-            if (result.isValid()) {
-                updateKeys(result.getResult());
+            if (result.isSuccess()) {
+                result.getContent().ifPresent(this::updateKeys);
 
                 // Log successful HTTP load
                 LOGGER.info(INFO.JWKS_LOADED, getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED)));
@@ -137,14 +137,13 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
             }
 
             // Log appropriate warning if no cached content
-            if (result.getResultDetail().isPresent()) {
-                String detailMessage = result.getResultDetail().get().getDetail().toString();
-                if (detailMessage.contains("no cached content")) {
+            result.getErrorMessage().ifPresent(msg -> {
+                if (msg.contains("no cached content")) {
                     LOGGER.warn(WARN.JWKS_LOAD_FAILED_NO_CACHE);
                 }
-            }
+            });
 
-            LOGGER.error(ERROR.JWKS_LOAD_FAILED, result.getResultDetail(), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED)));
+            LOGGER.error(ERROR.JWKS_LOAD_FAILED, result.getErrorMessage().orElse("Unknown error"), getIssuerIdentifier().orElseThrow(() -> new IllegalStateException(ISSUER_MUST_BE_RESOLVED)));
 
             // If background refresh is enabled, keep status as UNDEFINED to allow retries
             // Otherwise set to ERROR for permanent failure
@@ -315,15 +314,16 @@ public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCl
                             return;
                         }
 
-                        HttpResultObject<Jwks> result = handler.load();
+                        HttpResult<Jwks> result = handler.load();
 
-                        if (result.isValid() && result.getHttpStatus().map(s -> s == 200).orElse(false)) {
-                            updateKeys(result.getResult());
+                        if (result.isSuccess() && result.getHttpStatus().map(s -> s == 200).orElse(false)) {
+                            result.getContent().ifPresent(this::updateKeys);
                             LOGGER.debug("Background refresh updated keys");
                         } else if (result.getHttpStatus().map(s -> s == 304).orElse(false)) {
                             LOGGER.debug("Background refresh: keys unchanged (304)");
                         } else {
-                            LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED, result.getState());
+                            String statusDesc = result.isSuccess() ? "success" : "failure";
+                            LOGGER.warn(WARN.BACKGROUND_REFRESH_FAILED, statusDesc);
                         }
                     } catch (IllegalArgumentException e) {
                         // JSON parsing or validation errors

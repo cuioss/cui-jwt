@@ -42,10 +42,6 @@
         </dependency>
         <dependency>
             <groupId>de.cuioss</groupId>
-            <artifactId>cui-core-ui-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>de.cuioss</groupId>
             <artifactId>cui-http</artifactId>
         </dependency>
 
