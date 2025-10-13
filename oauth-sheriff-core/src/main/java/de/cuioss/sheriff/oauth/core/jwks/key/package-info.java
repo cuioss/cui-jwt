@@ -40,8 +40,8 @@
  * <p>
  * Implements requirements:
  * <ul>
- *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-4">CUI-JWT-4: Key Management</a></li>
- *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-8.5">CUI-JWT-8.5: Cryptographic Agility</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#OAUTH-SHERIFF-4">CUI-JWT-4: Key Management</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#OAUTH-SHERIFF-8.5">CUI-JWT-8.5: Cryptographic Agility</a></li>
  * </ul>
  * <p>
  * For more detailed specifications, see the

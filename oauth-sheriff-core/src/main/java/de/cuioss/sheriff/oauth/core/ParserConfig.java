@@ -61,8 +61,8 @@ import lombok.ToString;
  * <p>
  * Implements requirements:
  * <ul>
- *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-8.1">CUI-JWT-8.1: Token Size Limits</a></li>
- *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-8.2">CUI-JWT-8.2: Safe Parsing</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#OAUTH-SHERIFF-8.1">CUI-JWT-8.1: Token Size Limits</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#OAUTH-SHERIFF-8.2">CUI-JWT-8.2: Safe Parsing</a></li>
  * </ul>
  * <p>
  * For more detailed specifications, see the

@@ -40,7 +40,7 @@ import static de.cuioss.sheriff.oauth.core.domain.claim.ClaimName.*;
  * <p>
  * Implements requirements:
  * <ul>
- *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-1.2">CUI-JWT-1.2: Token Types</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#OAUTH-SHERIFF-1.2">CUI-JWT-1.2: Token Types</a></li>
  * </ul>
  * <p>
  * For more detailed specifications, see the

@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureThroughput",
+        "benchmark" : "de.cuioss.sheriff.oauth.core.benchmark.standard.SimpleCoreValidationBenchmark.measureThroughput",
         "mode" : "thrpt",
         "threads" : 100,
         "forks" : 1,
@@ -52,7 +52,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "de.cuioss.jwt.validation.benchmark.standard.SimpleErrorLoadBenchmark.validateMixedTokens0",
+        "benchmark" : "de.cuioss.sheriff.oauth.core.benchmark.standard.SimpleErrorLoadBenchmark.validateMixedTokens0",
         "mode" : "thrpt",
         "threads" : 100,
         "forks" : 1,
@@ -103,7 +103,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "de.cuioss.jwt.validation.benchmark.standard.SimpleErrorLoadBenchmark.validateMixedTokens50",
+        "benchmark" : "de.cuioss.sheriff.oauth.core.benchmark.standard.SimpleErrorLoadBenchmark.validateMixedTokens50",
         "mode" : "thrpt",
         "threads" : 100,
         "forks" : 1,
@@ -154,7 +154,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureAverageTime",
+        "benchmark" : "de.cuioss.sheriff.oauth.core.benchmark.standard.SimpleCoreValidationBenchmark.measureAverageTime",
         "mode" : "avgt",
         "threads" : 100,
         "forks" : 1,
@@ -205,7 +205,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "de.cuioss.jwt.validation.benchmark.standard.SimpleCoreValidationBenchmark.measureConcurrentValidation",
+        "benchmark" : "de.cuioss.sheriff.oauth.core.benchmark.standard.SimpleCoreValidationBenchmark.measureConcurrentValidation",
         "mode" : "avgt",
         "threads" : 100,
         "forks" : 1,
