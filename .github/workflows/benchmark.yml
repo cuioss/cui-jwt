@@ -54,9 +54,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Build cui-jwt-validation
+      - name: Build oauth-sheriff-library
         run: |
-          # Build validation module first to ensure test artifact is available for benchmarking
+          # Build library module first to ensure test artifact is available for benchmarking
           ./mvnw --no-transfer-progress clean install -DskipTests
 
       - name: Fetch Previous History
@@ -66,8 +66,8 @@ jobs:
           ref: main
           path: previous-pages
           sparse-checkout: |
-            cui-jwt/benchmarks/micro/history
-            cui-jwt/benchmarks/integration/history
+            OAuth-Sheriff/benchmarks/micro/history
+            OAuth-Sheriff/benchmarks/integration/history
         continue-on-error: true
 
       - name: Prepare Historical Data for Benchmarks
@@ -76,18 +76,18 @@ jobs:
           # This directory path will be passed to the benchmarks as a system property
           export HISTORY_BASE_DIR="${GITHUB_WORKSPACE}/benchmark-history"
 
-          if [ -d "previous-pages/cui-jwt/benchmarks/micro/history" ]; then
+          if [ -d "previous-pages/OAuth-Sheriff/benchmarks/micro/history" ]; then
             echo "📜 Preparing micro benchmark history..."
             mkdir -p "${HISTORY_BASE_DIR}/micro"
-            cp previous-pages/cui-jwt/benchmarks/micro/history/*.json \
+            cp previous-pages/OAuth-Sheriff/benchmarks/micro/history/*.json \
                "${HISTORY_BASE_DIR}/micro/" 2>/dev/null || true
             echo "✅ Copied $(ls -1 ${HISTORY_BASE_DIR}/micro/*.json 2>/dev/null | wc -l) micro history files"
           fi
 
-          if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
+          if [ -d "previous-pages/OAuth-Sheriff/benchmarks/integration/history" ]; then
             echo "📜 Preparing integration benchmark history..."
             mkdir -p "${HISTORY_BASE_DIR}/integration"
-            cp previous-pages/cui-jwt/benchmarks/integration/history/*.json \
+            cp previous-pages/OAuth-Sheriff/benchmarks/integration/history/*.json \
                "${HISTORY_BASE_DIR}/integration/" 2>/dev/null || true
             echo "✅ Copied $(ls -1 ${HISTORY_BASE_DIR}/integration/*.json 2>/dev/null | wc -l) integration history files"
           fi
@@ -143,17 +143,17 @@ jobs:
       - name: Merge Historical Data
         run: |
           # Copy previous history to gh-pages-ready if it exists (already fetched before benchmarks)
-          if [ -d "previous-pages/cui-jwt/benchmarks/micro/history" ]; then
+          if [ -d "previous-pages/OAuth-Sheriff/benchmarks/micro/history" ]; then
             echo "📜 Merging micro benchmark history..."
             mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
-            cp -n previous-pages/cui-jwt/benchmarks/micro/history/*.json \
+            cp -n previous-pages/OAuth-Sheriff/benchmarks/micro/history/*.json \
                benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
           fi
 
-          if [ -d "previous-pages/cui-jwt/benchmarks/integration/history" ]; then
+          if [ -d "previous-pages/OAuth-Sheriff/benchmarks/integration/history" ]; then
             echo "📜 Merging integration benchmark history..."
             mkdir -p benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history
-            cp -n previous-pages/cui-jwt/benchmarks/integration/history/*.json \
+            cp -n previous-pages/OAuth-Sheriff/benchmarks/integration/history/*.json \
                benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
           fi
 
@@ -223,6 +223,6 @@ jobs:
         with:
           folder: gh-pages
           repository-name: cuioss/cuioss.github.io
-          target-folder: cui-jwt/benchmarks
+          target-folder: OAuth-Sheriff/benchmarks
           branch: main
           token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
