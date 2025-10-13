@@ -28,6 +28,6 @@ import io.quarkus.runtime.annotations.Recorder;
  * from the deployment processor.
  */
 @Recorder
-public class CuiJwtRecorder {
+public class OAuthSheriffRecorder {
     // No initialization needed - all components are managed by CDI
 }

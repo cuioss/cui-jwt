@@ -22,21 +22,21 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
- * Minimal unit test for {@link CuiJwtRecorder}.
+ * Minimal unit test for {@link OAuthSheriffRecorder}.
  * <p>
  * This test verifies that the recorder can be instantiated without issues.
  * The recorder is currently empty as all runtime initialization is handled by CDI.
  */
 @EnableTestLogger
-@DisplayName("CuiJwtRecorder Tests")
-class CuiJwtRecorderTest {
+@DisplayName("OAuthSheriffRecorder Tests")
+class OAuthSheriffRecorderTest {
 
     @Test
-    @DisplayName("Should instantiate CuiJwtRecorder without exceptions")
+    @DisplayName("Should instantiate OAuthSheriffRecorder without exceptions")
     void shouldInstantiateRecorderSuccessfully() {
         // Test that the recorder can be instantiated without issues
-        assertDoesNotThrow(CuiJwtRecorder::new,
-                "CuiJwtRecorder should be instantiable without exceptions");
+        assertDoesNotThrow(OAuthSheriffRecorder::new,
+                "OAuthSheriffRecorder should be instantiable without exceptions");
     }
 
 }

@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * </ul>
  */
 @EnableTestLogger
-class CuiJwtProcessorTest {
+class OAuthSheriffProcessorTest {
 
     /**
      * The Quarkus test framework.
@@ -66,10 +66,10 @@ class CuiJwtProcessorTest {
     @Test
     void shouldTestProcessorBasicFunctionality() {
         // Test that processor can be instantiated without issues
-        assertDoesNotThrow(CuiJwtProcessor::new,
-                "CuiJwtProcessor should be instantiable without exceptions");
+        assertDoesNotThrow(OAuthSheriffProcessor::new,
+                "OAuthSheriffProcessor should be instantiable without exceptions");
 
-        CuiJwtProcessor processor = new CuiJwtProcessor();
+        OAuthSheriffProcessor processor = new OAuthSheriffProcessor();
         assertNotNull(processor, "Processor should not be null");
     }
 

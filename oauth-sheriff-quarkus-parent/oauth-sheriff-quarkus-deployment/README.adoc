@@ -31,10 +31,10 @@ For Maven dependency information, see xref:../README.adoc#maven-coordinates[Mave
 
 == Detailed Component Documentation
 
-=== CuiJwtProcessor
+=== OAuthSheriffProcessor
 Main deployment processor handling build-time configuration:
 
-* link:src/main/java/de/cuioss/jwt/quarkus/deployment/CuiJwtProcessor.java[CuiJwtProcessor]
+* link:src/main/java/de/cuioss/jwt/quarkus/deployment/OAuthSheriffProcessor.java[OAuthSheriffProcessor]
 * Registers JWT validation classes for reflection
 * Configures runtime initialization for HTTP components
 * Sets up DevUI integration in development mode
@@ -43,7 +43,7 @@ Main deployment processor handling build-time configuration:
 === DevUI Components
 Development interface components:
 
-* link:src/main/java/de/cuioss/jwt/quarkus/deployment/CuiJwtDevUIJsonRPCService.java[CuiJwtDevUIJsonRPCService] - JSON-RPC service for DevUI communication
+* link:src/main/java/de/cuioss/jwt/quarkus/deployment/OAuthSheriffDevUIJsonRPCService.java[OAuthSheriffDevUIJsonRPCService] - JSON-RPC service for DevUI communication
 * Web components in `src/main/resources/dev-ui/` for interactive JWT debugging
 
 For detailed component architecture, implementation details, and testing framework, see xref:../doc/development/devui-implementation.adoc[DevUI Implementation Documentation].

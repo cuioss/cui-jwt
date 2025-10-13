@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_ANNOTATION_NOT_FOUND;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.WARN.BEARER_TOKEN_ANNOTATION_NOT_FOUND;
 
 /**
  * Interceptor for declarative Bearer token validation at method level.

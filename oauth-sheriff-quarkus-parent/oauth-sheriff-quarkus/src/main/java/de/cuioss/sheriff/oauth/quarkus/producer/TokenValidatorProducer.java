@@ -33,7 +33,7 @@ import org.eclipse.microprofile.config.Config;
 
 import java.util.List;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.INFO;
 
 /**
  * CDI producer for JWT validation related instances.

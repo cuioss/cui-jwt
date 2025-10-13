@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.WARN;
 
 /**
  * Health check for JWKS endpoint connectivity.

@@ -205,8 +205,8 @@ export class QwcJwtConfig extends LitElement {
       this._error = null;
 
       const [config, health] = await Promise.all([
-        devui.jsonRPC.CuiJwtDevUI.getConfiguration(),
-        devui.jsonRPC.CuiJwtDevUI.getHealthInfo(),
+        devui.jsonRPC.OAuthSheriffDevUI.getConfiguration(),
+        devui.jsonRPC.OAuthSheriffDevUI.getHealthInfo(),
       ]);
 
       this._configuration = config;

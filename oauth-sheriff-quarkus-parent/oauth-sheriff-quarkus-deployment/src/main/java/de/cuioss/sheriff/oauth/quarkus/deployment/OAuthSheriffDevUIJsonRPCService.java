@@ -30,7 +30,7 @@ import java.util.Map;
  * Note: This service provides static build-time information only.
  * Runtime status will be available through actual application endpoints.
  */
-public class CuiJwtDevUIJsonRPCService {
+public class OAuthSheriffDevUIJsonRPCService {
 
     public static final String BUILD_TIME = "BUILD_TIME";
     public static final String MESSAGE = "message";

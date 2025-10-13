@@ -74,7 +74,7 @@ import org.jboss.jandex.DotName;
  * DevUI integration.
  * </p>
  */
-public class CuiJwtProcessor {
+public class OAuthSheriffProcessor {
 
     /**
      * The feature name for the OAuth Sheriff extension.
@@ -84,7 +84,7 @@ public class CuiJwtProcessor {
     /**
      * Logger for build-time processing.
      */
-    private static final CuiLogger LOGGER = new CuiLogger(CuiJwtProcessor.class);
+    private static final CuiLogger LOGGER = new CuiLogger(OAuthSheriffProcessor.class);
 
     /**
      * LogRecord for feature registration.
@@ -366,7 +366,7 @@ public class CuiJwtProcessor {
      */
     @BuildStep(onlyIf = IsDevelopment.class)
     public JsonRPCProvidersBuildItem createJwtDevUIJsonRPCService() {
-        return new JsonRPCProvidersBuildItem("CuiJwtDevUI", CuiJwtDevUIJsonRPCService.class);
+        return new JsonRPCProvidersBuildItem("OAuthSheriffDevUI", OAuthSheriffDevUIJsonRPCService.class);
     }
 
 }

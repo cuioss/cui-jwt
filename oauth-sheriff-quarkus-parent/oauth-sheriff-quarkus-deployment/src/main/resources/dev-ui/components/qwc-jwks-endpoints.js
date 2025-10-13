@@ -164,7 +164,7 @@ export class QwcJwksEndpoints extends LitElement {
       this._loading = true;
       this._error = null;
 
-      const response = await devui.jsonRPC.CuiJwtDevUI.getJwksStatus();
+      const response = await devui.jsonRPC.OAuthSheriffDevUI.getJwksStatus();
       this._jwksStatus = response;
     } catch (error) {
       // eslint-disable-next-line no-console

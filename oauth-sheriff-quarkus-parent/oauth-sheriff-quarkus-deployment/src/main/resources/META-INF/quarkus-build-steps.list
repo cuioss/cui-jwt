@@ -1,1 +1,1 @@
-de.cuioss.jwt.quarkus.deployment.CuiJwtProcessor
+de.cuioss.sheriff.oauth.quarkus.deployment.OAuthSheriffProcessor

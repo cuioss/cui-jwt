@@ -31,7 +31,7 @@ import jakarta.inject.Inject;
 
 import java.util.*;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.WARN.*;
 
 /**
  * CDI producer for extracting and validating bearer tokens from HTTP Authorization headers.

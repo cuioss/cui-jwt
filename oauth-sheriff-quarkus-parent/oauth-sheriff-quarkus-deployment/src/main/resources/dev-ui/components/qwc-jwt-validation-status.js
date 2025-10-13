@@ -133,7 +133,7 @@ export class QwcJwtValidationStatus extends LitElement {
       this._loading = true;
       this._error = null;
 
-      const response = await devui.jsonRPC.CuiJwtDevUI.getValidationStatus();
+      const response = await devui.jsonRPC.OAuthSheriffDevUI.getValidationStatus();
       this._validationStatus = response;
     } catch (error) {
       // eslint-disable-next-line no-console

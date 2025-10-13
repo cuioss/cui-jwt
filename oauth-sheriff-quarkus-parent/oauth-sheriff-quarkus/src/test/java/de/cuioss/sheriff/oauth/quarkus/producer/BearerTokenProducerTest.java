@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 import java.util.Set;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.WARN;
 import static de.cuioss.test.juli.LogAsserts.assertSingleLogMessagePresentContaining;
 import static org.easymock.EasyMock.*;
 import static org.junit.jupiter.api.Assertions.*;

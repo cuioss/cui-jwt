@@ -43,12 +43,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for {@link CuiJwtProcessor} build step methods.
+ * Unit tests for {@link OAuthSheriffProcessor} build step methods.
  */
 @EnableTestLogger
-class CuiJwtProcessorBuildStepTest {
+class OAuthSheriffProcessorBuildStepTest {
 
-    private final CuiJwtProcessor processor = new CuiJwtProcessor();
+    private final OAuthSheriffProcessor processor = new OAuthSheriffProcessor();
 
     @Test
     void shouldCreateFeatureBuildItem() {

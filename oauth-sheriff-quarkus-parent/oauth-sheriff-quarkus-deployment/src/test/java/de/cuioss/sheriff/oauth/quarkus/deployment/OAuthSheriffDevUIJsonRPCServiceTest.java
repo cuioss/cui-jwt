@@ -24,11 +24,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests for {@link CuiJwtDevUIJsonRPCService}.
+ * Unit tests for {@link OAuthSheriffDevUIJsonRPCService}.
  */
-class CuiJwtDevUIJsonRPCServiceTest {
+class OAuthSheriffDevUIJsonRPCServiceTest {
 
-    private final CuiJwtDevUIJsonRPCService service = new CuiJwtDevUIJsonRPCService();
+    private final OAuthSheriffDevUIJsonRPCService service = new OAuthSheriffDevUIJsonRPCService();
 
     @Test
     void getValidationStatus_shouldReturnBuildTimeStatus() {

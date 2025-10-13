@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collection;
 import java.util.Objects;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.INFO;
 import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresent;
 import static org.junit.jupiter.api.Assertions.*;
 

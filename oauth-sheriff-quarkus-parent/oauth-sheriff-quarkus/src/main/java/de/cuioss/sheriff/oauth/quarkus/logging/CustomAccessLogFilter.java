@@ -33,7 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.INFO;
 
 /**
  * Custom HTTP access log filter with configurable status code and path filtering.

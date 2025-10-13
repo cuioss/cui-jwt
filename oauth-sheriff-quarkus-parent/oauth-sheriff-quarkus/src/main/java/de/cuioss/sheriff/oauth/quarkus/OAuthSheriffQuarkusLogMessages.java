@@ -36,12 +36,12 @@ import lombok.experimental.UtilityClass;
  * @see de.cuioss.tools.logging.LogRecord
  */
 @UtilityClass
-public final class CuiJwtQuarkusLogMessages {
+public final class OAuthSheriffQuarkusLogMessages {
 
     /**
      * The prefix for all log messages in this module.
      */
-    public static final String PREFIX = "CUI_JWT_QUARKUS";
+    public static final String PREFIX = "OAUTH_SHERIFF_QUARKUS";
 
     /**
      * INFO level log messages (001-099).

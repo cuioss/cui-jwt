@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.INFO;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

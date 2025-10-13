@@ -16,9 +16,9 @@ The extension follows the standard Quarkus extension architecture with separate 
 
 === Key Components
 
-==== CuiJwtProcessor
+==== OAuthSheriffProcessor
 
-The `CuiJwtProcessor` class handles build-time processing for the extension:
+The `OAuthSheriffProcessor` class handles build-time processing for the extension:
 
 * Registers the `oauth-sheriff` feature
 * Sets up reflection for configuration classes:
@@ -28,9 +28,9 @@ The `CuiJwtProcessor` class handles build-time processing for the extension:
   ** `HttpJwksLoader` for proper native image support
 * Configures DevUI components for development mode
 
-==== CuiJwtRecorder
+==== OAuthSheriffRecorder
 
-The `CuiJwtRecorder` class follows Quarkus best practices by leveraging CDI for component management. All runtime initialization is handled by CDI, and health checks are automatically discovered by Quarkus through their annotations (`@ApplicationScoped`, `@Readiness`, `@Liveness`).
+The `OAuthSheriffRecorder` class follows Quarkus best practices by leveraging CDI for component management. All runtime initialization is handled by CDI, and health checks are automatically discovered by Quarkus through their annotations (`@ApplicationScoped`, `@Readiness`, `@Liveness`).
 
 ==== Health Checks
 
@@ -45,7 +45,7 @@ These health checks are automatically discovered by Quarkus through their annota
 * `@Readiness` or `@Liveness`: Identifies the health check type
 * Implementation of the `HealthCheck` interface
 
-No explicit registration is needed in the `CuiJwtProcessor` class, as Quarkus handles the discovery and registration automatically.
+No explicit registration is needed in the `OAuthSheriffProcessor` class, as Quarkus handles the discovery and registration automatically.
 
 See xref:health-checks.adoc[Health Checks] for detailed information.
 
@@ -88,9 +88,9 @@ In development mode, the extension provides DevUI integration with:
 
 The DevUI integration is implemented through:
 
-* `CuiJwtProcessor.createJwtDevUICard()`: Creates the DevUI card pages
-* `CuiJwtProcessor.createJwtDevUIJsonRPCService()`: Registers the JSON-RPC service
-* `CuiJwtDevUIJsonRPCService`: Provides runtime data access for the DevUI components
+* `OAuthSheriffProcessor.createJwtDevUICard()`: Creates the DevUI card pages
+* `OAuthSheriffProcessor.createJwtDevUIJsonRPCService()`: Registers the JSON-RPC service
+* `OAuthSheriffDevUIJsonRPCService`: Provides runtime data access for the DevUI components
 
 The DevUI components are only active in development mode, controlled by the `@BuildStep(onlyIf = IsDevelopment.class)` annotation.
 

@@ -29,7 +29,7 @@ oauth-sheriff-quarkus-deployment/src/main/resources/dev-ui/
 
 ==== Build-Time Registration
 
-DevUI components are registered during build time in `CuiJwtProcessor.java`:
+DevUI components are registered during build time in `OAuthSheriffProcessor.java`:
 
 [source,java]
 ----
@@ -51,13 +51,13 @@ CardPageBuildItem createJwtDevUICard() {
 
 ==== JSON-RPC Service
 
-Backend data access is provided through `CuiJwtDevUIJsonRPCService.java`:
+Backend data access is provided through `OAuthSheriffDevUIJsonRPCService.java`:
 
 [source,java]
 ----
 @BuildStep(onlyIf = IsDevelopment.class)
 JsonRPCProvidersBuildItem createJwtDevUIJsonRPCService() {
-    return new JsonRPCProvidersBuildItem("CuiJwtDevUI", CuiJwtDevUIJsonRPCService.class);
+    return new JsonRPCProvidersBuildItem("OAuthSheriffDevUI", OAuthSheriffDevUIJsonRPCService.class);
 }
 ----
 

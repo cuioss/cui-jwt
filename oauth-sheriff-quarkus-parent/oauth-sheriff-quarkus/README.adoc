@@ -88,10 +88,10 @@ For comprehensive metrics configuration, Prometheus queries, alerting examples, 
 
 === Runtime Services
 
-==== CuiJwtRecorder
+==== OAuthSheriffRecorder
 Quarkus build-time recorder for runtime initialization:
 
-* link:src/main/java/de/cuioss/jwt/quarkus/runtime/CuiJwtRecorder.java[CuiJwtRecorder]
+* link:src/main/java/de/cuioss/jwt/quarkus/runtime/OAuthSheriffRecorder.java[OAuthSheriffRecorder]
 * Handles runtime configuration setup
 * Manages bean registration
 * Coordinates with deployment module

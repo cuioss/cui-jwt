@@ -15,7 +15,7 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.servlet;
 
-import de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages;
+import de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -71,7 +71,7 @@ class VertxServletObjectsResolverErrorPathsTest {
 
         // Verify error logging
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
-                CuiJwtQuarkusLogMessages.ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.resolveIdentifierString());
+                OAuthSheriffQuarkusLogMessages.ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.resolveIdentifierString());
 
         verify(vertxRequestInstance);
     }
@@ -97,7 +97,7 @@ class VertxServletObjectsResolverErrorPathsTest {
 
         // Verify error logging
         LogAsserts.assertLogMessagePresentContaining(TestLogLevel.ERROR,
-                CuiJwtQuarkusLogMessages.ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.resolveIdentifierString());
+                OAuthSheriffQuarkusLogMessages.ERROR.VERTX_REQUEST_CONTEXT_UNAVAILABLE.resolveIdentifierString());
 
         verify(vertxRequestInstance);
     }

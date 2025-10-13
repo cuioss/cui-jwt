@@ -23,7 +23,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.ERROR;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.ERROR;
 
 /**
  * Vertx-based implementation for resolving servlet objects within Quarkus JAX-RS request contexts.

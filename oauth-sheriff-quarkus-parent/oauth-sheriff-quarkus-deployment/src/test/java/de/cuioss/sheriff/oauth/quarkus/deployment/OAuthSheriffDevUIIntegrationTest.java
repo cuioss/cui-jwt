@@ -35,7 +35,7 @@ class CuiJwtDevUIIntegrationTest {
     @RegisterExtension
     static final QuarkusUnitTest config = new QuarkusUnitTest()
             .withApplicationRoot(jar -> jar
-                    .addClasses(CuiJwtProcessor.class, CuiJwtDevUIJsonRPCService.class))
+                    .addClasses(OAuthSheriffProcessor.class, OAuthSheriffDevUIJsonRPCService.class))
             .overrideConfigKey("sheriff.oauth.enabled", "true")
             .overrideConfigKey("quarkus.dev", "true");
 
@@ -55,8 +55,8 @@ class CuiJwtDevUIIntegrationTest {
     @Test
     @DisplayName("Should have required DevUI build steps in processor")
     void devUIBuildStepsExist() {
-        // Verify that the CuiJwtProcessor has the required DevUI build steps
-        var processor = new CuiJwtProcessor();
+        // Verify that the OAuthSheriffProcessor has the required DevUI build steps
+        var processor = new OAuthSheriffProcessor();
 
         // These methods should exist and be callable
         assertDoesNotThrow(() -> {

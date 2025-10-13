@@ -36,7 +36,7 @@ import java.util.Map;
  * </p>
  */
 @ApplicationScoped
-public class CuiJwtDevUIRuntimeService {
+public class OAuthSheriffDevUIRuntimeService {
 
     // String constants for commonly used literals
     private static final String RUNTIME = "RUNTIME";
@@ -59,7 +59,7 @@ public class CuiJwtDevUIRuntimeService {
      * @param issuerConfigs the issuer configurations from TokenValidatorProducer
      */
     @Inject
-    public CuiJwtDevUIRuntimeService(TokenValidator tokenValidator, List<IssuerConfig> issuerConfigs) {
+    public OAuthSheriffDevUIRuntimeService(TokenValidator tokenValidator, List<IssuerConfig> issuerConfigs) {
         this.tokenValidator = tokenValidator;
         this.issuerConfigs = issuerConfigs;
     }

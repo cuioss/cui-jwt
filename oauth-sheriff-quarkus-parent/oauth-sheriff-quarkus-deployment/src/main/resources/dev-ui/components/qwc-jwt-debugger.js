@@ -282,7 +282,7 @@ export class QwcJwtDebugger extends LitElement {
       this._validating = true;
       this._validationResult = null;
 
-      const result = await devui.jsonRPC.CuiJwtDevUI.validateToken(this._token.trim());
+      const result = await devui.jsonRPC.OAuthSheriffDevUI.validateToken(this._token.trim());
       this._validationResult = result;
     } catch (error) {
       // eslint-disable-next-line no-console

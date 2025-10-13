@@ -29,7 +29,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import java.util.List;
 import java.util.Map;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.INFO;
 import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresent;
 import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresentContaining;
 import static org.junit.jupiter.api.Assertions.*;

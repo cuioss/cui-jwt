@@ -19,7 +19,7 @@ import de.cuioss.sheriff.oauth.core.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.eclipse.microprofile.config.Config;
 
-import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.OAuthSheriffQuarkusLogMessages.INFO;
 
 /**
  * Resolver for creating {@link ParserConfig} instances from Quarkus configuration properties.
