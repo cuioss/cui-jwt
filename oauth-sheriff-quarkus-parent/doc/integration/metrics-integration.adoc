@@ -3,11 +3,11 @@
 :toclevels: 3
 :source-highlighter: highlight.js
 
-This document describes the metrics exposed by the cui-jwt-quarkus extension for monitoring JWT token validation and security events.
+This document describes the metrics exposed by the oauth-sheriff-quarkus extension for monitoring JWT token validation and security events.
 
 == Overview
 
-The cui-jwt-quarkus extension automatically exposes metrics when the Quarkus Micrometer extension is present. These metrics provide insights into JWT validation performance, error patterns, and security events to help monitor application security and performance.
+The oauth-sheriff-quarkus extension automatically exposes metrics when the Quarkus Micrometer extension is present. These metrics provide insights into JWT validation performance, error patterns, and security events to help monitor application security and performance.
 
 All metrics follow Quarkus and Micrometer naming conventions and are compatible with standard monitoring systems like Prometheus and Grafana.
 

@@ -9,7 +9,7 @@
 
 == Overview
 
-This document describes the test utilities provided by the `cui-jwt-validation` project for testing JWT validation functionality in your applications.
+This document describes the test utilities provided by the `oauth-sheriff-library` project for testing JWT validation functionality in your applications.
 
 == Generators Artifact
 
@@ -23,8 +23,8 @@ For Maven dependency information, see xref:../README.adoc#test-artifact[Test Art
 
 The test artifact includes the following packages:
 
-* `de.cuioss.jwt.validation.test` - Core test utilities
-* `de.cuioss.jwt.validation.test.generator` - Token and claim generators
+* `de.cuioss.sheriff.oauth.library.test` - Core test utilities
+* `de.cuioss.sheriff.oauth.library.test.generator` - Token and claim generators
 
 == Key Test Utilities
 
@@ -270,7 +270,7 @@ void shouldRejectTokenWithMissingClaims() {
 == Testing Code Using OIDC Discovery (`HttpWellKnownResolver`)
 _See xref:../../doc/specification/well-known.adoc[OIDC Discovery Specification Details]_
 
-When your application uses the `HttpWellKnownResolver` to discover OIDC provider details, you'll want to test this integration without making actual network calls. The `de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher` utility class is provided for this purpose.
+When your application uses the `HttpWellKnownResolver` to discover OIDC provider details, you'll want to test this integration without making actual network calls. The `de.cuioss.sheriff.oauth.library.test.dispatcher.WellKnownDispatcher` utility class is provided for this purpose.
 
 === Introducing `WellKnownDispatcher`
 
@@ -290,10 +290,10 @@ Here's a typical setup for using `WellKnownDispatcher` in a JUnit 5 test class:
 
 [source,java]
 ----
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.well_known.HttpWellKnownResolver;
-import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.well_known.HttpWellKnownResolver;
+import de.cuioss.sheriff.oauth.library.test.dispatcher.WellKnownDispatcher;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;

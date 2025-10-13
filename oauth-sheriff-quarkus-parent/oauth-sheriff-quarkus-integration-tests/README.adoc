@@ -33,10 +33,10 @@ Integration tests for the CUI JWT Quarkus extension with native container testin
 [source,bash]
 ----
 # Native integration tests (requires Docker)
-./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -am
+./mvnw clean verify -Pintegration-tests -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests -am
 
 # JVM unit tests only (no Docker required)
-./mvnw clean test -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean test -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 
 # Manual container testing
 ./scripts/start-integration-container.sh
@@ -62,7 +62,7 @@ The integration tests support two optimized container variants for different use
 DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build cui-jwt-integration-tests
 
 # Run integration tests with distroless
-./mvnw clean verify -Pintegration-tests -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pintegration-tests -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ----
 
 === JFR-Enabled (Profiling) - Local Development Only
@@ -80,10 +80,10 @@ DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compo
 DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build cui-jwt-integration-tests
 
 # Run JFR profiling tests
-./mvnw clean verify -Pjfr -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean verify -Pjfr -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 
 # Extract JFR recordings (automatic via Maven)
-ls -la -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/target/jfr-results/
+ls -la -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/target/jfr-results/
 ----
 
 === Image Comparison
@@ -124,7 +124,7 @@ The builder image handles native compilation in a Docker container, so the local
 
 [source]
 ----
-cui-jwt-quarkus-integration-tests/
+oauth-sheriff-quarkus-integration-tests/
 ├── src/main/
 │   ├── java/de/cuioss/jwt/integration/
 │   │   ├── TestApplication.java
@@ -159,7 +159,7 @@ The module integrates Docker cleanup with Maven's clean phase to prevent file lo
 [source,bash]
 ----
 # Standard clean command now stops Docker containers first
-./mvnw clean -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+./mvnw clean -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 
 # What happens:
 # 1. Executes stop-integration-container.sh --clean (pre-clean phase)
@@ -346,8 +346,8 @@ DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
 ./scripts/dump-keycloak-logs.sh target
 
 # Manual log inspection
-docker logs cui-jwt-quarkus-integration-tests-cui-jwt-integration-tests-1
-docker logs cui-jwt-quarkus-integration-tests-keycloak-1
+docker logs oauth-sheriff-quarkus-integration-tests-cui-jwt-integration-tests-1
+docker logs oauth-sheriff-quarkus-integration-tests-keycloak-1
 
 # Check container status
 docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"

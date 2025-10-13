@@ -22,7 +22,7 @@ High-performance HTTP benchmarking for JWT validation endpoints using WRK, addre
 ./mvnw clean verify -Pbenchmark,max -pl benchmarking/benchmark-integration-wrk
 
 # Start containers manually for fast iteration
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./scripts/start-integration-container.sh
 ----
 
@@ -396,4 +396,4 @@ See link:../../.github/workflows/benchmark.yml[GitHub Actions Benchmark Workflow
 
 * link:../doc/README.adoc[Main Documentation Hub]
 * link:../benchmark-library/README.adoc[Library Benchmarks]
-* link:../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/README.adoc[Integration Test Infrastructure]
+* link:../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/README.adoc[Integration Test Infrastructure]

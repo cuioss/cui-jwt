@@ -176,7 +176,7 @@ Performs HTTP-based load testing using WRK tool via shell scripts. Minimal Java 
 **Shell Script Orchestration:**
 
 Maven pom.xml references scripts from two locations:
-* `../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/` - Container lifecycle and monitoring
+* `../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/scripts/` - Container lifecycle and monitoring
 * `src/main/resources/wrk-scripts/` - WRK benchmark execution
 
 Key scripts:

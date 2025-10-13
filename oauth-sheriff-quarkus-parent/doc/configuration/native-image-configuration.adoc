@@ -321,8 +321,8 @@ quarkus.native.container-runtime-options=-m=64m
 
 [source,bash]
 ----
-# Build cui-jwt-validation module first
-./mvnw clean install -pl cui-jwt-validation
+# Build oauth-sheriff-library module first
+./mvnw clean install -pl oauth-sheriff-library
 
 # Build native image
 ./mvnw clean package -Pnative
@@ -402,7 +402,7 @@ curl -H "Authorization: Bearer <test-token>" http://localhost:8080/api/test
 
 **Missing Reflection Configuration**:
 
-* Ensure cui-jwt-validation module is built before native image
+* Ensure oauth-sheriff-library module is built before native image
 * Verify automatic reflection registration is working
 * Check that all JWT validation classes are included
 

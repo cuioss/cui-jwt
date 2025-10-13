@@ -86,7 +86,7 @@ ENTRYPOINT ["/app/application", "-XX:+FlightRecorder", \
 [source,bash]
 ----
 # Build and run JFR-enabled containers using Maven
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # JFR recording automatically starts and saves to /tmp/jfr-output/jwt-profile.jfr
@@ -95,7 +95,7 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 # JFR files are automatically extracted to target/jfr-results/ during Maven build
 
 # Run benchmarks with JFR profiling
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # Manual extraction alternative (if needed)
@@ -132,19 +132,19 @@ docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-profile.jfr ./target/jfr
 [source,bash]
 ----
 # Production build (distroless, 104MB, no JFR)
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pintegration-tests
 
 # Profiling build (UBI-based, 189MB, full JFR support)
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # Run benchmarks with distroless containers
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pintegration-tests
 
 # Run benchmarks with JFR profiling containers
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 ----
 
@@ -173,7 +173,7 @@ cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
 # Use Maven profiles for automated JFR collection
 
 # Run benchmark with JFR-enabled containers
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # JFR files automatically generated in ./target/benchmark-results/

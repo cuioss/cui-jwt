@@ -1,14 +1,14 @@
-= Developer Guide for cui-jwt-validation
+= Developer Guide for oauth-sheriff-library
 :toc: left
 :toclevels: 3
 :sectnums:
 :source-highlighter: highlight.js
 
-This guide provides information for developers extending or integrating with the cui-jwt-validation library.
+This guide provides information for developers extending or integrating with the oauth-sheriff-library library.
 
 == Performance Metrics Infrastructure
 
-The library includes a lightweight, thread-safe performance monitoring system in the `de.cuioss.jwt.validation.metrics` package for analyzing JWT validation performance.
+The library includes a lightweight, thread-safe performance monitoring system in the `de.cuioss.sheriff.oauth.library.metrics` package for analyzing JWT validation performance.
 
 === TokenValidatorMonitor and MetricsTicker
 
@@ -54,7 +54,7 @@ The `MeasurementType` enum defines measurable pipeline stages:
 
 == Security Event Monitoring
 
-The `SecurityEventCounter` in `de.cuioss.jwt.validation.security` provides thread-safe counters for security events:
+The `SecurityEventCounter` in `de.cuioss.sheriff.oauth.library.security` provides thread-safe counters for security events:
 
 [source,java]
 ----

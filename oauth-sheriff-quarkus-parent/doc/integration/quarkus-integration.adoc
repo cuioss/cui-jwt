@@ -5,7 +5,7 @@
 
 == Overview
 
-The cui-jwt-quarkus extension integrates the JWT validation library with Quarkus applications, providing automatic configuration, health checks, metrics, and DevUI integration. This document describes the current implementation and architecture of the extension.
+The oauth-sheriff-quarkus extension integrates the JWT validation library with Quarkus applications, providing automatic configuration, health checks, metrics, and DevUI integration. This document describes the current implementation and architecture of the extension.
 
 == Architecture
 
@@ -61,7 +61,7 @@ See xref:metrics-integration.adoc[Metrics Integration] for detailed information.
 
 == Configuration
 
-The extension uses MicroProfile Config API with the `cui.jwt` prefix:
+The extension uses MicroProfile Config API with the `sheriff.oauth` prefix:
 
 [source,properties]
 ----

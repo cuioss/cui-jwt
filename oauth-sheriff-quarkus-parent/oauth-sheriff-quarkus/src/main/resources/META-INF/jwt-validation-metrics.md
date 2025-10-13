@@ -1,6 +1,6 @@
 # JWT Validation Metrics
 
-The cui-jwt-quarkus extension provides automatic metrics collection for JWT validation operations through Micrometer integration.
+The oauth-sheriff-quarkus extension provides automatic metrics collection for JWT validation operations through Micrometer integration.
 
 ## Available Metrics
 
@@ -211,7 +211,7 @@ Example Grafana dashboard JSON:
 
 ## Using the Metrics in Your Application
 
-These metrics are automatically collected when the cui-jwt-quarkus module is used in your application. To use them:
+These metrics are automatically collected when the oauth-sheriff-quarkus module is used in your application. To use them:
 
 1. Ensure the `quarkus-micrometer` extension is enabled in your application
 2. Optionally, add a registry implementation like `quarkus-micrometer-registry-prometheus` for Prometheus integration

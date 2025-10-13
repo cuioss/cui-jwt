@@ -8,39 +8,39 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 == Module Documentation
 
 === Core Validation Module
-* xref:../cui-jwt-validation/README.adoc[JWT Validation Module] - Core validation library
-* xref:../cui-jwt-validation/doc/usage-guide.adoc[Usage Guide]
-* xref:../cui-jwt-validation/doc/api-reference.adoc[API Reference]
-* xref:../cui-jwt-validation/doc/UnitTesting.adoc[Testing Guide]
+* xref:../oauth-sheriff-library/README.adoc[JWT Validation Module] - Core validation library
+* xref:../oauth-sheriff-library/doc/usage-guide.adoc[Usage Guide]
+* xref:../oauth-sheriff-library/doc/api-reference.adoc[API Reference]
+* xref:../oauth-sheriff-library/doc/UnitTesting.adoc[Testing Guide]
 
 ==== Configuration Topics
-* xref:../cui-jwt-validation/doc/configuration/roles-groups-mapping.adoc[Roles and Groups]
-* xref:../cui-jwt-validation/doc/configuration/security-settings.adoc[Security Settings]
-* xref:../cui-jwt-validation/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
-* xref:../cui-jwt-validation/doc/configuration/openid-discovery.adoc[OpenID Discovery]
+* xref:../oauth-sheriff-library/doc/configuration/roles-groups-mapping.adoc[Roles and Groups]
+* xref:../oauth-sheriff-library/doc/configuration/security-settings.adoc[Security Settings]
+* xref:../oauth-sheriff-library/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
+* xref:../oauth-sheriff-library/doc/configuration/openid-discovery.adoc[OpenID Discovery]
 
 === Quarkus Extension
-* xref:../cui-jwt-quarkus-parent/README.adoc[Quarkus Extension Overview]
-* xref:../cui-jwt-quarkus-parent/cui-jwt-quarkus/README.adoc[Runtime Module]
-* xref:../cui-jwt-quarkus-parent/cui-jwt-quarkus-deployment/README.adoc[Deployment Module]
-* xref:../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/README.adoc[Integration Tests]
+* xref:../oauth-sheriff-quarkus-parent/README.adoc[Quarkus Extension Overview]
+* xref:../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus/README.adoc[Runtime Module]
+* xref:../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-deployment/README.adoc[Deployment Module]
+* xref:../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/README.adoc[Integration Tests]
 
 ==== Quarkus Integration Topics
-* xref:../cui-jwt-quarkus-parent/doc/integration/quarkus-integration.adoc[Quarkus Integration]
-* xref:../cui-jwt-quarkus-parent/doc/integration/health-checks.adoc[Health Checks]
-* xref:../cui-jwt-quarkus-parent/doc/integration/metrics-integration.adoc[Metrics]
-* xref:../cui-jwt-quarkus-parent/doc/integration/https-integration-testing.adoc[HTTPS Testing]
+* xref:../oauth-sheriff-quarkus-parent/doc/integration/quarkus-integration.adoc[Quarkus Integration]
+* xref:../oauth-sheriff-quarkus-parent/doc/integration/health-checks.adoc[Health Checks]
+* xref:../oauth-sheriff-quarkus-parent/doc/integration/metrics-integration.adoc[Metrics]
+* xref:../oauth-sheriff-quarkus-parent/doc/integration/https-integration-testing.adoc[HTTPS Testing]
 
 ==== Quarkus Configuration
-* xref:../cui-jwt-quarkus-parent/doc/configuration/native-image-configuration.adoc[Native Image]
-* xref:../cui-jwt-quarkus-parent/doc/configuration/testing-configuration.adoc[Testing Setup]
-* xref:../cui-jwt-quarkus-parent/doc/configuration/maven-build-configuration.adoc[Maven Build]
+* xref:../oauth-sheriff-quarkus-parent/doc/configuration/native-image-configuration.adoc[Native Image]
+* xref:../oauth-sheriff-quarkus-parent/doc/configuration/testing-configuration.adoc[Testing Setup]
+* xref:../oauth-sheriff-quarkus-parent/doc/configuration/maven-build-configuration.adoc[Maven Build]
 
 ==== Quarkus Performance
-* xref:../cui-jwt-quarkus-parent/doc/performance/jwt-validation-performance.adoc[Performance Analysis]
-* xref:../cui-jwt-quarkus-parent/doc/performance/jfr-profiling-guide.adoc[JFR Profiling]
-* xref:../cui-jwt-quarkus-parent/doc/performance/native-optimization-guide.adoc[Native Optimization]
-* xref:../cui-jwt-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[RSA Optimization]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/jwt-validation-performance.adoc[Performance Analysis]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/jfr-profiling-guide.adoc[JFR Profiling]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/native-optimization-guide.adoc[Native Optimization]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[RSA Optimization]
 
 === Benchmarking
 * xref:../benchmarking/README.adoc[Benchmarking Overview]
@@ -56,36 +56,36 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 
 === Getting Started
 1. xref:../README.adoc[Project Overview]
-2. xref:../cui-jwt-validation/README.adoc[Quick Start - Validation]
-3. xref:../cui-jwt-quarkus-parent/README.adoc[Quick Start - Quarkus]
+2. xref:../oauth-sheriff-library/README.adoc[Quick Start - Validation]
+3. xref:../oauth-sheriff-quarkus-parent/README.adoc[Quick Start - Quarkus]
 
 === Configuration
-* xref:../cui-jwt-validation/doc/configuration/security-settings.adoc[Security Configuration]
-* xref:../cui-jwt-validation/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
-* xref:../cui-jwt-quarkus-parent/doc/configuration/native-image-configuration.adoc[Native Image Setup]
+* xref:../oauth-sheriff-library/doc/configuration/security-settings.adoc[Security Configuration]
+* xref:../oauth-sheriff-library/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
+* xref:../oauth-sheriff-quarkus-parent/doc/configuration/native-image-configuration.adoc[Native Image Setup]
 
 === Testing
-* xref:../cui-jwt-validation/doc/UnitTesting.adoc[Unit Testing]
-* xref:../cui-jwt-quarkus-parent/doc/configuration/testing-configuration.adoc[Integration Testing]
+* xref:../oauth-sheriff-library/doc/UnitTesting.adoc[Unit Testing]
+* xref:../oauth-sheriff-quarkus-parent/doc/configuration/testing-configuration.adoc[Integration Testing]
 * xref:../benchmarking/doc/workflow.adoc[Benchmark Workflow]
 
 === Performance
 * xref:Requirements.adoc#CUI-JWT-9[Performance Requirements]
-* xref:../cui-jwt-quarkus-parent/doc/performance/jwt-validation-performance.adoc[Performance Analysis]
-* xref:../cui-jwt-quarkus-parent/doc/performance/native-optimization-guide.adoc[Optimization Guide]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/jwt-validation-performance.adoc[Performance Analysis]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/native-optimization-guide.adoc[Optimization Guide]
 
 === Development
-* xref:../cui-jwt-validation/doc/developing.adoc[Core Development]
-* xref:../cui-jwt-quarkus-parent/doc/development/quarkus-test-setup.adoc[Quarkus Development]
-* xref:../cui-jwt-quarkus-parent/doc/development/devui-implementation.adoc[DevUI Development]
+* xref:../oauth-sheriff-library/doc/developing.adoc[Core Development]
+* xref:../oauth-sheriff-quarkus-parent/doc/development/quarkus-test-setup.adoc[Quarkus Development]
+* xref:../oauth-sheriff-quarkus-parent/doc/development/devui-implementation.adoc[DevUI Development]
 
 == Standards and Specifications
 * xref:ai-rules.adoc[AI Development Guidelines]
-* xref:../cui-jwt-validation/doc/specification/technical-components.adoc[Technical Specification]
-* xref:../cui-jwt-validation/doc/specification/references.adoc[References]
-* xref:../cui-jwt-validation/doc/LogMessages.adoc[Log Messages - Validation]
-* xref:../cui-jwt-quarkus-parent/doc/LogMessages.adoc[Log Messages - Quarkus]
+* xref:../oauth-sheriff-library/doc/specification/technical-components.adoc[Technical Specification]
+* xref:../oauth-sheriff-library/doc/specification/references.adoc[References]
+* xref:../oauth-sheriff-library/doc/LogMessages.adoc[Log Messages - Validation]
+* xref:../oauth-sheriff-quarkus-parent/doc/LogMessages.adoc[Log Messages - Quarkus]
 
 == Analysis and Reports
 * xref:../benchmarking/benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis - Library]
-* xref:../cui-jwt-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[GraalVM RSA Analysis]
+* xref:../oauth-sheriff-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[GraalVM RSA Analysis]

@@ -183,7 +183,7 @@ Runs JFR-instrumented benchmarks with flight recording enabled.
 **Configuration:**
 
 * Activates benchmarks (`skip.benchmark=false`)
-* Sets benchmark runner to `de.cuioss.jwt.validation.benchmark.JfrBenchmarkRunner`
+* Sets benchmark runner to `de.cuioss.sheriff.oauth.library.benchmark.JfrBenchmarkRunner`
 * Adds JVM arguments for JFR recording
 
 **Default JFR settings** (from JfrBenchmarkRunner):

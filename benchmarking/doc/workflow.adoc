@@ -18,7 +18,7 @@ The benchmark processing is automatically triggered in GitHub Actions:
 1. **Environment Setup**
    - Checkout code with full history
    - Set up JDK 21 with Maven cache
-   - Build cui-jwt-validation module
+   - Build oauth-sheriff-library module
 
 2. **Micro Benchmarks**
    - Run JMH benchmarks using `benchmark` profile

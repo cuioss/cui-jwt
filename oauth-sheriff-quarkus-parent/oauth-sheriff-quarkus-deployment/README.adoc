@@ -57,7 +57,7 @@ To use the Quarkus extension, add the deployment module dependency:
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-quarkus-deployment</artifactId>
+    <artifactId>oauth-sheriff-quarkus-deployment</artifactId>
 </dependency>
 ----
 
@@ -82,20 +82,20 @@ Automatically registers these classes for reflection:
 
 **Classes with Methods and Constructors:**
 
-* `de.cuioss.jwt.validation.TokenValidator` - Main validation component
+* `de.cuioss.sheriff.oauth.library.TokenValidator` - Main validation component
 * `de.cuioss.jwt.quarkus.config.IssuerConfigResolver` - Configuration resolver
-* `de.cuioss.jwt.validation.security.SecurityEventCounter` - Security metrics
+* `de.cuioss.sheriff.oauth.library.security.SecurityEventCounter` - Security metrics
 * `io.micrometer.core.instrument.MeterRegistry` - Metrics registry
 
 **Configuration Classes (Methods Only):**
 
-* `de.cuioss.jwt.validation.IssuerConfig` - Issuer configuration
-* `de.cuioss.jwt.validation.ParserConfig` - Parser settings
-* `de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig` - JWKS loader configuration
+* `de.cuioss.sheriff.oauth.library.IssuerConfig` - Issuer configuration
+* `de.cuioss.sheriff.oauth.library.ParserConfig` - Parser settings
+* `de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig` - JWKS loader configuration
 
 **Runtime Initialization:**
 
-* `de.cuioss.jwt.validation.jwks.http.HttpJwksLoader` (runtime initialized for native image compatibility)
+* `de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader` (runtime initialized for native image compatibility)
 
 === Native Image Support
 Configures GraalVM native image compilation with automatic reflection registration and runtime initialization.
@@ -128,7 +128,7 @@ For detailed configuration, reflection classes, and testing information, see xre
 
 == Related Documentation
 
-* xref:../cui-jwt-quarkus/README.adoc[Runtime Module Documentation]
+* xref:../oauth-sheriff-quarkus/README.adoc[Runtime Module Documentation]
 * xref:../doc/integration/quarkus-integration.adoc[Quarkus Integration Architecture]
 * xref:../doc/development/devui-implementation.adoc[DevUI Implementation Documentation]
 * xref:../doc/development/devui-testing.adoc[DevUI Testing Guide]

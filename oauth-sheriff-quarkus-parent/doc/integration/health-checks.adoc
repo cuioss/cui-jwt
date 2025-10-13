@@ -5,7 +5,7 @@
 
 == Overview
 
-The cui-jwt-quarkus extension provides MicroProfile Health checks for JWT validation components using SmallRye Health (MicroProfile Health 4.0). These health checks are essential for containerized environments and Kubernetes deployments.
+The oauth-sheriff-quarkus extension provides MicroProfile Health checks for JWT validation components using SmallRye Health (MicroProfile Health 4.0). These health checks are essential for containerized environments and Kubernetes deployments.
 
 == Available Health Checks
 
@@ -54,7 +54,7 @@ The cui-jwt-quarkus extension provides MicroProfile Health checks for JWT valida
 
 === Health Check Configuration
 
-For health check configuration options, see the xref:../../cui-jwt-quarkus/src/main/resources/META-INF/quarkus-config-doc.adoc#health-check-configuration[Health Check Configuration] section in the main configuration reference.
+For health check configuration options, see the xref:../../oauth-sheriff-quarkus/src/main/resources/META-INF/quarkus-config-doc.adoc#health-check-configuration[Health Check Configuration] section in the main configuration reference.
 
 === Required Dependency
 

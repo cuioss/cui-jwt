@@ -173,11 +173,11 @@ quarkus.native.monitoring=jfr
 [source,bash]
 ----
 # Production build (104MB distroless image)
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pintegration-tests
 
 # JFR profiling build (187MB UBI-based image)
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # Run and extract JFR recordings (JFR variant only)
@@ -303,11 +303,11 @@ quarkus.native.reuse-existing=true
 
 [source,bash]
 ----
-# Build cui-jwt-validation module first
-./mvnw clean install -pl cui-jwt-validation
+# Build oauth-sheriff-library module first
+./mvnw clean install -pl oauth-sheriff-library
 
 # Build native integration
-./mvnw clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pnative
+./mvnw clean install -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests -Pnative
 ----
 
 === Performance Testing Build
@@ -372,7 +372,7 @@ curl http://localhost:8080/q/health/ready
 
 **Missing Reflection Configuration**:
 
-* Ensure cui-jwt-validation module is built before native image
+* Ensure oauth-sheriff-library module is built before native image
 * Verify reflection configuration is applied automatically by deployment
 
 **Memory Issues During Build**:

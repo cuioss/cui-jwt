@@ -87,19 +87,19 @@ quarkus.native.container-runtime-options=-m=512m,--cpus=2.0
 [source,bash]
 ----
 # Production build (distroless, 104MB)
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pintegration-tests
 
 # JFR profiling build (UBI-based, 187MB)
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # Run benchmarks with distroless containers
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pintegration-tests
 
 # Run benchmarks with JFR profiling containers
-cd cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 ----
 

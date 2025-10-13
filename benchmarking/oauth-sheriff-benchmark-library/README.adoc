@@ -115,7 +115,7 @@ jq '.overallScore, .grade' target/benchmark-results/benchmark-summary.json
 ----
 # Analyze variance
 java -cp "target/classes:target/dependency/*" \
-  de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer \
+  de.cuioss.sheriff.oauth.library.benchmark.jfr.JfrVarianceAnalyzer \
   target/benchmark-results/jfr-benchmark.jfr
 
 # View hot methods
@@ -134,7 +134,7 @@ Each run generates:
 
 === GitHub Pages
 
-View trends at: https://cuioss.github.io/cui-jwt/benchmarks/performance-trends.html
+View trends at: https://cuioss.github.io/OAuth-Sheriff/benchmarks/performance-trends.html
 
 Features:
 

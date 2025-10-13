@@ -13,7 +13,7 @@ Comprehensive JWT token validation library for multi-issuer environments with ty
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-validation</artifactId>
+    <artifactId>oauth-sheriff-library</artifactId>
 </dependency>
 ----
 
@@ -77,7 +77,7 @@ The module provides test utilities via a classifier artifact:
 ----
 <dependency>
     <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-validation</artifactId>
+    <artifactId>oauth-sheriff-library</artifactId>
     <classifier>generators</classifier>
     <scope>test</scope>
 </dependency>

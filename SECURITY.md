@@ -1,7 +1,7 @@
 # CUI Open Source Security Policies and Procedures
 
 This document outlines security procedures and general policies for the
-CUI Open Source projects as found on [https://github.com/cuioss/cui-jwt](https://github.com/cuioss/cui-jwt).
+CUI Open Source projects as found on [https://github.com/cuioss/OAuth-Sheriff](https://github.com/cuioss/OAuth-Sheriff).
 
   * [Reporting a Vulnerability](#reporting-a-vulnerability)
   * [Disclosure Policy](#disclosure-policy)
@@ -14,7 +14,7 @@ software. We appreciate your efforts and responsible disclosure and will
 make every effort to acknowledge your contributions.
 
 Report security vulnerabilities by using the github security reporting mechanism:
-* https://github.com/cuioss/cui-jwt/security
+* https://github.com/cuioss/OAuth-Sheriff/security
 * -> "Private vulnerability reporting"
 * -> "Report a vulnerability"
 

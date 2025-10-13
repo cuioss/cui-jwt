@@ -17,7 +17,7 @@ The DevUI implementation consists of frontend web components and backend service
 
 [source]
 ----
-cui-jwt-quarkus-deployment/src/main/resources/dev-ui/
+oauth-sheriff-quarkus-deployment/src/main/resources/dev-ui/
 └── components/
     ├── qwc-jwt-validation-status.js  # Real-time validation status monitoring
     ├── qwc-jwks-endpoints.js         # JWKS endpoint status and monitoring

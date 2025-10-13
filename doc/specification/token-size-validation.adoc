@@ -13,7 +13,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size L
 === Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-library/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
@@ -27,9 +27,9 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size L
 
 This specification has been implemented in the following classes:
 
-* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
-* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
-* xref:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/ParserConfig.java[ParserConfig]
+* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
+* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
+* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/ParserConfig.java[ParserConfig]
 
 This document provides detailed specifications for enhancing the token size validation capabilities in the JWT Token Validation library. Specifically, it outlines how to implement token size validation in the token processing pipeline.
 

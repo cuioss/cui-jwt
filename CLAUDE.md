@@ -19,7 +19,7 @@ Please refer to `doc/ai-rules.md` for complete guidance when working on this CUI
 Verify that the codebase complies with CUI logging standards by:
 
 1. **Analyze CUI logging standards** from `/Users/oliver/git/cui-llm-rules/standards/logging`
-2. **Scan for logging violations** in the cui-jwt-validation module:
+2. **Scan for logging violations** in the oauth-sheriff-library module:
    - Direct string usage in INFO/WARN/ERROR logging calls
    - Missing LogRecord definitions for structured messages
    - Incorrect parameter substitution patterns (should use '%s', not '{}' or '%d')
@@ -118,7 +118,7 @@ Fix all OpenRewrite TODO markers in a module following CUI standards:
 - ✅ **ALWAYS fix placeholder/parameter count mismatches**
 - ✅ **ALWAYS use specific exception types** (never Exception/RuntimeException)
 
-**Usage:** When user says "fixOpenRewriteMarkers cui-jwt-validation", execute this complete marker fixing workflow.
+**Usage:** When user says "fixOpenRewriteMarkers oauth-sheriff-library", execute this complete marker fixing workflow.
 
 ### verifyAndCommit <module-name>
 
@@ -169,7 +169,7 @@ Execute comprehensive quality verification and commit workflow for a specific mo
    - Create descriptive commit message explaining the changes
    - Include Co-Authored-By: Claude footer
 
-**Usage:** When user says "verifyAndCommit cui-jwt-validation", execute this complete verification and commit workflow for the cui-jwt-validation module.
+**Usage:** When user says "verifyAndCommit oauth-sheriff-library", execute this complete verification and commit workflow for the oauth-sheriff-library module.
 
 **Critical Rules:**
 - **NEVER skip error fixes** - Every warning and error must be resolved

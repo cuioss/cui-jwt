@@ -264,7 +264,7 @@ sheriff.oauth.issuers.my-issuer.parser.allowed-algorithms=RS256,RS384,RS512
 
 == Related Documentation
 
-* xref:../cui-jwt-quarkus-deployment/README.adoc[Deployment Module Documentation]
+* xref:../oauth-sheriff-quarkus-deployment/README.adoc[Deployment Module Documentation]
 * xref:../doc/integration/quarkus-integration.adoc[Quarkus Integration Architecture]
 * xref:../doc/integration/health-checks.adoc[Health Checks Documentation]
 * xref:../doc/integration/metrics-integration.adoc[Metrics Integration Documentation]
