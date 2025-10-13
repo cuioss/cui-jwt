@@ -44,7 +44,7 @@ class JmhBenchmarkConverterTest {
                 [
                     {
                         "jmhVersion": "1.37",
-                        "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckThroughput",
+                        "benchmark": "de.cuioss.sheriff.oauth.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckThroughput",
                         "mode": "thrpt",
                         "threads": 24,
                         "forks": 2,
@@ -64,7 +64,7 @@ class JmhBenchmarkConverterTest {
                     },
                     {
                         "jmhVersion": "1.37",
-                        "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtValidationBenchmark.validateJwtThroughput",
+                        "benchmark": "de.cuioss.sheriff.oauth.quarkus.benchmark.benchmarks.JwtValidationBenchmark.validateJwtThroughput",
                         "mode": "thrpt",
                         "threads": 24,
                         "forks": 2,
@@ -133,7 +133,7 @@ class JmhBenchmarkConverterTest {
                 [
                     {
                         "jmhVersion": "1.37",
-                        "benchmark": "de.cuioss.jwt.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckThroughput",
+                        "benchmark": "de.cuioss.sheriff.oauth.quarkus.benchmark.benchmarks.JwtHealthBenchmark.healthCheckThroughput",
                         "mode": "avgt",
                         "threads": 24,
                         "forks": 2,

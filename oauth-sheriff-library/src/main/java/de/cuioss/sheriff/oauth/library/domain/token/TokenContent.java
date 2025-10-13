@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.domain.token;
+package de.cuioss.sheriff.oauth.library.domain.token;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.context.ValidationContext;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.context.ValidationContext;
 
 import java.time.OffsetDateTime;
 import java.util.Map;

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.well_known;
+package de.cuioss.sheriff.oauth.library.well_known;
 
 import de.cuioss.http.client.HttpHandlerProvider;
 import de.cuioss.http.client.handler.HttpHandler;
 import de.cuioss.http.client.handler.SecureSSLContextProvider;
 import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;

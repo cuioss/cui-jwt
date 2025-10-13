@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.http;
+package de.cuioss.sheriff.oauth.library.jwks.http;
 
 import com.dslplatform.json.DslJson;
 import de.cuioss.http.client.converter.StringContentConverter;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.Jwks;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.json.Jwks;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
 
 /**
  * HTTP content converter for JSON Web Key Set (JWKS) content.

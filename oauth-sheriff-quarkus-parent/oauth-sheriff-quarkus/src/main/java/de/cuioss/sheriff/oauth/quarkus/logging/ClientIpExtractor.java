@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.logging;
+package de.cuioss.sheriff.oauth.quarkus.logging;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import lombok.experimental.UtilityClass;

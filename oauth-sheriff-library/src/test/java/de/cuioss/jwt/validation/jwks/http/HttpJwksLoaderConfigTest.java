@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.http;
+package de.cuioss.sheriff.oauth.library.jwks.http;
 
 import de.cuioss.http.client.handler.SecureSSLContextProvider;
 import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;

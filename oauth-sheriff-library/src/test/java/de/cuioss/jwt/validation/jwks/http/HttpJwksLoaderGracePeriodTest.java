@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.http;
+package de.cuioss.sheriff.oauth.library.jwks.http;
 
 import de.cuioss.http.client.LoaderStatus;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.jwks.key.KeyInfo;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
-import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.dispatcher.JwksResolveDispatcher;
-import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.TokenType;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.test.InMemoryJWKSFactory;
+import de.cuioss.sheriff.oauth.library.test.InMemoryKeyMaterialHandler;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.test.dispatcher.JwksResolveDispatcher;
+import de.cuioss.sheriff.oauth.library.test.generator.ClaimControlParameter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;

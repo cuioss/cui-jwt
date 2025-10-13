@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks;
+package de.cuioss.sheriff.oauth.library.jwks;
 
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
-import de.cuioss.jwt.validation.jwks.key.KeyInfo;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;

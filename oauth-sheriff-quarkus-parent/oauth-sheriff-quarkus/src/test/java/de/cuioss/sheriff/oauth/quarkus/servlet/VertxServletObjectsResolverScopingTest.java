@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.servlet;
+package de.cuioss.sheriff.oauth.quarkus.servlet;
 
-import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
-import de.cuioss.jwt.quarkus.config.JwtTestProfile;
+import de.cuioss.sheriff.oauth.quarkus.annotation.ServletObjectsResolver;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtTestProfile;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.enterprise.context.RequestScoped;

@@ -20,10 +20,10 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.TokenValidator} - Main entry point for creating and validating tokens</li>
- *   <li>{@link de.cuioss.jwt.validation.IssuerConfig} - Configuration for token issuers</li>
- *   <li>{@link de.cuioss.jwt.validation.ParserConfig} - Configuration for token parsing</li>
- *   <li>{@link de.cuioss.jwt.validation.JWTValidationLogMessages} - Structured logging messages</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.TokenValidator} - Main entry point for creating and validating tokens</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.IssuerConfig} - Configuration for token issuers</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.ParserConfig} - Configuration for token parsing</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.JWTValidationLogMessages} - Structured logging messages</li>
  * </ul>
  * <p>
  * The package supports:
@@ -48,6 +48,6 @@
  * @since 1.0
  */
 @NullMarked
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
 import org.jspecify.annotations.NullMarked;

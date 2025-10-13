@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.domain.claim.mapper;
+package de.cuioss.sheriff.oauth.library.domain.claim.mapper;
 
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.json.MapRepresentation;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
 
 /***
  * A functional interface for mapping a claim from a {@link MapRepresentation} to a {@link ClaimValue}.

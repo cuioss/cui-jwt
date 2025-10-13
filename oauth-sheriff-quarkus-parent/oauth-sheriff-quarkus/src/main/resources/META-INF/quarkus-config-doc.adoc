@@ -12,16 +12,16 @@ The extension provides sensible defaults for most configuration options. At mini
 [source,properties]
 ----
 # Minimal configuration example using well-known approach (recommended)
-cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
-cui.jwt.issuers.default.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
+sheriff.oauth.issuers.default.issuer-identifier=https://your-idp.example.com/
+sheriff.oauth.issuers.default.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
 
 # OR minimal configuration with direct JWKS URL
-# cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
-# cui.jwt.issuers.default.jwks.url=https://your-idp.example.com/jwks.json
+# sheriff.oauth.issuers.default.issuer-identifier=https://your-idp.example.com/
+# sheriff.oauth.issuers.default.jwks.url=https://your-idp.example.com/jwks.json
 
 # OR minimal configuration with public key
-# cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
-# cui.jwt.issuers.default.jwks.file-path=classpath:keys/public_key.pem
+# sheriff.oauth.issuers.default.issuer-identifier=https://your-idp.example.com/
+# sheriff.oauth.issuers.default.jwks.file-path=classpath:keys/public_key.pem
 ----
 
 All other configuration options have default values as described below.
@@ -38,11 +38,11 @@ While the minimal configuration will work, we recommend the following best pract
 [source,properties]
 ----
 # Recommended configuration
-cui.jwt.issuers.default.issuer-identifier=https://your-idp.example.com/
-cui.jwt.issuers.default.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
-cui.jwt.issuers.default.jwks.http.connection-timeout-seconds=3
-cui.jwt.issuers.default.jwks.http.read-timeout-seconds=3
-cui.jwt.issuers.default.jwks.http.max-retries=3
+sheriff.oauth.issuers.default.issuer-identifier=https://your-idp.example.com/
+sheriff.oauth.issuers.default.well-known-url=https://your-idp.example.com/.well-known/openid-configuration
+sheriff.oauth.issuers.default.jwks.http.connection-timeout-seconds=3
+sheriff.oauth.issuers.default.jwks.http.read-timeout-seconds=3
+sheriff.oauth.issuers.default.jwks.http.max-retries=3
 ----
 
 == Global Configuration
@@ -51,31 +51,31 @@ cui.jwt.issuers.default.jwks.http.max-retries=3
 |===
 |Property |Type |Description
 
-|`cui.jwt.parser.max-token-size`
+|`sheriff.oauth.parser.max-token-size`
 |int (default: 8192)
 |Maximum size of a JWT token in bytes to prevent overflow attacks.
 
-|`cui.jwt.parser.max-payload-size`
+|`sheriff.oauth.parser.max-payload-size`
 |int (default: 2048)
 |Maximum size of decoded JSON payload in bytes.
 
-|`cui.jwt.parser.max-string-size`
+|`sheriff.oauth.parser.max-string-size`
 |int (default: 1024)
 |Maximum string size for JSON parsing.
 
-|`cui.jwt.parser.max-array-size`
+|`sheriff.oauth.parser.max-array-size`
 |int (default: 64)
 |Maximum array size for JSON parsing.
 
-|`cui.jwt.parser.max-depth`
+|`sheriff.oauth.parser.max-depth`
 |int (default: 10)
 |Maximum depth for JSON parsing.
 
-|`cui.jwt.cache.access-token.max-size`
+|`sheriff.oauth.cache.access-token.max-size`
 |int (default: 1000)
 |Maximum number of validated access tokens to cache. Set to 0 to disable caching completely.
 
-|`cui.jwt.cache.access-token.eviction-interval-seconds`
+|`sheriff.oauth.cache.access-token.eviction-interval-seconds`
 |long (default: 10)
 |Interval in seconds between cache eviction runs. Controls how frequently the cache checks for and removes expired tokens.
 |===
@@ -88,19 +88,19 @@ The extension supports multiple issuers, each with its own configuration. Replac
 |===
 |Property |Type |Description
 
-|`cui.jwt.issuers.<issuer-name>.issuer-identifier`
+|`sheriff.oauth.issuers.<issuer-name>.issuer-identifier`
 |String (required)
 |The issuer URL/identifier that will be matched against the "iss" claim in the JWT.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.file-path`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.file-path`
 |Optional<String>
 |Location of the public key or certificate used to verify tokens from this issuer. This can be a file path, URL, or classpath resource.
 
-|`cui.jwt.issuers.<issuer-name>.enabled`
+|`sheriff.oauth.issuers.<issuer-name>.enabled`
 |boolean (default: true)
 |Whether this issuer configuration is enabled.
 
-|`cui.jwt.issuers.<issuer-name>.claim-sub-optional`
+|`sheriff.oauth.issuers.<issuer-name>.claim-sub-optional`
 |boolean (default: false)
 |Whether the "sub" (subject) claim is optional for this issuer. When set to `true`, the mandatory claims validator will not require the "sub" claim to be present in tokens from this issuer. This provides a workaround for identity providers that don't include the subject claim in access tokens by default. *Warning:* Setting this to `true` relaxes RFC 7519 compliance.
 |===
@@ -117,43 +117,43 @@ Each issuer can have a JWKS (JSON Web Key Set) endpoint configuration. There are
 |===
 |Property |Type |Description
 
-|`cui.jwt.issuers.<issuer-name>.jwks.url`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.url`
 |Optional<String>
 |The URL of the JWKS endpoint. This property is mutually exclusive with `wellKnownUrl`. If both are provided, the well-known approach takes precedence.
 
-|`cui.jwt.issuers.<issuer-name>.well-known-url`
+|`sheriff.oauth.issuers.<issuer-name>.well-known-url`
 |Optional<String>
 |The URL of the OpenID Connect discovery document (well-known endpoint). When provided, the JWKS URL will be automatically discovered from this endpoint. This is the recommended approach for configuring JWKS as it follows the OpenID Connect discovery standard. Example: https://your-idp.com/realms/my-realm/.well-known/openid-configuration
 
-|`cui.jwt.issuers.<issuer-name>.jwks.content`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.content`
 |Optional<String>
 |The direct JWKS content as JSON string. Mutually exclusive with other JWKS sources.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.refresh-interval-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.refresh-interval-seconds`
 |int (default: 300)
 |The refresh interval in seconds for the JWKS cache.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.connection-timeout-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.connection-timeout-seconds`
 |int (default: 5)
 |The connection timeout in seconds for the JWKS endpoint.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.read-timeout-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.read-timeout-seconds`
 |int (default: 5)
 |The read timeout in seconds for the JWKS endpoint.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retries`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.max-retries`
 |int (default: 3)
 |The maximum number of retries for failed JWKS requests.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.use-system-proxy`
 |boolean (default: false)
 |Whether to use HTTP proxy settings from the system properties.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
 |int (default: 300)
 |The grace period in seconds for retired keys during rotation. During this period, tokens signed with recently rotated keys can still be validated, preventing service disruptions for in-flight requests. Set to 0 to immediately invalidate old keys upon rotation. This implements Issue #110 for seamless key rotation.
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
 |int (default: 10)
 |The maximum number of retired key sets to retain in memory during the grace period. This prevents unbounded memory growth when keys rotate frequently. Older retired key sets beyond this limit are removed even if still within the grace period.
 |===
@@ -166,11 +166,11 @@ The extension provides optional default claim mappers for seamless integration w
 |===
 |Property |Type |Description
 
-|`cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-roles.enabled`
+|`sheriff.oauth.issuers.<issuer-name>.keycloak.mappers.default-roles.enabled`
 |boolean (default: false)
 |Enables the default roles mapper for this issuer that transforms Keycloak's `realm_access.roles` claim to the standard `roles` claim. This allows applications to work with Keycloak tokens without requiring custom protocol mappers.
 
-|`cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-groups.enabled`
+|`sheriff.oauth.issuers.<issuer-name>.keycloak.mappers.default-groups.enabled`
 |boolean (default: false)
 |Enables the default groups mapper for this issuer that processes Keycloak's standard `groups` claim. This provides consistent group membership handling for Keycloak tokens.
 |===
@@ -180,12 +180,12 @@ The extension provides optional default claim mappers for seamless integration w
 [source,properties]
 ----
 # Standard issuer configuration with Keycloak default mappers
-cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
-cui.jwt.issuers.keycloak.well-known-url=https://keycloak.example.com/realms/master/.well-known/openid-configuration
+sheriff.oauth.issuers.keycloak.issuer-identifier=https://keycloak.example.com/realms/master
+sheriff.oauth.issuers.keycloak.well-known-url=https://keycloak.example.com/realms/master/.well-known/openid-configuration
 
 # Enable Keycloak default mappers for this issuer
-cui.jwt.issuers.keycloak.keycloak.mappers.default-roles.enabled=true
-cui.jwt.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
+sheriff.oauth.issuers.keycloak.keycloak.mappers.default-roles.enabled=true
+sheriff.oauth.issuers.keycloak.keycloak.mappers.default-groups.enabled=true
 ----
 
 === Benefits
@@ -268,7 +268,7 @@ The extension provides MicroProfile Health checks for JWT validation components.
 |===
 |Property |Type |Description
 
-|`cui.jwt.health.jwks.cache-seconds`
+|`sheriff.oauth.health.jwks.cache-seconds`
 |int (default: 30)
 |The cache time-to-live in seconds for JWKS health check results. This prevents excessive network calls to JWKS endpoints during frequent health check evaluations.
 |===
@@ -286,61 +286,61 @@ For quick reference, here are all the default values in one place:
 |===
 |Property |Default Value
 
-|cui.jwt.parser.max-token-size
+|sheriff.oauth.parser.max-token-size
 |8192
 
-|cui.jwt.parser.max-payload-size
+|sheriff.oauth.parser.max-payload-size
 |2048
 
-|cui.jwt.parser.max-string-size
+|sheriff.oauth.parser.max-string-size
 |1024
 
-|cui.jwt.parser.max-array-size
+|sheriff.oauth.parser.max-array-size
 |64
 
-|cui.jwt.parser.max-depth
+|sheriff.oauth.parser.max-depth
 |10
 
-|cui.jwt.cache.access-token.max-size
+|sheriff.oauth.cache.access-token.max-size
 |1000
 
-|cui.jwt.cache.access-token.eviction-interval-seconds
+|sheriff.oauth.cache.access-token.eviction-interval-seconds
 |10
 
-|cui.jwt.issuers.<issuer-name>.enabled
+|sheriff.oauth.issuers.<issuer-name>.enabled
 |true
 
-|cui.jwt.issuers.<issuer-name>.claim-sub-optional
+|sheriff.oauth.issuers.<issuer-name>.claim-sub-optional
 |false
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.refresh-interval-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.refresh-interval-seconds`
 |300
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.connection-timeout-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.connection-timeout-seconds`
 |5
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.read-timeout-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.read-timeout-seconds`
 |5
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retries`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.max-retries`
 |3
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.use-system-proxy`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.use-system-proxy`
 |false
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.key-rotation-grace-period-seconds`
 |300
 
-|`cui.jwt.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
+|`sheriff.oauth.issuers.<issuer-name>.jwks.http.max-retired-key-sets`
 |10
 
-|`cui.jwt.health.jwks.cache-seconds`
+|`sheriff.oauth.health.jwks.cache-seconds`
 |30
 
-|`cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-roles.enabled`
+|`sheriff.oauth.issuers.<issuer-name>.keycloak.mappers.default-roles.enabled`
 |false
 
-|`cui.jwt.issuers.<issuer-name>.keycloak.mappers.default-groups.enabled`
+|`sheriff.oauth.issuers.<issuer-name>.keycloak.mappers.default-groups.enabled`
 |false
 |===
 
@@ -351,28 +351,28 @@ For quick reference, here are all the default values in one place:
 [source,properties]
 ----
 # Global parser configuration
-cui.jwt.parser.max-token-size=8192
-cui.jwt.parser.max-payload-size=8192
-cui.jwt.parser.max-string-size=4096
-cui.jwt.parser.max-array-size=64
-cui.jwt.parser.max-depth=10
+sheriff.oauth.parser.max-token-size=8192
+sheriff.oauth.parser.max-payload-size=8192
+sheriff.oauth.parser.max-string-size=4096
+sheriff.oauth.parser.max-array-size=64
+sheriff.oauth.parser.max-depth=10
 
 # Keycloak issuer configuration
-cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/auth/realms/master
-cui.jwt.issuers.keycloak.jwks.file-path=classpath:keys/public_key.pem
-cui.jwt.issuers.keycloak.enabled=true
+sheriff.oauth.issuers.keycloak.issuer-identifier=https://keycloak.example.com/auth/realms/master
+sheriff.oauth.issuers.keycloak.jwks.file-path=classpath:keys/public_key.pem
+sheriff.oauth.issuers.keycloak.enabled=true
 
 # JWKS configuration for Keycloak (direct URL approach)
-cui.jwt.issuers.keycloak.jwks.url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
-cui.jwt.issuers.keycloak.jwks.http.refresh-interval-seconds=600
-cui.jwt.issuers.keycloak.jwks.http.connection-timeout-seconds=3
-cui.jwt.issuers.keycloak.jwks.http.read-timeout-seconds=3
-cui.jwt.issuers.keycloak.jwks.http.max-retries=5
-cui.jwt.issuers.keycloak.jwks.http.use-system-proxy=true
+sheriff.oauth.issuers.keycloak.jwks.url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
+sheriff.oauth.issuers.keycloak.jwks.http.refresh-interval-seconds=600
+sheriff.oauth.issuers.keycloak.jwks.http.connection-timeout-seconds=3
+sheriff.oauth.issuers.keycloak.jwks.http.read-timeout-seconds=3
+sheriff.oauth.issuers.keycloak.jwks.http.max-retries=5
+sheriff.oauth.issuers.keycloak.jwks.http.use-system-proxy=true
 
 # Key rotation grace period configuration (Issue #110)
-cui.jwt.issuers.keycloak.jwks.http.key-rotation-grace-period-seconds=300  # 5 minute grace period
-cui.jwt.issuers.keycloak.jwks.http.max-retired-key-sets=10               # Keep max 10 old key sets
+sheriff.oauth.issuers.keycloak.jwks.http.key-rotation-grace-period-seconds=300  # 5 minute grace period
+sheriff.oauth.issuers.keycloak.jwks.http.max-retired-key-sets=10               # Keep max 10 old key sets
 ----
 
 === Example 2: OpenID Connect Discovery Configuration (Recommended)
@@ -380,22 +380,22 @@ cui.jwt.issuers.keycloak.jwks.http.max-retired-key-sets=10               # Keep 
 [source,properties]
 ----
 # Global parser configuration
-cui.jwt.parser.max-token-size=8192
-cui.jwt.parser.max-payload-size=8192
-cui.jwt.parser.max-string-size=4096
-cui.jwt.parser.max-array-size=64
-cui.jwt.parser.max-depth=10
+sheriff.oauth.parser.max-token-size=8192
+sheriff.oauth.parser.max-payload-size=8192
+sheriff.oauth.parser.max-string-size=4096
+sheriff.oauth.parser.max-array-size=64
+sheriff.oauth.parser.max-depth=10
 
 # Issuer configuration using well-known approach
-cui.jwt.issuers.auth0.issuer-identifier=https://your-tenant.auth0.com/
-cui.jwt.issuers.auth0.enabled=true
+sheriff.oauth.issuers.auth0.issuer-identifier=https://your-tenant.auth0.com/
+sheriff.oauth.issuers.auth0.enabled=true
 
 # JWKS configuration using OpenID Connect Discovery (well-known approach)
-cui.jwt.issuers.auth0.well-known-url=https://your-tenant.auth0.com/.well-known/openid-configuration
-cui.jwt.issuers.auth0.jwks.http.refresh-interval-seconds=300
-cui.jwt.issuers.auth0.jwks.http.connection-timeout-seconds=5
-cui.jwt.issuers.auth0.jwks.http.read-timeout-seconds=5
-cui.jwt.issuers.auth0.jwks.http.max-retries=3
+sheriff.oauth.issuers.auth0.well-known-url=https://your-tenant.auth0.com/.well-known/openid-configuration
+sheriff.oauth.issuers.auth0.jwks.http.refresh-interval-seconds=300
+sheriff.oauth.issuers.auth0.jwks.http.connection-timeout-seconds=5
+sheriff.oauth.issuers.auth0.jwks.http.read-timeout-seconds=5
+sheriff.oauth.issuers.auth0.jwks.http.max-retries=3
 ----
 
 == Metrics Integration
@@ -431,7 +431,7 @@ The extension exposes the following metrics:
 |===
 |Metric Name |Type |Description |Tags
 
-|`cui.jwt.validation.errors` |Counter |Number of JWT validation errors by type |event_type, result, category
+|`sheriff.oauth.validation.errors` |Counter |Number of JWT validation errors by type |event_type, result, category
 |===
 
 === Accessing Metrics

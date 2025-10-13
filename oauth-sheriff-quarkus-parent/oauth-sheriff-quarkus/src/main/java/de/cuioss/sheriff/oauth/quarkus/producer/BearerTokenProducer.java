@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.producer;
+package de.cuioss.sheriff.oauth.quarkus.producer;
 
-import de.cuioss.jwt.quarkus.annotation.BearerToken;
-import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
-import de.cuioss.jwt.quarkus.metrics.MetricIdentifier;
-import de.cuioss.jwt.quarkus.servlet.HttpServletRequestResolver;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerToken;
+import de.cuioss.sheriff.oauth.quarkus.annotation.ServletObjectsResolver;
+import de.cuioss.sheriff.oauth.quarkus.metrics.MetricIdentifier;
+import de.cuioss.sheriff.oauth.quarkus.servlet.HttpServletRequestResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import io.micrometer.core.annotation.Timed;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -31,7 +31,7 @@ import jakarta.inject.Inject;
 
 import java.util.*;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN.*;
 
 /**
  * CDI producer for extracting and validating bearer tokens from HTTP Authorization headers.

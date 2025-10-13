@@ -34,6 +34,6 @@
  * @since 1.0
  */
 @NullUnmarked
-package de.cuioss.jwt.validation.json;
+package de.cuioss.sheriff.oauth.library.json;
 
 import org.jspecify.annotations.NullUnmarked;

@@ -22,10 +22,10 @@
  * <p>
  * Key classes:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.domain.context.ValidationContext} - 
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.context.ValidationContext} - 
  *       Carries cached current time and configuration through the validation pipeline</li>
  * </ul>
  *
  * @since 1.0
  */
-package de.cuioss.jwt.validation.domain.context;
+package de.cuioss.sheriff.oauth.library.domain.context;

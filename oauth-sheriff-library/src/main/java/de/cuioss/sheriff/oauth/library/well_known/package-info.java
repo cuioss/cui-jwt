@@ -20,8 +20,8 @@
  * <p>
  * The main components include:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.well_known.WellKnownConfig} - Configuration for well-known endpoint discovery</li>
- *   <li>{@link de.cuioss.jwt.validation.json.WellKnownResult} - Data structure for OIDC discovery document</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.well_known.WellKnownConfig} - Configuration for well-known endpoint discovery</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.json.WellKnownResult} - Data structure for OIDC discovery document</li>
  *   <li>Support classes for HTTP operations, JSON parsing, and endpoint resolution</li>
  * </ul>
  * <p>
@@ -33,4 +33,4 @@
  *   <li>DSL-JSON based parsing for optimal performance</li>
  * </ul>
  */
-package de.cuioss.jwt.validation.well_known;
+package de.cuioss.sheriff.oauth.library.well_known;

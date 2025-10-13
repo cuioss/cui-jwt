@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.servlet;
+package de.cuioss.sheriff.oauth.quarkus.servlet;
 
-import de.cuioss.jwt.quarkus.annotation.ServletObjectsResolver;
+import de.cuioss.sheriff.oauth.quarkus.annotation.ServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import io.vertx.core.http.HttpServerRequest;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,7 +23,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.ERROR;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.ERROR;
 
 /**
  * Vertx-based implementation for resolving servlet objects within Quarkus JAX-RS request contexts.

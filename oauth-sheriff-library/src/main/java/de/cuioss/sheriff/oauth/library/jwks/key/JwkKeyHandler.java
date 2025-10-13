@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.key;
+package de.cuioss.sheriff.oauth.library.jwks.key;
 
-import de.cuioss.jwt.validation.json.JwkKey;
+import de.cuioss.sheriff.oauth.library.json.JwkKey;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 

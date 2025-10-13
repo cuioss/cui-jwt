@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.key;
+package de.cuioss.sheriff.oauth.library.jwks.key;
 
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
-import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.security.JwkAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.test.InMemoryJWKSFactory;
+import de.cuioss.sheriff.oauth.library.test.InMemoryKeyMaterialHandler;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -31,9 +31,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED;
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.ERROR;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.ERROR.JWKS_CONTENT_SIZE_EXCEEDED;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger(debug = {JWKSKeyLoader.class}, trace = {JWKSKeyLoader.class})

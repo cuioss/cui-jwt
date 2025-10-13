@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.security;
+package de.cuioss.sheriff.oauth.library.security;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-import de.cuioss.jwt.validation.test.junit.TestTokenSource;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.TokenType;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.test.generator.TestTokenGenerators;
+import de.cuioss.sheriff.oauth.library.test.junit.TestTokenSource;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.tools.logging.CuiLogger;

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline;
+package de.cuioss.sheriff.oauth.library.pipeline;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.JwtHeader;
-import de.cuioss.jwt.validation.json.MapRepresentation;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.json.JwtHeader;
+import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.DisplayName;

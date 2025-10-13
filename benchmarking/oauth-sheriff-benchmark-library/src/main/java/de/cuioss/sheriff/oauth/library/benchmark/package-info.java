@@ -24,6 +24,6 @@
  * @author CUI-OpenSource-Software
  */
 @NullMarked
-package de.cuioss.jwt.validation.benchmark;
+package de.cuioss.sheriff.oauth.library.benchmark;
 
 import org.jspecify.annotations.NullMarked;

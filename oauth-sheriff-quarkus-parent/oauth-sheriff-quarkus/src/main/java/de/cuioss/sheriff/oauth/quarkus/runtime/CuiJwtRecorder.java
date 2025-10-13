@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.runtime;
+package de.cuioss.sheriff.oauth.quarkus.runtime;
 
 import io.quarkus.runtime.annotations.Recorder;
 

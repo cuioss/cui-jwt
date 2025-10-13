@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark;
+package de.cuioss.sheriff.oauth.library.benchmark;
 
-import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
-import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler.IssuerKeyMaterial;
+import de.cuioss.sheriff.oauth.library.test.InMemoryKeyMaterialHandler;
+import de.cuioss.sheriff.oauth.library.test.InMemoryKeyMaterialHandler.IssuerKeyMaterial;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.util.Map;

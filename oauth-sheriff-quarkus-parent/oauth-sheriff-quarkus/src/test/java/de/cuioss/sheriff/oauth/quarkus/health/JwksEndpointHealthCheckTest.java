@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.health;
+package de.cuioss.sheriff.oauth.quarkus.health;
 
 import de.cuioss.http.client.LoaderStatus;
-import de.cuioss.jwt.quarkus.config.JwtTestProfile;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.key.KeyInfo;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.JwksType;
+import de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtTestProfile;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;

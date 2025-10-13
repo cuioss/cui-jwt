@@ -4,21 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-quarkus-parent</artifactId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
+        <artifactId>oauth-sheriff-quarkus-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cui-jwt-quarkus</artifactId>
+    <artifactId>oauth-sheriff-quarkus</artifactId>
     <packaging>jar</packaging>
-    <name>JWT Token Validation Quarkus Integration - Runtime</name>
-    <description>Runtime module for Quarkus integration for JWT token validation, providing configuration, producers,
+    <name>OAuth Sheriff Quarkus Integration - Runtime</name>
+    <description>Runtime module for Quarkus integration for OAuth/JWT token validation, providing configuration, producers,
         and integration from SecurityEvents to Micrometer
     </description>
 
     <properties>
-        <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus</maven.jar.plugin.automatic.module.name>
+        <maven.jar.plugin.automatic.module.name>de.cuioss.sheriff.oauth.quarkus</maven.jar.plugin.automatic.module.name>
     </properties>
 
     <dependencies>
@@ -46,8 +46,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-jwt-validation</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-library</artifactId>
             <version>${project.version}</version>
             <classifier>generators</classifier>
             <scope>test</scope>
@@ -143,7 +143,7 @@
                             <goal>extension-descriptor</goal>
                         </goals>
                         <configuration>
-                            <deployment>${project.groupId}:cui-jwt-quarkus-deployment:${project.version}</deployment>
+                            <deployment>${project.groupId}:oauth-sheriff-quarkus-deployment:${project.version}</deployment>
                         </configuration>
                     </execution>
                 </executions>

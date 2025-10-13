@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.servlet;
+package de.cuioss.sheriff.oauth.quarkus.servlet;
 
-import de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages;
+import de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;

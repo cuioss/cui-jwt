@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.metrics;
+package de.cuioss.sheriff.oauth.quarkus.metrics;
 
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.security.EventCategory;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.security.EventCategory;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
 import de.cuioss.tools.logging.CuiLogger;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,8 +33,8 @@ import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN;
 
 /**
  * Collects JWT validation metrics from {@link SecurityEventCounter} and exposes them as Micrometer metrics.
@@ -47,8 +47,8 @@ import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
  * All metrics follow Micrometer naming conventions and include appropriate tags
  * for filtering:
  * <ul>
- *   <li>cui.jwt.validation.errors - Counter for validation errors by type</li>
- *   <li>cui.jwt.validation.success - Counter for successful operations by type</li>
+ *   <li>sheriff.oauth.validation.errors - Counter for validation errors by type</li>
+ *   <li>sheriff.oauth.validation.success - Counter for successful operations by type</li>
  * </ul>
  * <p>
  * Security event metrics include tags:
@@ -166,7 +166,7 @@ public class JwtMetricsCollector {
      * Updates all counters from the current state.
      * This method is called periodically to ensure metrics are up to date.
      * <p>
-     * The interval can be configured via the property: cui.jwt.metrics.collection.interval
+     * The interval can be configured via the property: sheriff.oauth.metrics.collection.interval
      * Default: 10s (production), can be set to 2s for faster integration testing.
      */
     @Scheduled(every = "${" + JwtPropertyKeys.METRICS.COLLECTION_INTERVAL + ":10s}")

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.test;
+package de.cuioss.sheriff.oauth.library.test;
 
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import lombok.experimental.UtilityClass;
 
 /**

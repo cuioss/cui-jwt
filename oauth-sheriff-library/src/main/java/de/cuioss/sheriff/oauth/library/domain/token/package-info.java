@@ -19,12 +19,12 @@
  * This package defines a comprehensive type hierarchy for representing different
  * token types in OAuth 2.0 and OpenID Connect:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.domain.token.TokenContent} - Base interface for JWT Token content</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.token.MinimalTokenContent} - Minimal interface for token content with raw token string and type</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.token.BaseTokenContent} - Abstract base implementation of token content</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.token.AccessTokenContent} - Specialized implementation for OAuth2 access tokens</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.token.IdTokenContent} - Specialized implementation for OpenID Connect ID tokens</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.token.RefreshTokenContent} - Specialized implementation for OAuth2 refresh tokens</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token.TokenContent} - Base interface for JWT Token content</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token.MinimalTokenContent} - Minimal interface for token content with raw token string and type</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token.BaseTokenContent} - Abstract base implementation of token content</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent} - Specialized implementation for OAuth2 access tokens</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token.IdTokenContent} - Specialized implementation for OpenID Connect ID tokens</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token.RefreshTokenContent} - Specialized implementation for OAuth2 refresh tokens</li>
  * </ul>
  * <p>
  * The token implementations:
@@ -49,8 +49,8 @@
  *
  * @author Oliver Wolff
  * @since 1.0
- * @see de.cuioss.jwt.validation.domain.claim.ClaimName
+ * @see de.cuioss.sheriff.oauth.library.domain.claim.ClaimName
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC 6749 - OAuth 2.0</a>
  * @see <a href="https://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect Core 1.0</a>
  */
-package de.cuioss.jwt.validation.domain.token;
+package de.cuioss.sheriff.oauth.library.domain.token;

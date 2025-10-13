@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks;
+package de.cuioss.sheriff.oauth.library.jwks;
 
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.jwks.key.JWKSKeyLoader;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.test.InMemoryJWKSFactory;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

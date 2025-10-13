@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
-import de.cuioss.jwt.validation.test.junit.TestTokenSource;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.test.InMemoryJWKSFactory;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.test.generator.TestTokenGenerators;
+import de.cuioss.sheriff.oauth.library.test.junit.TestTokenSource;
 import de.cuioss.test.generator.Generators;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;

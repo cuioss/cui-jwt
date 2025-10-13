@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.metrics;
+package de.cuioss.sheriff.oauth.quarkus.metrics;
 
 import lombok.experimental.UtilityClass;
 
 /**
- * Constants for Micrometer metric identifiers used in the cui-jwt-quarkus module.
+ * Constants for Micrometer metric identifiers used in the OAuth Sheriff Quarkus module.
  * <p>
  * This class follows the DSL-style nested constants pattern to organize
  * metric identifiers in a hierarchical, discoverable manner.
  * </p>
  * <p>
- * All metrics are prefixed with "cui.jwt".
+ * All metrics are prefixed with "sheriff.oauth".
  * </p>
  *
  * @since 1.0
@@ -35,7 +35,7 @@ public final class MetricIdentifier {
     /**
      * The common prefix for all JWT metrics.
      */
-    public static final String PREFIX = "cui.jwt";
+    public static final String PREFIX = "sheriff.oauth";
 
     /**
      * Metrics related to bearer token operations.

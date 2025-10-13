@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.producer;
+package de.cuioss.sheriff.oauth.quarkus.producer;
 
-import de.cuioss.jwt.quarkus.annotation.BearerToken;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerToken;
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.InjectionPoint;

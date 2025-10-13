@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.key;
+package de.cuioss.sheriff.oauth.library.jwks.key;
 
 import de.cuioss.http.client.LoaderStatus;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.JwkKey;
-import de.cuioss.jwt.validation.json.Jwks;
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.JwksType;
-import de.cuioss.jwt.validation.jwks.parser.JwksParser;
-import de.cuioss.jwt.validation.jwks.parser.KeyProcessor;
-import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.json.JwkKey;
+import de.cuioss.sheriff.oauth.library.json.Jwks;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.JwksType;
+import de.cuioss.sheriff.oauth.library.jwks.parser.JwksParser;
+import de.cuioss.sheriff.oauth.library.jwks.parser.KeyProcessor;
+import de.cuioss.sheriff.oauth.library.security.JwkAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
 import lombok.EqualsAndHashCode;

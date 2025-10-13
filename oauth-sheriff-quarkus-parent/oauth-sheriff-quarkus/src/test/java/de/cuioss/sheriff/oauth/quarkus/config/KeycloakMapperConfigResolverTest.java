@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.jwt.quarkus.test.TestConfig;
+import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.eclipse.microprofile.config.Config;
@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_GROUPS_ENABLED;
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_ROLES_ENABLED;
+import static de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_GROUPS_ENABLED;
+import static de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_ROLES_ENABLED;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnableTestLogger

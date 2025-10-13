@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.producer;
+package de.cuioss.sheriff.oauth.quarkus.producer;
 
-import de.cuioss.jwt.quarkus.annotation.BearerToken;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerToken;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.ws.rs.core.Response;
 import lombok.Builder;

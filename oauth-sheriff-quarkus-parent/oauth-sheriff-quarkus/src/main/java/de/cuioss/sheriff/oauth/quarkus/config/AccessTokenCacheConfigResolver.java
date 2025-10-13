@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.microprofile.config.Config;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.CACHE;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys.CACHE;
 
 /**
  * Resolves {@link AccessTokenCacheConfig} from Quarkus configuration.

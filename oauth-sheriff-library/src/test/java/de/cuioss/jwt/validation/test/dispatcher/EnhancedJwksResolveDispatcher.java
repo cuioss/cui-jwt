@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.test.dispatcher;
+package de.cuioss.sheriff.oauth.library.test.dispatcher;
 
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
+import de.cuioss.sheriff.oauth.library.test.InMemoryJWKSFactory;
 import lombok.Getter;
 import lombok.NonNull;
 import mockwebserver3.MockResponse;

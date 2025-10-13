@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.standard;
+package de.cuioss.sheriff.oauth.library.benchmark.standard;
 
-import de.cuioss.jwt.validation.benchmark.base.AbstractBenchmark;
-import de.cuioss.jwt.validation.benchmark.delegates.ErrorLoadDelegate;
+import de.cuioss.sheriff.oauth.library.benchmark.base.AbstractBenchmark;
+import de.cuioss.sheriff.oauth.library.benchmark.delegates.ErrorLoadDelegate;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

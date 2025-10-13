@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline;
+package de.cuioss.sheriff.oauth.library.pipeline;
 
-import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

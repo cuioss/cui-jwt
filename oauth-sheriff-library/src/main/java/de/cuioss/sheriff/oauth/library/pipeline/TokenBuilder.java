@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline;
+package de.cuioss.sheriff.oauth.library.pipeline;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.domain.token.IdTokenContent;
-import de.cuioss.jwt.validation.json.MapRepresentation;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.ClaimMapper;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.domain.token.IdTokenContent;
+import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
 
 import java.util.HashMap;
 import java.util.Map;

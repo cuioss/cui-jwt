@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.servlet;
+package de.cuioss.sheriff.oauth.quarkus.servlet;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;

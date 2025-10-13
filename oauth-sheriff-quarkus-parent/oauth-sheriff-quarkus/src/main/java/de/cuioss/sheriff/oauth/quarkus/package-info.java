@@ -38,6 +38,6 @@
  * @since 1.0
  */
 @NullMarked
-package de.cuioss.jwt.quarkus;
+package de.cuioss.sheriff.oauth.quarkus;
 
 import org.jspecify.annotations.NullMarked;

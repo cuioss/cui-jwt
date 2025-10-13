@@ -22,4 +22,4 @@
  *
  * @since 1.0
  */
-package de.cuioss.jwt.quarkus.deployment;
+package de.cuioss.sheriff.oauth.quarkus.deployment;

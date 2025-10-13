@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.well_known;
+package de.cuioss.sheriff.oauth.library.well_known;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.json.WellKnownResult;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.json.WellKnownResult;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;

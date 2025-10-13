@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.parser;
+package de.cuioss.sheriff.oauth.library.jwks.parser;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.json.JwkKey;
-import de.cuioss.jwt.validation.json.Jwks;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.json.JwkKey;
+import de.cuioss.sheriff.oauth.library.json.Jwks;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.RequiredArgsConstructor;
 

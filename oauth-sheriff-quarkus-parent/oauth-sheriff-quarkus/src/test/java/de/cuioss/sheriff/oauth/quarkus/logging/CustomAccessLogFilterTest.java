@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.logging;
+package de.cuioss.sheriff.oauth.quarkus.logging;
 
-import de.cuioss.jwt.quarkus.config.AccessLogFilterConfigResolver;
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
-import de.cuioss.jwt.quarkus.test.TestConfig;
+import de.cuioss.sheriff.oauth.quarkus.config.AccessLogFilterConfigResolver;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
+import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;

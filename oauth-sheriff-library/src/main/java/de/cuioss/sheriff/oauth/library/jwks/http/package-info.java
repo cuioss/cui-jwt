@@ -21,9 +21,9 @@
  * 
  * <h3>Key Components</h3>
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.jwks.http.HttpJwksLoader} - Main component that implements
- *       {@link de.cuioss.jwt.validation.jwks.JwksLoader} for HTTP-based JWKS sources</li>
- *   <li>{@link de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig} - Configuration parameters
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader} - Main component that implements
+ *       {@link de.cuioss.sheriff.oauth.library.jwks.JwksLoader} for HTTP-based JWKS sources</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig} - Configuration parameters
  *       for the HTTP JWKS loader</li>
  *   <li>JwksHttpClient - Client for making HTTP requests
  *       to JWKS endpoints</li>
@@ -117,4 +117,4 @@
  * @author Oliver Wolff
  * @since 1.0
  */
-package de.cuioss.jwt.validation.jwks.http;
+package de.cuioss.sheriff.oauth.library.jwks.http;

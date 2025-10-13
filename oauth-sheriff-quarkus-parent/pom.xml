@@ -4,21 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-parent</artifactId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
+        <artifactId>oauth-sheriff-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cui-jwt-quarkus-parent</artifactId>
+    <artifactId>oauth-sheriff-quarkus-parent</artifactId>
     <packaging>pom</packaging>
-    <name>JWT Token Validation Quarkus Integration Parent</name>
-    <description>Parent module for Quarkus integration for JWT token validation, providing configuration, producers, and integration from SecurityEvents to Micrometer</description>
+    <name>OAuth Sheriff Quarkus Integration Parent</name>
+    <description>Parent module for Quarkus integration for OAuth/JWT token validation, providing configuration, producers, and integration from SecurityEvents to Micrometer</description>
 
     <modules>
-        <module>cui-jwt-quarkus</module>
-        <module>cui-jwt-quarkus-deployment</module>
-        <module>cui-jwt-quarkus-integration-tests</module>
+        <module>oauth-sheriff-quarkus</module>
+        <module>oauth-sheriff-quarkus-deployment</module>
+        <module>oauth-sheriff-quarkus-integration-tests</module>
     </modules>
 
     <properties>
@@ -45,8 +45,8 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>de.cuioss.jwt</groupId>
-                <artifactId>bom</artifactId>
+                <groupId>de.cuioss.sheriff.oauth</groupId>
+                <artifactId>oauth-sheriff-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -89,8 +89,8 @@
     <dependencies>
         <!-- Internal module dependencies -->
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-jwt-validation</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-library</artifactId>
         </dependency>
 
         <!-- Quarkus dependencies -->
@@ -324,8 +324,8 @@
                 <!-- Multiple XML report paths for Sonar to pick up coverage from all modules -->
                 <sonar.coverage.jacoco.xmlReportPaths>
                     ${project.build.directory}/site/jacoco/jacoco.xml,
-                    cui-jwt-quarkus/target/site/jacoco/jacoco.xml,
-                    cui-jwt-quarkus-deployment/target/site/jacoco/jacoco.xml,
+                    oauth-sheriff-quarkus/target/site/jacoco/jacoco.xml,
+                    oauth-sheriff-quarkus-deployment/target/site/jacoco/jacoco.xml,
                     ../target/site/jacoco/jacoco.xml
                 </sonar.coverage.jacoco.xmlReportPaths>
             </properties>

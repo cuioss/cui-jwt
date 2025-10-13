@@ -21,23 +21,23 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser} - Parses JWT tokens without validating signatures</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.DecodedJwt} - Represents a decoded JWT token with header, body, and signature</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.TokenBuilder} - Creates typed token instances from decoded JWTs</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator} - Validates token claims against issuer configuration</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator} - Validates token headers against issuer configuration</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator} - Validates token signatures using JWKS</li>
- *   <li>{@link de.cuioss.jwt.validation.IssuerConfig} - Configuration for a token issuer</li>
- *   <li>{@link de.cuioss.jwt.validation.ParserConfig} - Configuration for token parsing</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.NonValidatingJwtParser} - Parses JWT tokens without validating signatures</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.DecodedJwt} - Represents a decoded JWT token with header, body, and signature</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.TokenBuilder} - Creates typed token instances from decoded JWTs</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator} - Validates token claims against issuer configuration</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator} - Validates token headers against issuer configuration</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator} - Validates token signatures using JWKS</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.IssuerConfig} - Configuration for a token issuer</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.ParserConfig} - Configuration for token parsing</li>
  * </ul>
  * <p>
  * The typical token processing pipeline is:
  * <ol>
- *   <li>Parse the token using {@link de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser}</li>
- *   <li>Validate the token header using {@link de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator}</li>
- *   <li>Validate the token signature using {@link de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator}</li>
- *   <li>Build a typed token using {@link de.cuioss.jwt.validation.pipeline.TokenBuilder}</li>
- *   <li>Validate the token claims using {@link de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator}</li>
+ *   <li>Parse the token using {@link de.cuioss.sheriff.oauth.library.pipeline.NonValidatingJwtParser}</li>
+ *   <li>Validate the token header using {@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator}</li>
+ *   <li>Validate the token signature using {@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator}</li>
+ *   <li>Build a typed token using {@link de.cuioss.sheriff.oauth.library.pipeline.TokenBuilder}</li>
+ *   <li>Validate the token claims using {@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator}</li>
  * </ol>
  * <p>
  * This package implements security best practices for JWT token processing, including
@@ -55,7 +55,7 @@
  * 
  * @author Oliver Wolff
  * @since 1.0
- * @see de.cuioss.jwt.validation.TokenValidator
- * @see de.cuioss.jwt.validation.domain.token.TokenContent
+ * @see de.cuioss.sheriff.oauth.library.TokenValidator
+ * @see de.cuioss.sheriff.oauth.library.domain.token.TokenContent
  */
-package de.cuioss.jwt.validation.pipeline;
+package de.cuioss.sheriff.oauth.library.pipeline;

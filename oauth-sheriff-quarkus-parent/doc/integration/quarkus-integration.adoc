@@ -66,13 +66,13 @@ The extension uses MicroProfile Config API with the `cui.jwt` prefix:
 [source,properties]
 ----
 # Basic configuration
-cui.jwt.enabled=true
-cui.jwt.parser.allow-unsafe-algorithms=false
-cui.jwt.parser.max-token-size-bytes=8192
+sheriff.oauth.enabled=true
+sheriff.oauth.parser.allow-unsafe-algorithms=false
+sheriff.oauth.parser.max-token-size-bytes=8192
 
 # Issuer configuration
-cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak.example.com/auth/realms/master
-cui.jwt.issuers.keycloak.jwks.http.url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
+sheriff.oauth.issuers.keycloak.issuer-identifier=https://keycloak.example.com/auth/realms/master
+sheriff.oauth.issuers.keycloak.jwks.http.url=https://keycloak.example.com/auth/realms/master/protocol/openid-connect/certs
 ----
 
 Configuration is resolved through dedicated resolver classes that access properties via MicroProfile Config.

@@ -24,7 +24,7 @@
  * <h2>Package Structure</h2>
  * <ul>
  *   <li>{@code benchmarks/} - JWT-specific JFR-instrumented benchmark implementations</li>
- *   <li>{@link de.cuioss.jwt.validation.benchmark.jfr.JfrEventTest} - JFR event testing utility</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.benchmark.jfr.JfrEventTest} - JFR event testing utility</li>
  * </ul>
  * 
  * <h2>Usage</h2>
@@ -57,4 +57,4 @@
  * 
  * @since 1.0
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.sheriff.oauth.library.benchmark.jfr;

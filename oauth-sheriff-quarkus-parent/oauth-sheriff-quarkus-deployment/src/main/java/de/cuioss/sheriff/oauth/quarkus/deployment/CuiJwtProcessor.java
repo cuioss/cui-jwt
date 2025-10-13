@@ -13,39 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.deployment;
+package de.cuioss.sheriff.oauth.quarkus.deployment;
 
-import de.cuioss.jwt.quarkus.config.AccessLogFilterConfigProducer;
-import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
-import de.cuioss.jwt.quarkus.interceptor.BearerTokenInterceptor;
-import de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter;
-import de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector;
-import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
-import de.cuioss.jwt.quarkus.producer.TokenValidatorProducer;
-import de.cuioss.jwt.quarkus.servlet.VertxServletObjectsResolver;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.IssuerConfigResolver;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
-import de.cuioss.jwt.validation.domain.claim.mapper.*;
-import de.cuioss.jwt.validation.domain.token.*;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
-import de.cuioss.jwt.validation.jwks.key.KeyInfo;
-import de.cuioss.jwt.validation.jwks.parser.JwksParser;
-import de.cuioss.jwt.validation.pipeline.DecodedJwt;
-import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
-import de.cuioss.jwt.validation.pipeline.TokenBuilder;
-import de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator;
-import de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator;
-import de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator;
-import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.IssuerConfigResolver;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValueType;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.*;
+import de.cuioss.sheriff.oauth.library.domain.token.*;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.jwks.key.JWKSKeyLoader;
+import de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo;
+import de.cuioss.sheriff.oauth.library.jwks.parser.JwksParser;
+import de.cuioss.sheriff.oauth.library.pipeline.DecodedJwt;
+import de.cuioss.sheriff.oauth.library.pipeline.NonValidatingJwtParser;
+import de.cuioss.sheriff.oauth.library.pipeline.TokenBuilder;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator;
+import de.cuioss.sheriff.oauth.library.security.JwkAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.quarkus.config.AccessLogFilterConfigProducer;
+import de.cuioss.sheriff.oauth.quarkus.config.ParserConfigResolver;
+import de.cuioss.sheriff.oauth.quarkus.interceptor.BearerTokenInterceptor;
+import de.cuioss.sheriff.oauth.quarkus.logging.CustomAccessLogFilter;
+import de.cuioss.sheriff.oauth.quarkus.metrics.JwtMetricsCollector;
+import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenProducer;
+import de.cuioss.sheriff.oauth.quarkus.producer.TokenValidatorProducer;
+import de.cuioss.sheriff.oauth.quarkus.servlet.VertxServletObjectsResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.logging.LogRecord;
 import de.cuioss.tools.logging.LogRecordModel;
@@ -236,10 +236,10 @@ public class CuiJwtProcessor {
 
         // Explicitly register our generated converters as service providers
         serviceProvider.produce(new ServiceProviderBuildItem("com.dslplatform.json.Configuration",
-                "de.cuioss.jwt.validation.json._WellKnownConfiguration_DslJsonConverter",
-                "de.cuioss.jwt.validation.json._Jwks_DslJsonConverter",
-                "de.cuioss.jwt.validation.json._JwkKey_DslJsonConverter",
-                "de.cuioss.jwt.validation.json._JwtHeader_DslJsonConverter"));
+                "de.cuioss.sheriff.oauth.library.json._WellKnownConfiguration_DslJsonConverter",
+                "de.cuioss.sheriff.oauth.library.json._Jwks_DslJsonConverter",
+                "de.cuioss.sheriff.oauth.library.json._JwkKey_DslJsonConverter",
+                "de.cuioss.sheriff.oauth.library.json._JwtHeader_DslJsonConverter"));
     }
 
 
@@ -260,8 +260,8 @@ public class CuiJwtProcessor {
     @BuildStep
     public void registerJwtValidationResources(BuildProducer<NativeImageResourceBuildItem> resourceProducer) {
         // Include any JWT validation configuration files that might exist
-        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.jwt.validation.jwks.JwksLoader"));
-        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper"));
+        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.sheriff.oauth.library.jwks.JwksLoader"));
+        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.sheriff.oauth.library.domain.claim.mapper.ClaimMapper"));
     }
 
 
@@ -277,7 +277,7 @@ public class CuiJwtProcessor {
                 .addBeanClasses(
                         TokenValidatorProducer.class,
                         BearerTokenProducer.class,
-                        de.cuioss.jwt.quarkus.config.IssuerConfigResolver.class,
+                        de.cuioss.sheriff.oauth.quarkus.config.IssuerConfigResolver.class,
                         ParserConfigResolver.class,
                         VertxServletObjectsResolver.class,
                         JwtMetricsCollector.class

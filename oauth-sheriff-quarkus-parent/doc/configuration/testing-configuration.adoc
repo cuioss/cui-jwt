@@ -29,12 +29,12 @@ public class JwtTestProfile implements QuarkusTestProfile {
         Map<String, String> config = new HashMap<>();
 
         // Test issuer configuration
-        config.put("cui.jwt.issuers.default.url", "https://test.example.com/auth");
-        config.put("cui.jwt.issuers.default.enabled", "true");
-        config.put("cui.jwt.issuers.default.public-key-location", "");
+        config.put("sheriff.oauth.issuers.default.url", "https://test.example.com/auth");
+        config.put("sheriff.oauth.issuers.default.enabled", "true");
+        config.put("sheriff.oauth.issuers.default.public-key-location", "");
 
         // Test parser configuration
-        config.put("cui.jwt.parser.audience", "test-application");
+        config.put("sheriff.oauth.parser.audience", "test-application");
 
         return config;
     }
@@ -68,17 +68,17 @@ public class MultiIssuerTestProfile implements QuarkusTestProfile {
         Map<String, String> config = new HashMap<>();
 
         // Primary test issuer
-        config.put("cui.jwt.issuers.primary.url", "https://primary-auth.example.com");
-        config.put("cui.jwt.issuers.primary.enabled", "true");
-        config.put("cui.jwt.issuers.primary.audience", "primary-app");
+        config.put("sheriff.oauth.issuers.primary.url", "https://primary-auth.example.com");
+        config.put("sheriff.oauth.issuers.primary.enabled", "true");
+        config.put("sheriff.oauth.issuers.primary.audience", "primary-app");
 
         // Secondary test issuer
-        config.put("cui.jwt.issuers.secondary.url", "https://secondary-auth.example.com");
-        config.put("cui.jwt.issuers.secondary.enabled", "true");
-        config.put("cui.jwt.issuers.secondary.audience", "secondary-app");
+        config.put("sheriff.oauth.issuers.secondary.url", "https://secondary-auth.example.com");
+        config.put("sheriff.oauth.issuers.secondary.enabled", "true");
+        config.put("sheriff.oauth.issuers.secondary.audience", "secondary-app");
 
         // Parser configuration
-        config.put("cui.jwt.parser.max-token-size", "16384");
+        config.put("sheriff.oauth.parser.max-token-size", "16384");
 
         return config;
     }
@@ -390,13 +390,13 @@ public class TestJwtBuilder {
 [source,properties]
 ----
 # Test-specific JWT configuration
-%test.cui.jwt.issuers.test.url=https://test-issuer.example.com
-%test.cui.jwt.issuers.test.enabled=true
-%test.cui.jwt.issuers.test.audience=test-application
+%test.sheriff.oauth.issuers.test.url=https://test-issuer.example.com
+%test.sheriff.oauth.issuers.test.enabled=true
+%test.sheriff.oauth.issuers.test.audience=test-application
 
 # Relaxed validation for testing
-%test.cui.jwt.parser.max-token-size=32768
-%test.cui.jwt.parser.max-payload-size=16384
+%test.sheriff.oauth.parser.max-token-size=32768
+%test.sheriff.oauth.parser.max-payload-size=16384
 
 # Logging for test debugging
 %test.quarkus.log.category."de.cuioss.jwt".level=DEBUG
@@ -409,12 +409,12 @@ public class TestJwtBuilder {
 [source,properties]
 ----
 # CI-specific configuration
-%ci.cui.jwt.issuers.ci.url=https://ci-auth.example.com
-%ci.cui.jwt.issuers.ci.enabled=true
+%ci.sheriff.oauth.issuers.ci.url=https://ci-auth.example.com
+%ci.sheriff.oauth.issuers.ci.enabled=true
 
 # Optimized for CI performance
-%ci.cui.jwt.parser.cache-size=100
-%ci.cui.jwt.validation.timeout=5000
+%ci.sheriff.oauth.parser.cache-size=100
+%ci.sheriff.oauth.validation.timeout=5000
 ----
 
 == See Also

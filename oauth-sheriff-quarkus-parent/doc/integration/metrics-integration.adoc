@@ -28,21 +28,21 @@ Currently, the extension exposes the following metrics:
 |===
 |Metric Name |Type |Description |Tags
 
-|`cui.jwt.validation.errors` |Counter |Number of JWT validation errors by type |event_type, result, category
-|`cui.jwt.validation.duration` |Timer |Duration of JWT validation pipeline steps |step
+|`sheriff.oauth.validation.errors` |Counter |Number of JWT validation errors by type |event_type, result, category
+|`sheriff.oauth.validation.duration` |Timer |Duration of JWT validation pipeline steps |step
 |===
 
 === Metric Tags
 
 Each metric includes the following tags for filtering and analysis:
 
-==== Error Metrics (`cui.jwt.validation.errors`)
+==== Error Metrics (`sheriff.oauth.validation.errors`)
 
 * **`event_type`**: The specific type of validation error (e.g., `TOKEN_EXPIRED`, `SIGNATURE_VALIDATION_FAILED`)
 * **`result`**: Always "failure" for error metrics
 * **`category`**: The error category (`STRUCTURE`, `SIGNATURE`, `SEMANTIC`) when available
 
-==== Performance Metrics (`cui.jwt.validation.duration`)
+==== Performance Metrics (`sheriff.oauth.validation.duration`)
 
 * **`step`**: The validation pipeline step being measured:
   ** `complete_validation` - Complete token validation from start to finish

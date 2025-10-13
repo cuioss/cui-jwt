@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.smallrye.config.SmallRyeConfigBuilder;
@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.CACHE;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys.CACHE;
 import static de.cuioss.test.juli.LogAsserts.assertSingleLogMessagePresentContaining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

@@ -6,7 +6,7 @@ The cui-jwt-quarkus extension provides automatic metrics collection for JWT vali
 
 | Metric Name | Type | Description | Tags |
 |-------------|------|-------------|------|
-| `cui.jwt.validation.errors` | Counter | Number of JWT validation errors by type | event_type, result, category |
+| `sheriff.oauth.validation.errors` | Counter | Number of JWT validation errors by type | event_type, result, category |
 
 ## Metric Tags
 

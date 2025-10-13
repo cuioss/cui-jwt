@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.logging;
+package de.cuioss.sheriff.oauth.quarkus.logging;
 
-import de.cuioss.jwt.quarkus.config.AccessLogFilterConfig;
-import de.cuioss.jwt.quarkus.config.AccessLogFilterConfigResolver;
+import de.cuioss.sheriff.oauth.quarkus.config.AccessLogFilterConfig;
+import de.cuioss.sheriff.oauth.quarkus.config.AccessLogFilterConfigResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,7 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
 
 /**
  * Custom HTTP access log filter with configurable status code and path filtering.

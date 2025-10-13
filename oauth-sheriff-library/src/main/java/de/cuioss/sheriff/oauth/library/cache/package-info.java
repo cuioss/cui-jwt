@@ -31,4 +31,4 @@
  *
  * @since 1.0
  */
-package de.cuioss.jwt.validation.cache;
+package de.cuioss.sheriff.oauth.library.cache;

@@ -4,19 +4,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-quarkus-parent</artifactId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
+        <artifactId>oauth-sheriff-quarkus-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cui-jwt-quarkus-deployment</artifactId>
+    <artifactId>oauth-sheriff-quarkus-deployment</artifactId>
     <packaging>jar</packaging>
-    <name>JWT Token Validation Quarkus Integration - Deployment</name>
-    <description>Deployment module for Quarkus integration for JWT token validation</description>
+    <name>OAuth Sheriff Quarkus Integration - Deployment</name>
+    <description>Deployment module for Quarkus integration for OAuth/JWT token validation</description>
 
     <properties>
-        <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.quarkus.deployment</maven.jar.plugin.automatic.module.name>
+        <maven.jar.plugin.automatic.module.name>de.cuioss.sheriff.oauth.quarkus.deployment</maven.jar.plugin.automatic.module.name>
 
         <!-- Sonar configuration for JavaScript coverage -->
         <sonar.javascript.lcov.reportPaths>target/coverage/lcov.info</sonar.javascript.lcov.reportPaths>
@@ -32,8 +32,8 @@
     <dependencies>
         <!-- Runtime module dependency -->
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-jwt-quarkus</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-quarkus</artifactId>
         </dependency>
 
         <!-- Quarkus deployment dependencies -->
@@ -200,7 +200,7 @@
                         <configuration>
                             <!-- Configure JaCoCo to work with deployment tests -->
                             <includes>
-                                <include>de/cuioss/jwt/quarkus/deployment/**</include>
+                                <include>de/cuioss/sheriff/oauth/quarkus/deployment/**</include>
                             </includes>
                             <!-- Ensure JaCoCo agent is properly attached to tests -->
                             <append>true</append>

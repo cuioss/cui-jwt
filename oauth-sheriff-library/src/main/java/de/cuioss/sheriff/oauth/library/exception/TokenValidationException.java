@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.exception;
+package de.cuioss.sheriff.oauth.library.exception;
 
-import de.cuioss.jwt.validation.security.EventCategory;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.library.security.EventCategory;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter.EventType;
 import lombok.Getter;
 
 import java.io.Serial;

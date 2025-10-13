@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.test;
+package de.cuioss.sheriff.oauth.quarkus.test;
 
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.QuarkusUnitTest;

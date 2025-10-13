@@ -202,8 +202,8 @@ The integration tests use **two Keycloak realms** to validate different JWT conf
 
 [source,properties]
 ----
-cui.jwt.issuers.keycloak.issuer-identifier=http://localhost:1080/realms/benchmark
-cui.jwt.issuers.keycloak.jwks.http.well-known-url=http://keycloak:8080/realms/benchmark/.well-known/openid-configuration
+sheriff.oauth.issuers.keycloak.issuer-identifier=http://localhost:1080/realms/benchmark
+sheriff.oauth.issuers.keycloak.jwks.http.well-known-url=http://keycloak:8080/realms/benchmark/.well-known/openid-configuration
 ----
 
 ==== Integration Realm (Direct JWKS)
@@ -215,8 +215,8 @@ cui.jwt.issuers.keycloak.jwks.http.well-known-url=http://keycloak:8080/realms/be
 
 [source,properties]
 ----
-cui.jwt.issuers.integration.issuer-identifier=http://localhost:1080/realms/integration
-cui.jwt.issuers.integration.jwks.http.url=http://keycloak:8080/realms/integration/protocol/openid-connect/certs
+sheriff.oauth.issuers.integration.issuer-identifier=http://localhost:1080/realms/integration
+sheriff.oauth.issuers.integration.jwks.http.url=http://keycloak:8080/realms/integration/protocol/openid-connect/certs
 ----
 
 Both realms are automatically imported into Keycloak during container startup via the `docker-compose.yml` configuration.
@@ -238,12 +238,12 @@ Both realms use consistent HTTPS configuration:
 [source,properties]
 ----
 # Benchmark realm with well-known discovery
-cui.jwt.issuers.keycloak.issuer-identifier=https://keycloak:8443/realms/benchmark
-cui.jwt.issuers.keycloak.jwks.http.well-known-url=https://keycloak:8443/realms/benchmark/.well-known/openid-configuration
+sheriff.oauth.issuers.keycloak.issuer-identifier=https://keycloak:8443/realms/benchmark
+sheriff.oauth.issuers.keycloak.jwks.http.well-known-url=https://keycloak:8443/realms/benchmark/.well-known/openid-configuration
 
 # Integration realm with direct JWKS URL
-cui.jwt.issuers.integration.issuer-identifier=https://keycloak:8443/realms/integration
-cui.jwt.issuers.integration.jwks.http.url=https://keycloak:8443/realms/integration/protocol/openid-connect/certs
+sheriff.oauth.issuers.integration.issuer-identifier=https://keycloak:8443/realms/integration
+sheriff.oauth.issuers.integration.jwks.http.url=https://keycloak:8443/realms/integration/protocol/openid-connect/certs
 ----
 
 ==== Key Points
@@ -265,16 +265,16 @@ Self-signed certificates via `generate-certificates.sh`:
 [source,properties]
 ----
 # JWT - Default test issuer (disabled for Keycloak testing)
-cui.jwt.issuers.default.issuer-identifier=https://test-auth.example.com
-cui.jwt.issuers.default.enabled=false
-cui.jwt.issuers.default.jwks.file-path=classpath:test-jwks.json
+sheriff.oauth.issuers.default.issuer-identifier=https://test-auth.example.com
+sheriff.oauth.issuers.default.enabled=false
+sheriff.oauth.issuers.default.jwks.file-path=classpath:test-jwks.json
 
 # JWT - Keycloak issuers (both realms)
-cui.jwt.issuers.keycloak.enabled=true
-cui.jwt.issuers.integration.enabled=true
+sheriff.oauth.issuers.keycloak.enabled=true
+sheriff.oauth.issuers.integration.enabled=true
 
 # Health checks
-cui.jwt.health.enabled=true
+sheriff.oauth.health.enabled=true
 
 # HTTPS configuration
 quarkus.http.ssl-port=8443

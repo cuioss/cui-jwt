@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.jwt.quarkus.test.TestConfig;
+import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

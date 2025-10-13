@@ -22,9 +22,9 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences} - Manages algorithm preferences for JWT signature validation</li>
- *   <li>{@link de.cuioss.jwt.validation.security.JwkAlgorithmPreferences} - Manages algorithm preferences for JWK parsing</li>
- *   <li>{@link de.cuioss.jwt.validation.security.SecurityEventCounter} - Tracks security-relevant events for monitoring</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences} - Manages algorithm preferences for JWT signature validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.security.JwkAlgorithmPreferences} - Manages algorithm preferences for JWK parsing</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.security.SecurityEventCounter} - Tracks security-relevant events for monitoring</li>
  * </ul>
  * <p>
  * The classes in this package implement security best practices, including:
@@ -51,8 +51,8 @@
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/security.adoc">Security Specification</a>
  *
  * @author Oliver Wolff
- * @see de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator
- * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoader
+ * @see de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator
+ * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader
  * @since 1.0
  */
-package de.cuioss.jwt.validation.security;
+package de.cuioss.sheriff.oauth.library.security;

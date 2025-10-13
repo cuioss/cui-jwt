@@ -22,12 +22,12 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.jwks.JwksLoader} - Interface for loading JSON Web Keys from a JWKS source</li>
- *   <li>{@link de.cuioss.jwt.validation.jwks.http.HttpJwksLoader} - Implementation that loads JWKS from an HTTP endpoint</li>
- *   <li>{@link de.cuioss.jwt.validation.jwks.JwksLoaderFactory} - Factory for creating JwksLoader instances</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.JwksLoader} - Interface for loading JSON Web Keys from a JWKS source</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader} - Implementation that loads JWKS from an HTTP endpoint</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.JwksLoaderFactory} - Factory for creating JwksLoader instances</li>
  * </ul>
  * <p>
- * The {@link de.cuioss.jwt.validation.jwks.key} subpackage contains classes for handling individual
+ * The {@link de.cuioss.sheriff.oauth.library.jwks.key} subpackage contains classes for handling individual
  * keys within a JWKS.
  * <p>
  * This package implements security best practices for JWKS handling, including:
@@ -48,7 +48,7 @@
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#_jwksloader">Technical Components Specification - JwksLoader</a>
  * 
  * @since 1.0
- * @see de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator
+ * @see de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7517">RFC 7517 - JSON Web Key (JWK)</a>
  */
-package de.cuioss.jwt.validation.jwks;
+package de.cuioss.sheriff.oauth.library.jwks;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -24,7 +24,7 @@ import org.eclipse.microprofile.config.Config;
  * CDI producer for {@link AccessLogFilterConfigResolver}.
  * <p>
  * This producer creates the configuration resolver instance and injects
- * it into dependent beans like {@link de.cuioss.jwt.quarkus.logging.CustomAccessLogFilter}.
+ * it into dependent beans like {@link de.cuioss.sheriff.oauth.quarkus.logging.CustomAccessLogFilter}.
  * </p>
  */
 @ApplicationScoped

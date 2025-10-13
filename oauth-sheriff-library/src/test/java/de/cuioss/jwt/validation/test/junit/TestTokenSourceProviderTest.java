@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.test.junit;
+package de.cuioss.sheriff.oauth.library.test.junit;
 
-import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.TokenType;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

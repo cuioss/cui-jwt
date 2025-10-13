@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.security;
+package de.cuioss.sheriff.oauth.library.security;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
 

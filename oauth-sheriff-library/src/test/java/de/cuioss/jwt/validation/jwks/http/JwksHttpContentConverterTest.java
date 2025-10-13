@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.http;
+package de.cuioss.sheriff.oauth.library.jwks.http;
 
-import de.cuioss.jwt.validation.json.Jwks;
+import de.cuioss.sheriff.oauth.library.json.Jwks;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -28,7 +28,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

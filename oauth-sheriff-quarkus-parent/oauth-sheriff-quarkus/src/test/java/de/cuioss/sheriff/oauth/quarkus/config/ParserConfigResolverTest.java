@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.jwt.quarkus.test.TestConfig;
-import de.cuioss.jwt.validation.ParserConfig;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import org.junit.jupiter.api.DisplayName;
@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
 import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresent;
 import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresentContaining;
 import static org.junit.jupiter.api.Assertions.*;
@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests ParserConfigResolver functionality.
  */
-@EnableTestLogger
+@EnableTestLogger(rootLevel = TestLogLevel.DEBUG)
 class ParserConfigResolverTest {
 
     @Test

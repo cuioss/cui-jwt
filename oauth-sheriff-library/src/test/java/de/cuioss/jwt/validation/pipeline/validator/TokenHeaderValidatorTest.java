@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline.validator;
+package de.cuioss.sheriff.oauth.library.pipeline.validator;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.json.JwtHeader;
-import de.cuioss.jwt.validation.json.MapRepresentation;
-import de.cuioss.jwt.validation.pipeline.DecodedJwt;
-import de.cuioss.jwt.validation.pipeline.NonValidatingJwtParser;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
-import de.cuioss.jwt.validation.test.InMemoryJWKSFactory;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.TokenType;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.json.JwtHeader;
+import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
+import de.cuioss.sheriff.oauth.library.pipeline.DecodedJwt;
+import de.cuioss.sheriff.oauth.library.pipeline.NonValidatingJwtParser;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.test.InMemoryJWKSFactory;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.test.generator.ClaimControlParameter;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;

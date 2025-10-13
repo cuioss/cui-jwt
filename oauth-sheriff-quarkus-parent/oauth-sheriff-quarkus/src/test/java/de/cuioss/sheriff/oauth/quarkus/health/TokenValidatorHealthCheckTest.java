@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.health;
+package de.cuioss.sheriff.oauth.quarkus.health;
 
-import de.cuioss.jwt.quarkus.config.JwtTestProfile;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtTestProfile;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;

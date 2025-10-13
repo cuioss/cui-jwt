@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
 import de.cuioss.http.client.retry.ExponentialBackoffRetryStrategy;
 import de.cuioss.http.client.retry.RetryStrategy;

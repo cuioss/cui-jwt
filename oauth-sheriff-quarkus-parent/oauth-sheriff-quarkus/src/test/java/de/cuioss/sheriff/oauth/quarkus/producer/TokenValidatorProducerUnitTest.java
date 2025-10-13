@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.producer;
+package de.cuioss.sheriff.oauth.quarkus.producer;
 
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
-import de.cuioss.jwt.quarkus.test.TestConfig;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
+import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;
 import de.cuioss.test.juli.LogAsserts;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

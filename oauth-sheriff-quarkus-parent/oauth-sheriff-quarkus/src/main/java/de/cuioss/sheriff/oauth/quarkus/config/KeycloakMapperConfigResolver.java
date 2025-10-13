@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
 import lombok.Value;
 import org.eclipse.microprofile.config.Config;
 
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_GROUPS_ENABLED;
-import static de.cuioss.jwt.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_ROLES_ENABLED;
+import static de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_GROUPS_ENABLED;
+import static de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys.ISSUERS.KEYCLOAK_DEFAULT_ROLES_ENABLED;
 
 /**
  * Configuration resolver for Keycloak mapper settings per issuer.

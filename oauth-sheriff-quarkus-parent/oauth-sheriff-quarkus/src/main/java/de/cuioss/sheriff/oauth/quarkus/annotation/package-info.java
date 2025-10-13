@@ -24,10 +24,10 @@
  * <p>
  * Key annotations:
  * <ul>
- *   <li>{@link de.cuioss.jwt.quarkus.annotation.BearerToken} - CDI qualifier for injecting validated AccessTokenContent</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.quarkus.annotation.BearerToken} - CDI qualifier for injecting validated AccessTokenContent</li>
  * </ul>
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-package de.cuioss.jwt.quarkus.annotation;
+package de.cuioss.sheriff.oauth.quarkus.annotation;

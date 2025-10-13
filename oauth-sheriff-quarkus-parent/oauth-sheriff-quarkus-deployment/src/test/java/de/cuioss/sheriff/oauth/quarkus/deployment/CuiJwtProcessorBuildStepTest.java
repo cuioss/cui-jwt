@@ -15,6 +15,17 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.deployment;
 
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.IssuerConfigResolver;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.IdentityMapper;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.ScopeMapper;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;
@@ -56,11 +67,11 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(reflectiveItem);
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.TokenValidator"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.IssuerConfigResolver"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.security.SecurityEventCounter"));
-        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.IssuerConfig"));
-        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.ParserConfig"));
+        assertTrue(reflectiveItem.getClassNames().contains(TokenValidator.class.getName()));
+        assertTrue(reflectiveItem.getClassNames().contains(IssuerConfigResolver.class.getName()));
+        assertTrue(reflectiveItem.getClassNames().contains(SecurityEventCounter.class.getName()));
+        assertFalse(reflectiveItem.getClassNames().contains(IssuerConfig.class.getName()));
+        assertFalse(reflectiveItem.getClassNames().contains(ParserConfig.class.getName()));
     }
 
     @Test
@@ -70,11 +81,11 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(reflectiveItem);
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.IssuerConfig"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.ParserConfig"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig"));
+        assertTrue(reflectiveItem.getClassNames().contains(IssuerConfig.class.getName()));
+        assertTrue(reflectiveItem.getClassNames().contains(ParserConfig.class.getName()));
+        assertTrue(reflectiveItem.getClassNames().contains(HttpJwksLoaderConfig.class.getName()));
         // These classes are in the constructor group
-        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.TokenValidator"));
+        assertFalse(reflectiveItem.getClassNames().contains(TokenValidator.class.getName()));
     }
 
     @Test
@@ -84,10 +95,10 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(reflectiveItem);
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue"));
+        assertTrue(reflectiveItem.getClassNames().contains(AccessTokenContent.class.getName()));
+        assertTrue(reflectiveItem.getClassNames().contains(ClaimValue.class.getName()));
         // Claim mappers are in separate group
-        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.domain.claim.mapper.IdentityMapper"));
+        assertFalse(reflectiveItem.getClassNames().contains(IdentityMapper.class.getName()));
     }
 
     @Test
@@ -97,10 +108,10 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(reflectiveItem);
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.domain.claim.mapper.IdentityMapper"));
-        assertTrue(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.domain.claim.mapper.ScopeMapper"));
+        assertTrue(reflectiveItem.getClassNames().contains(IdentityMapper.class.getName()));
+        assertTrue(reflectiveItem.getClassNames().contains(ScopeMapper.class.getName()));
         // Token content classes are in separate group
-        assertFalse(reflectiveItem.getClassNames().contains("de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent"));
+        assertFalse(reflectiveItem.getClassNames().contains(AccessTokenContent.class.getName()));
     }
 
     // REMOVED: registerBearerTokenClassesForReflection test
@@ -114,7 +125,7 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(runtimeItem);
-        assertEquals("de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader", runtimeItem.getClassName());
+        assertEquals(HttpJwksLoader.class.getName(), runtimeItem.getClassName());
     }
 
     @Test

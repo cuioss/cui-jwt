@@ -4,25 +4,25 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
         <artifactId>benchmarking</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>benchmark-library</artifactId>
+    <artifactId>oauth-sheriff-benchmark-library</artifactId>
     <packaging>jar</packaging>
-    <name>JWT Token Validation Benchmark Library</name>
-    <description>Benchmarking module for JWT token validation</description>
+    <name>OAuth Sheriff Benchmark Library</name>
+    <description>Benchmarking module for OAuth/JWT token validation</description>
 
     <properties>
-        <maven.jar.plugin.automatic.module.name>de.cuioss.jwt.validation.benchmark</maven.jar.plugin.automatic.module.name>
+        <maven.jar.plugin.automatic.module.name>de.cuioss.sheriff.oauth.benchmark.library</maven.jar.plugin.automatic.module.name>
 
         <!-- Default benchmark runner -->
-        <benchmark.runner>de.cuioss.jwt.validation.benchmark.LibraryBenchmarkRunner</benchmark.runner>
+        <benchmark.runner>de.cuioss.sheriff.oauth.library.benchmark.LibraryBenchmarkRunner</benchmark.runner>
 
         <!-- JMH Configuration Properties - Optimized for fast execution (<10 minutes) -->
-        <jmh.include>de\.cuioss\.jwt\.validation\.benchmark\.standard\..*</jmh.include>
+        <jmh.include>de\.cuioss\.sheriff\.oauth\.library\.benchmark\.standard\..*</jmh.include>
         <jmh.result.format>JSON</jmh.result.format>
         <jmh.result.filePrefix>target/benchmark-results/micro-result</jmh.result.filePrefix>
         <jmh.iterations>5</jmh.iterations>
@@ -37,15 +37,15 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>de.cuioss.jwt</groupId>
-                <artifactId>bom</artifactId>
+                <groupId>de.cuioss.sheriff.oauth</groupId>
+                <artifactId>oauth-sheriff-bom</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>de.cuioss.jwt</groupId>
-                <artifactId>cui-jwt-validation</artifactId>
+                <groupId>de.cuioss.sheriff.oauth</groupId>
+                <artifactId>oauth-sheriff-library</artifactId>
                 <version>${project.version}</version>
                 <classifier>generators</classifier>
             </dependency>
@@ -55,19 +55,19 @@
     <dependencies>
         <!-- Internal module dependencies -->
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-jwt-validation</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-library</artifactId>
         </dependency>
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-benchmarking-common</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-benchmarking-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- Test dependencies from validation module -->
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-jwt-validation</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-library</artifactId>
             <version>${project.version}</version>
             <classifier>generators</classifier>
             <scope>compile</scope>
@@ -258,7 +258,7 @@
             <id>benchmark-jfr</id>
             <properties>
                 <skip.benchmark>false</skip.benchmark>
-                <benchmark.runner>de.cuioss.jwt.validation.benchmark.JfrBenchmarkRunner</benchmark.runner>
+                <benchmark.runner>de.cuioss.sheriff.oauth.library.benchmark.JfrBenchmarkRunner</benchmark.runner>
             </properties>
         </profile>
 

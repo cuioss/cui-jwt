@@ -18,12 +18,12 @@
  * <p>
  * This package is organized into two main subpackages:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim} - Classes for handling JWT claims, including claim names,
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim} - Classes for handling JWT claims, including claim names,
  *       values, types, and mappers</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.token} - Classes representing different validation types and their content</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.token} - Classes representing different validation types and their content</li>
  * </ul>
  * <p>
  * 
  * @since 1.0
  */
-package de.cuioss.jwt.validation.domain;
+package de.cuioss.sheriff.oauth.library.domain;

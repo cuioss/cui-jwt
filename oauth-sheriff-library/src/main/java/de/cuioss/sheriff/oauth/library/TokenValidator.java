@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
-import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.domain.token.IdTokenContent;
-import de.cuioss.jwt.validation.domain.token.RefreshTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.metrics.*;
-import de.cuioss.jwt.validation.pipeline.*;
-import de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator;
-import de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator;
-import de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator;
-import de.cuioss.jwt.validation.pipeline.validator.TokenStringValidator;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.domain.token.IdTokenContent;
+import de.cuioss.sheriff.oauth.library.domain.token.RefreshTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.metrics.*;
+import de.cuioss.sheriff.oauth.library.pipeline.*;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator;
+import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenStringValidator;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Builder;
 import lombok.Getter;

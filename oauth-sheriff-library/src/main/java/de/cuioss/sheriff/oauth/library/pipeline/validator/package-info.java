@@ -19,23 +19,23 @@
  * This package contains specialized validators that verify different aspects
  * of JWT tokens during the validation pipeline:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenStringValidator} - Pre-pipeline string validation</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator} - Cryptographic signature verification</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator} - JWT header validation</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator} - Claims validation orchestrator</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.AudienceValidator} - Audience claim validation</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.ExpirationValidator} - Expiration and timing validation</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.MandatoryClaimsValidator} - Required claims validation</li>
- *   <li>{@link de.cuioss.jwt.validation.pipeline.validator.AuthorizedPartyValidator} - Authorized party validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenStringValidator} - Pre-pipeline string validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator} - Cryptographic signature verification</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator} - JWT header validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator} - Claims validation orchestrator</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.AudienceValidator} - Audience claim validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.ExpirationValidator} - Expiration and timing validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.MandatoryClaimsValidator} - Required claims validation</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.pipeline.validator.AuthorizedPartyValidator} - Authorized party validation</li>
  * </ul>
  * <p>
  * These validators are used by the pipeline classes in the parent package
- * ({@link de.cuioss.jwt.validation.pipeline.AccessTokenValidationPipeline},
- * {@link de.cuioss.jwt.validation.pipeline.IdTokenValidationPipeline},
- * {@link de.cuioss.jwt.validation.pipeline.RefreshTokenValidationPipeline})
+ * ({@link de.cuioss.sheriff.oauth.library.pipeline.AccessTokenValidationPipeline},
+ * {@link de.cuioss.sheriff.oauth.library.pipeline.IdTokenValidationPipeline},
+ * {@link de.cuioss.sheriff.oauth.library.pipeline.RefreshTokenValidationPipeline})
  * to perform comprehensive token validation.
  *
  * @author Oliver Wolff
  * @since 1.0
  */
-package de.cuioss.jwt.validation.pipeline.validator;
+package de.cuioss.sheriff.oauth.library.pipeline.validator;

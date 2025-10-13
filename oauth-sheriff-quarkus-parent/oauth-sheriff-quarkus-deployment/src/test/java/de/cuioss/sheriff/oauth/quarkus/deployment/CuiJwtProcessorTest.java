@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.deployment;
+package de.cuioss.sheriff.oauth.quarkus.deployment;
 
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.test.QuarkusUnitTest;
 import jakarta.inject.Inject;

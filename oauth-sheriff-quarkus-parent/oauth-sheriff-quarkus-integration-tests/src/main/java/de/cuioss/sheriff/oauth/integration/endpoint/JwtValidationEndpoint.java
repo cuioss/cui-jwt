@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.integration.endpoint;
+package de.cuioss.sheriff.oauth.integration.endpoint;
 
-import de.cuioss.jwt.quarkus.annotation.BearerAuth;
-import de.cuioss.jwt.quarkus.annotation.BearerToken;
-import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerAuth;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerToken;
+import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import io.smallrye.common.annotation.RunOnVirtualThread;

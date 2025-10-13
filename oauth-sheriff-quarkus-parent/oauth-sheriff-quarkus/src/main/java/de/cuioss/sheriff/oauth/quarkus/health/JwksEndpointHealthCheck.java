@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.health;
+package de.cuioss.sheriff.oauth.quarkus.health;
 
 import de.cuioss.http.client.LoaderStatus;
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.JwksType;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.JwksType;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
 import de.cuioss.tools.logging.CuiLogger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN;
 
 /**
  * Health check for JWKS endpoint connectivity.

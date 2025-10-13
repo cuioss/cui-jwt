@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.json;
+package de.cuioss.sheriff.oauth.library.json;
 
 import com.dslplatform.json.CompiledJson;
 import de.cuioss.tools.logging.CuiLogger;
@@ -23,7 +23,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
 
 /**
  * Represents a JSON Web Key (JWK) for DSL-JSON mapping.

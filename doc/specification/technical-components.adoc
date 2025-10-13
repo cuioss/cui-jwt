@@ -408,7 +408,7 @@ The monitor tracks the following pipeline steps:
 
 In Quarkus environments, the performance metrics are automatically exposed as Micrometer timers through the `JwtMetricsCollector`:
 
-* **Metric Name**: `cui.jwt.validation.duration`
+* **Metric Name**: `sheriff.oauth.validation.duration`
 * **Tags**: `step` (measurement type in lowercase)
 * **Description**: Duration of JWT validation pipeline steps
 

@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
 import lombok.experimental.UtilityClass;
 
 /**
- * Constants for JWT property keys used in the cui-jwt-quarkus module.
+ * Constants for JWT property keys used in the OAuth Sheriff Quarkus module.
  * <p>
  * This class follows the DSL-style nested constants pattern to organize
  * property keys in a hierarchical, discoverable manner.
  * </p>
  * <p>
- * All properties are prefixed with "cui.jwt".
+ * All properties are prefixed with "sheriff.oauth".
  * </p>
  *
  * @since 1.0
@@ -37,7 +37,7 @@ public final class JwtPropertyKeys {
     /**
      * The common prefix for all JWT properties.
      */
-    public static final String PREFIX = "cui.jwt";
+    public static final String PREFIX = "sheriff.oauth";
     public static final String DOT_JWKS = ".jwks";
     public static final String DOT_ENABLED = ".enabled";
 
@@ -84,7 +84,7 @@ public final class JwtPropertyKeys {
      * Usage pattern: KEY.formatted("issuerName") where "issuerName" is an arbitrary string.
      * </p>
      * <p>
-     * Example: ENABLED.formatted("default") -> "cui.jwt.issuers.default.enabled"
+     * Example: ENABLED.formatted("default") -> "sheriff.oauth.issuers.default.enabled"
      * </p>
      * <p>
      * <strong>JWKS Source Configuration (Mutually Exclusive):</strong>
@@ -117,7 +117,7 @@ public final class JwtPropertyKeys {
 
         /**
          * Whether this issuer configuration is enabled.
-         * Template: "cui.jwt.issuers.%s.enabled"
+         * Template: "sheriff.oauth.issuers.%s.enabled"
          * <p>
          * When set to {@code false}, this issuer configuration will be ignored during
          * token validation and will not attempt to use the underlying {@link JwksLoader}.
@@ -126,13 +126,13 @@ public final class JwtPropertyKeys {
          * Default value is {@code true}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String ENABLED = BASE + "enabled";
 
         /**
          * The issuer identifier that will be matched against the "iss" claim in JWT tokens.
-         * Template: "cui.jwt.issuers.%s.issuer-identifier"
+         * Template: "sheriff.oauth.issuers.%s.issuer-identifier"
          * <p>
          * This field is required for all JWKS loading variants except well-known discovery.
          * For well-known discovery, the issuer identifier is automatically extracted from
@@ -144,50 +144,50 @@ public final class JwtPropertyKeys {
          * <strong>Optional</strong> for {@link #WELL_KNOWN_URL} (extracted from discovery document).
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String ISSUER_IDENTIFIER = BASE + "issuer-identifier";
 
         /**
          * Set of expected audience values (comma-separated).
-         * Template: "cui.jwt.issuers.%s.expected-audience"
+         * Template: "sheriff.oauth.issuers.%s.expected-audience"
          * <p>
          * These values are matched against the "aud" claim in the token.
          * If the token's audience claim matches any of these values, it is considered valid.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String EXPECTED_AUDIENCE = BASE + "expected-audience";
 
         /**
          * Set of expected client ID values (comma-separated).
-         * Template: "cui.jwt.issuers.%s.expected-client-id"
+         * Template: "sheriff.oauth.issuers.%s.expected-client-id"
          * <p>
          * These values are matched against the "azp" or "client_id" claim in the token.
          * If the token's client ID claim matches any of these values, it is considered valid.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String EXPECTED_CLIENT_ID = BASE + "expected-client-id";
 
         /**
          * Signature algorithm preferences (comma-separated).
-         * Template: "cui.jwt.issuers.%s.algorithm-preferences"
+         * Template: "sheriff.oauth.issuers.%s.algorithm-preferences"
          * <p>
          * This configuration controls which signature algorithms are preferred and allowed
          * during token validation. It can be used to enforce security policies, such as
          * requiring stronger algorithms or blacklisting weak ones.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String ALGORITHM_PREFERENCES = BASE + "algorithm-preferences";
 
         /**
          * Whether the "sub" (subject) claim is optional for this issuer.
-         * Template: "cui.jwt.issuers.%s.claim-sub-optional"
+         * Template: "sheriff.oauth.issuers.%s.claim-sub-optional"
          * <p>
          * When set to {@code true}, the mandatory claims validator will not require the "sub" claim
          * to be present in tokens from this issuer. This provides a workaround for identity providers
@@ -202,7 +202,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code false} (subject claim is mandatory, RFC compliant).
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig#isClaimSubOptional()
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig#isClaimSubOptional()
          * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
          */
         public static final String CLAIM_SUB_OPTIONAL = BASE + "claim-sub-optional";
@@ -211,7 +211,7 @@ public final class JwtPropertyKeys {
 
         /**
          * The URL of the JWKS endpoint for direct loading.
-         * Template: "cui.jwt.issuers.%s.jwks.http.url"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.url"
          * <p>
          * This method configures the issuer to load JWKS (JSON Web Key Set) from a remote HTTP endpoint.
          * This is the most common configuration for production environments where JWKS are served
@@ -222,13 +222,13 @@ public final class JwtPropertyKeys {
          * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
          */
         public static final String JWKS_URL = HTTP_BASE + "url";
 
         /**
          * The URL of the OpenID Connect discovery document (well-known endpoint).
-         * Template: "cui.jwt.issuers.%s.jwks.http.well-known-url"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.well-known-url"
          * <p>
          * This method configures the JWKS loading using well-known endpoint discovery from a URL string.
          * This method creates a WellKnownConfig internally for dynamic JWKS URI resolution.
@@ -239,13 +239,13 @@ public final class JwtPropertyKeys {
          * Provides {@link #ISSUER_IDENTIFIER} automatically from discovery document.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
          */
         public static final String WELL_KNOWN_URL = HTTP_BASE + "well-known-url";
 
         /**
          * File path for loading JWKS from a local file.
-         * Template: "cui.jwt.issuers.%s.jwks.file-path"
+         * Template: "sheriff.oauth.issuers.%s.jwks.file-path"
          * <p>
          * This method configures the issuer to load JWKS (JSON Web Key Set) from a local file.
          * This is useful for development environments, testing, or scenarios where JWKS are
@@ -257,13 +257,13 @@ public final class JwtPropertyKeys {
          * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String JWKS_FILE_PATH = JWKS_BASE + "file-path";
 
         /**
          * JWKS content directly as a JSON string.
-         * Template: "cui.jwt.issuers.%s.jwks.content"
+         * Template: "sheriff.oauth.issuers.%s.jwks.content"
          * <p>
          * This method configures the issuer to use JWKS (JSON Web Key Set) provided directly
          * as a JSON string. This is useful for testing, embedded configurations, or scenarios
@@ -275,7 +275,7 @@ public final class JwtPropertyKeys {
          * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
          */
         public static final String JWKS_CONTENT = JWKS_BASE + "content";
 
@@ -283,7 +283,7 @@ public final class JwtPropertyKeys {
 
         /**
          * The refresh interval in seconds for HTTP-based JWKS loading.
-         * Template: "cui.jwt.issuers.%s.jwks.http.refresh-interval-seconds"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.refresh-interval-seconds"
          * <p>
          * The interval in seconds at which to refresh the keys.
          * If set to 0, no time-based caching will be used.
@@ -293,13 +293,13 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
          */
         public static final String REFRESH_INTERVAL_SECONDS = HTTP_BASE + "refresh-interval-seconds";
 
         /**
          * The connection timeout in seconds for HTTP requests.
-         * Template: "cui.jwt.issuers.%s.jwks.http.connect-timeout-seconds"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.connect-timeout-seconds"
          * <p>
          * Sets the connection timeout in seconds for HTTP requests to JWKS endpoints.
          * This timeout controls how long to wait when establishing a connection to the remote server.
@@ -308,13 +308,13 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
          */
         public static final String CONNECT_TIMEOUT_SECONDS = HTTP_BASE + "connect-timeout-seconds";
 
         /**
          * The read timeout in seconds for HTTP requests.
-         * Template: "cui.jwt.issuers.%s.jwks.http.read-timeout-seconds"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.read-timeout-seconds"
          * <p>
          * Sets the read timeout in seconds for HTTP requests to JWKS endpoints.
          * This timeout controls how long to wait for data to be received from the remote server
@@ -324,13 +324,13 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
          */
         public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
 
         /**
          * The grace period in seconds for retired keys during rotation.
-         * Template: "cui.jwt.issuers.%s.jwks.http.key-rotation-grace-period-seconds"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.key-rotation-grace-period-seconds"
          * <p>
          * Sets the grace period for which retired keys remain valid after key rotation.
          * During this period, tokens signed with recently rotated keys can still be validated,
@@ -352,7 +352,7 @@ public final class JwtPropertyKeys {
 
         /**
          * The maximum number of retired key sets to retain.
-         * Template: "cui.jwt.issuers.%s.jwks.http.max-retired-key-sets"
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.max-retired-key-sets"
          * <p>
          * Sets the maximum number of retired key sets to keep in memory during the grace period.
          * This prevents unbounded memory growth when keys rotate frequently. Older retired
@@ -365,7 +365,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
+         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
          * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
          * @since 1.1
          */
@@ -385,7 +385,7 @@ public final class JwtPropertyKeys {
 
         /**
          * Enable Keycloak default roles mapper for realm_access.roles claim.
-         * Template: "cui.jwt.issuers.%s.keycloak.mappers.default-roles.enabled"
+         * Template: "sheriff.oauth.issuers.%s.keycloak.mappers.default-roles.enabled"
          * <p>
          * When enabled, this mapper extracts roles from Keycloak's standard
          * {@code realm_access.roles} claim and maps them to the expected
@@ -399,13 +399,13 @@ public final class JwtPropertyKeys {
          * Default value is {@code false}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper
+         * @see de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultRolesMapper
          */
         public static final String KEYCLOAK_DEFAULT_ROLES_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-roles.enabled";
 
         /**
          * Enable Keycloak default groups mapper for groups claim.
-         * Template: "cui.jwt.issuers.%s.keycloak.mappers.default-groups.enabled"
+         * Template: "sheriff.oauth.issuers.%s.keycloak.mappers.default-groups.enabled"
          * <p>
          * When enabled, this mapper processes Keycloak's standard {@code groups}
          * claim and ensures they are properly formatted for the CUI JWT library's
@@ -419,7 +419,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code false}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper
+         * @see de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultGroupsMapper
          */
         public static final String KEYCLOAK_DEFAULT_GROUPS_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-groups.enabled";
     }
@@ -484,9 +484,9 @@ public final class JwtPropertyKeys {
 
         /**
          * Interval for metrics collection in seconds.
-         * Template: "cui.jwt.metrics.collection.interval"
+         * Template: "sheriff.oauth.metrics.collection.interval"
          * <p>
-         * Controls how frequently the {@link de.cuioss.jwt.quarkus.metrics.JwtMetricsCollector}
+         * Controls how frequently the {@link de.cuioss.sheriff.oauth.quarkus.metrics.JwtMetricsCollector}
          * updates Micrometer metrics from the internal counters and monitors.
          * </p>
          * <p>
@@ -686,7 +686,7 @@ public final class JwtPropertyKeys {
 
         /**
          * Maximum number of access tokens to cache.
-         * Template: "cui.jwt.cache.access-token.max-size"
+         * Template: "sheriff.oauth.cache.access-token.max-size"
          * <p>
          * Controls the maximum number of validated access tokens that will be cached
          * to improve performance by avoiding redundant validations.
@@ -696,13 +696,13 @@ public final class JwtPropertyKeys {
          * Default value is {@code 1000}.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.cache.AccessTokenCacheConfig
+         * @see de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig
          */
         public static final String MAX_SIZE = BASE + ".max-size";
 
         /**
          * Interval in seconds between cache eviction runs.
-         * Template: "cui.jwt.cache.access-token.eviction-interval-seconds"
+         * Template: "sheriff.oauth.cache.access-token.eviction-interval-seconds"
          * <p>
          * Controls how frequently the cache checks for and removes expired tokens.
          * This helps maintain cache size and ensures expired tokens are not served
@@ -712,7 +712,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code 10} seconds.
          * </p>
          *
-         * @see de.cuioss.jwt.validation.cache.AccessTokenCacheConfig
+         * @see de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig
          */
         public static final String EVICTION_INTERVAL_SECONDS = BASE + ".eviction-interval-seconds";
     }

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark;
+package de.cuioss.sheriff.oauth.library.benchmark;
 
 import de.cuioss.benchmarking.common.token.TokenProvider;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
-import de.cuioss.jwt.validation.test.InMemoryKeyMaterialHandler;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.library.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.sheriff.oauth.library.test.InMemoryKeyMaterialHandler;
 import io.jsonwebtoken.Jwts;
 import lombok.Builder;
 import lombok.Getter;

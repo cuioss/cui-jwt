@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
 import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultGroupsMapper;
-import de.cuioss.jwt.validation.domain.claim.mapper.KeycloakDefaultRolesMapper;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultGroupsMapper;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultRolesMapper;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
 import org.eclipse.microprofile.config.Config;
 import org.jspecify.annotations.Nullable;
@@ -30,7 +30,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
 
 /**
  * Resolver for creating {@link IssuerConfig} instances from Quarkus configuration properties.

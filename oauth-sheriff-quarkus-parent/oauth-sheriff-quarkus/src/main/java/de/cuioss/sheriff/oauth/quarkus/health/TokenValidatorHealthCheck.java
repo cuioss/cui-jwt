@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.health;
+package de.cuioss.sheriff.oauth.quarkus.health;
 
-import de.cuioss.jwt.validation.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;

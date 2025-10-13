@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.Getter;
 
@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static de.cuioss.jwt.validation.domain.claim.ClaimName.*;
+import static de.cuioss.sheriff.oauth.library.domain.claim.ClaimName.*;
 
 /**
  * Defines the supported token types within the authentication system.

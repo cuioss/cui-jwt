@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.cache;
+package de.cuioss.sheriff.oauth.library.cache;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.InternalCacheException;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
-import de.cuioss.jwt.validation.metrics.MetricsTicker;
-import de.cuioss.jwt.validation.metrics.MetricsTickerFactory;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.InternalCacheException;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.metrics.MeasurementType;
+import de.cuioss.sheriff.oauth.library.metrics.MetricsTicker;
+import de.cuioss.sheriff.oauth.library.metrics.MetricsTickerFactory;
+import de.cuioss.sheriff.oauth.library.metrics.TokenValidatorMonitor;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.time.OffsetDateTime;

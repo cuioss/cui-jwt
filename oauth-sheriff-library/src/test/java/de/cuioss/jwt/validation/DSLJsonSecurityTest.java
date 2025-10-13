@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.jwt.validation.json.Jwks;
-import de.cuioss.jwt.validation.json.WellKnownResult;
+import de.cuioss.sheriff.oauth.library.json.Jwks;
+import de.cuioss.sheriff.oauth.library.json.WellKnownResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

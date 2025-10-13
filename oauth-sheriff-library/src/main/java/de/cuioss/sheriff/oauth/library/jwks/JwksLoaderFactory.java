@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks;
+package de.cuioss.sheriff.oauth.library.jwks;
 
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoader;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.jwks.key.JWKSKeyLoader;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.experimental.UtilityClass;
 

@@ -4,18 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
         <artifactId>benchmarking</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>cui-benchmarking-common</artifactId>
-    <name>CUI Benchmarking Common Infrastructure</name>
+    <artifactId>oauth-sheriff-benchmarking-common</artifactId>
+    <name>OAuth Sheriff Benchmarking Common Infrastructure</name>
     <description>Common benchmarking infrastructure with JMH integration for artifact generation during benchmark execution</description>
 
     <properties>
-        <maven.jar.plugin.automatic.module.name>de.cuioss.benchmarking.common</maven.jar.plugin.automatic.module.name>
+        <maven.jar.plugin.automatic.module.name>de.cuioss.sheriff.oauth.benchmarking.common</maven.jar.plugin.automatic.module.name>
     </properties>
 
     <dependencies>

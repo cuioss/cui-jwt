@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.jfr;
+package de.cuioss.sheriff.oauth.library.benchmark.jfr;
 
 import de.cuioss.benchmarking.common.jfr.JfrInstrumentation;
 import de.cuioss.tools.logging.CuiLogger;

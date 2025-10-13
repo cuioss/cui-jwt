@@ -18,10 +18,10 @@
  * Interceptor-based Bearer token validation for declarative security.
  * <p>
  * This package provides CDI interceptor support for automatic Bearer token validation
- * at method level using the {@link de.cuioss.jwt.quarkus.annotation.BearerAuth} annotation.
+ * at method level using the {@link de.cuioss.sheriff.oauth.quarkus.annotation.BearerAuth} annotation.
  * <p>
  * The interceptor validates Bearer tokens and automatically returns error responses for
- * failed validation. Validated token details can be accessed via {@link de.cuioss.jwt.quarkus.annotation.BearerToken}
+ * failed validation. Validated token details can be accessed via {@link de.cuioss.sheriff.oauth.quarkus.annotation.BearerToken}
  * parameter injection.
  * <p>
  * The interceptor pattern complements the existing producer pattern, providing
@@ -31,4 +31,4 @@
  * @author Oliver Wolff
  * @since 1.0
  */
-package de.cuioss.jwt.quarkus.interceptor;
+package de.cuioss.sheriff.oauth.quarkus.interceptor;

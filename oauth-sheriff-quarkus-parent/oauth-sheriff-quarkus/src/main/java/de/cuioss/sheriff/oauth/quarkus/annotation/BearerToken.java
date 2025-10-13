@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.annotation;
+package de.cuioss.sheriff.oauth.quarkus.annotation;
 
 import jakarta.enterprise.util.Nonbinding;
 import jakarta.inject.Qualifier;
@@ -27,14 +27,14 @@ import java.lang.annotation.Target;
  * CDI qualifier for injecting BearerTokenResult with validated token information from HTTP Authorization header.
  * <p>
  * This annotation allows specifying required scopes, roles, and groups that the bearer token
- * must contain for successful validation. The producer always returns a {@link de.cuioss.jwt.quarkus.producer.BearerTokenResult}
+ * must contain for successful validation. The producer always returns a {@link de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult}
  * object containing the validation status, the validated token (if successful), and detailed
  * error information (if validation failed).
  * <p>
  * <strong>Note:</strong> For declarative security with automatic validation, use {@link BearerAuth} instead.
  *
  * <h2>Usage Pattern: CDI Producer Pattern (Explicit Validation)</h2>
- * Inject {@link de.cuioss.jwt.quarkus.producer.BearerTokenResult} and manually check authorization:
+ * Inject {@link de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult} and manually check authorization:
  * <pre>{@code
  * @RequestScoped
  * @Path("/api")

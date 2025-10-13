@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline.validator;
+package de.cuioss.sheriff.oauth.library.pipeline.validator;
 
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.JWTValidationLogMessages;
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.token.TokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.token.TokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.RequiredArgsConstructor;
 
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * Validator for mandatory JWT claims based on token type.
  * <p>
  * This class validates that all mandatory claims for a specific token type are present and properly set.
- * The mandatory claims are defined by the {@link de.cuioss.jwt.validation.TokenType} and vary between
+ * The mandatory claims are defined by the {@link de.cuioss.sheriff.oauth.library.TokenType} and vary between
  * access tokens, ID tokens, and refresh tokens.
  * <p>
  * The validator checks both claim presence and claim value validity. For certain claims like "sub" (subject),

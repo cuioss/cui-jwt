@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.base;
+package de.cuioss.sheriff.oauth.library.benchmark.base;
 
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.LibraryMetricsExporter;
-import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.benchmark.LibraryMetricsExporter;
+import de.cuioss.sheriff.oauth.library.benchmark.MockTokenRepository;
+import de.cuioss.sheriff.oauth.library.metrics.TokenValidatorMonitorConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.TearDown;

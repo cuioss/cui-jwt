@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
-import de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper;
-import de.cuioss.jwt.validation.jwks.JwksLoader;
-import de.cuioss.jwt.validation.jwks.JwksLoaderFactory;
-import de.cuioss.jwt.validation.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.domain.claim.mapper.ClaimMapper;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.library.jwks.JwksLoaderFactory;
+import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.base.Preconditions;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
@@ -140,7 +140,7 @@ public class IssuerConfig implements LoadingStatusProvider {
      * Default value is {@code false} (subject claim is mandatory, RFC compliant).
      * </p>
      *
-     * @see de.cuioss.jwt.validation.domain.claim.ClaimName#SUBJECT
+     * @see de.cuioss.sheriff.oauth.library.domain.claim.ClaimName#SUBJECT
      * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
      */
     boolean claimSubOptional;
@@ -454,7 +454,7 @@ public class IssuerConfig implements LoadingStatusProvider {
          *
          * @param claimSubOptional {@code true} to make the subject claim optional, {@code false} to require it (RFC compliant)
          * @return this builder instance for method chaining
-         * @see de.cuioss.jwt.validation.domain.claim.ClaimName#SUBJECT
+         * @see de.cuioss.sheriff.oauth.library.domain.claim.ClaimName#SUBJECT
          * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
          */
         public IssuerConfigBuilder claimSubOptional(boolean claimSubOptional) {

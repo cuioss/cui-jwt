@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark;
+package de.cuioss.sheriff.oauth.library.benchmark;
 
 import de.cuioss.benchmarking.common.config.BenchmarkConfiguration;
 import de.cuioss.benchmarking.common.config.BenchmarkType;
@@ -44,9 +44,9 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
  * <p>
  * JFR data is automatically saved to: {@code target/benchmark-jfr-results/}
  *
- * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.CoreJfrBenchmark
- * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.ErrorJfrBenchmark
- * @see de.cuioss.jwt.validation.benchmark.jfr.benchmarks.MixedJfrBenchmark
+ * @see de.cuioss.sheriff.oauth.library.benchmark.jfr.benchmarks.CoreJfrBenchmark
+ * @see de.cuioss.sheriff.oauth.library.benchmark.jfr.benchmarks.ErrorJfrBenchmark
+ * @see de.cuioss.sheriff.oauth.library.benchmark.jfr.benchmarks.MixedJfrBenchmark
  */
 public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
 

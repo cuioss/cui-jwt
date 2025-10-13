@@ -25,9 +25,9 @@
  * allowing different validation settings for different token issuers.
  * </p>
  * <p>
- * All properties are prefixed with "cui.jwt".
+ * All properties are prefixed with "sheriff.oauth".
  * </p>
  * 
  * @since 1.0
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;

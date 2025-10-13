@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.domain.claim.mapper;
+package de.cuioss.sheriff.oauth.library.domain.claim.mapper;
 
 import com.dslplatform.json.DslJson;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.domain.claim.ClaimValue;
-import de.cuioss.jwt.validation.domain.claim.ClaimValueType;
-import de.cuioss.jwt.validation.json.MapRepresentation;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValueType;
+import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
 import de.cuioss.test.generator.junit.EnableGeneratorController;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.json.Json;

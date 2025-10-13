@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.cache;
+package de.cuioss.sheriff.oauth.library.cache;
 
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

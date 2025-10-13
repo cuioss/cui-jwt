@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark;
+package de.cuioss.sheriff.oauth.library.benchmark;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitorConfig;
+import de.cuioss.sheriff.oauth.library.metrics.MeasurementType;
+import de.cuioss.sheriff.oauth.library.metrics.TokenValidatorMonitor;
+import de.cuioss.sheriff.oauth.library.metrics.TokenValidatorMonitorConfig;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

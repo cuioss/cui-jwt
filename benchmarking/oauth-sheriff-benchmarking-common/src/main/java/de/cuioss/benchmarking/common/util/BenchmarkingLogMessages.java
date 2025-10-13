@@ -412,7 +412,7 @@ public final class BenchmarkingLogMessages {
         public static final LogRecord JFR_VARIANCE_COMMAND = LogRecordModel.builder()
                 .prefix(PREFIX)
                 .identifier(52)
-                .template("java -cp \"target/classes:target/dependency/*\" de.cuioss.jwt.validation.benchmark.jfr.JfrVarianceAnalyzer %s")
+                .template("java -cp \"target/classes:target/dependency/*\" de.cuioss.sheriff.oauth.library.benchmark.jfr.JfrVarianceAnalyzer %s")
                 .build();
 
         /** Message when iteration windows are parsed from timestamp file. */

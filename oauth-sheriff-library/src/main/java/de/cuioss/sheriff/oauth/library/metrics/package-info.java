@@ -37,4 +37,4 @@
  * @author Oliver Wolff
  * @since 1.0
  */
-package de.cuioss.jwt.validation.metrics;
+package de.cuioss.sheriff.oauth.library.metrics;

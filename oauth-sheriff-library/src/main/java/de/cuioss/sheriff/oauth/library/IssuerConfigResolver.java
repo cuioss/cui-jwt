@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
 import de.cuioss.http.client.LoaderStatus;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -27,9 +27,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.*;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.ERROR;
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.INFO;
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.ERROR;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
 
 /**
  * Thread-safe resolver for issuer configurations with async loading management.

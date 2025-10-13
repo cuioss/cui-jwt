@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.jwks.parser;
+package de.cuioss.sheriff.oauth.library.jwks.parser;
 
-import de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
-import de.cuioss.jwt.validation.json.JwkKey;
-import de.cuioss.jwt.validation.jwks.key.JwkKeyHandler;
-import de.cuioss.jwt.validation.jwks.key.KeyInfo;
-import de.cuioss.jwt.validation.security.JwkAlgorithmPreferences;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
+import de.cuioss.sheriff.oauth.library.json.JwkKey;
+import de.cuioss.sheriff.oauth.library.jwks.key.JwkKeyHandler;
+import de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo;
+import de.cuioss.sheriff.oauth.library.security.JwkAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter.EventType;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.security.spec.InvalidKeySpecException;

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.pipeline;
+package de.cuioss.sheriff.oauth.library.pipeline;
 
-import de.cuioss.jwt.validation.domain.claim.ClaimName;
-import de.cuioss.jwt.validation.json.JwtHeader;
-import de.cuioss.jwt.validation.json.MapRepresentation;
+import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.library.json.JwtHeader;
+import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
 
 import java.util.Arrays;
 import java.util.Base64;
@@ -39,7 +39,7 @@ import java.util.Optional;
  * <p>
  * <strong>Security Note:</strong> This record is not guaranteed to contain a validated token.
  * It is usually created by {@link NonValidatingJwtParser} and should be passed to
- * {@link de.cuioss.jwt.validation.pipeline.validator.TokenHeaderValidator}, {@link de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator}, and {@link de.cuioss.jwt.validation.pipeline.validator.TokenClaimValidator}
+ * {@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator}, {@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator}, and {@link de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator}
  * for proper validation.
  * <p>
  * The record provides immutability guarantees and value-based equality by default, making it

@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.well_known;
+package de.cuioss.sheriff.oauth.library.well_known;
 
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.LoadingStatusProvider;
 import de.cuioss.http.client.ResilientHttpHandler;
 import de.cuioss.http.client.result.HttpResult;
 import de.cuioss.http.client.retry.RetryStrategies;
-import de.cuioss.jwt.validation.json.WellKnownResult;
+import de.cuioss.sheriff.oauth.library.json.WellKnownResult;
 import de.cuioss.tools.logging.CuiLogger;
 
 import java.util.Optional;

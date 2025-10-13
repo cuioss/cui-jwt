@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.metrics;
+package de.cuioss.sheriff.oauth.library.metrics;
 
 import de.cuioss.http.client.retry.RetryContext;
 import de.cuioss.http.client.retry.RetryMetrics;
@@ -21,8 +21,8 @@ import de.cuioss.tools.logging.CuiLogger;
 
 import java.time.Duration;
 
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.INFO;
-import static de.cuioss.jwt.validation.JWTValidationLogMessages.WARN;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
 
 /**
  * JWT-specific implementation of {@link RetryMetrics} that integrates with the

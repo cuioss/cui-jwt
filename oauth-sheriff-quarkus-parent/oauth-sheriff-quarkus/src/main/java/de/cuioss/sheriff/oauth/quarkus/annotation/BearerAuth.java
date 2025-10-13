@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.annotation;
+package de.cuioss.sheriff.oauth.quarkus.annotation;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.enterprise.util.Nonbinding;
@@ -92,7 +92,7 @@ import java.lang.annotation.Target;
  *
  * <h2>Error Handling:</h2>
  * <ul>
- *   <li>Methods returning {@link jakarta.ws.rs.core.Response}: Automatic error response via {@link de.cuioss.jwt.quarkus.producer.BearerTokenResponseFactory}</li>
+ *   <li>Methods returning {@link jakarta.ws.rs.core.Response}: Automatic error response via {@link de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResponseFactory}</li>
  *   <li>Other return types: Validation still occurs, access token via {@link BearerToken} parameter injection</li>
  * </ul>
  *
@@ -130,8 +130,8 @@ import java.lang.annotation.Target;
  *
  * @author Oliver Wolff
  * @see BearerToken
- * @see de.cuioss.jwt.quarkus.interceptor.BearerTokenInterceptor
- * @see de.cuioss.jwt.quarkus.producer.BearerTokenResult
+ * @see de.cuioss.sheriff.oauth.quarkus.interceptor.BearerTokenInterceptor
+ * @see de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult
  * @since 1.0
  */
 @InterceptorBinding

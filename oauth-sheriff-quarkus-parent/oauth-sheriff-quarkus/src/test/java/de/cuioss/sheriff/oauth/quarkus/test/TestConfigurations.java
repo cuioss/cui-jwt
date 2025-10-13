@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.test;
+package de.cuioss.sheriff.oauth.quarkus.test;
 
-import de.cuioss.jwt.quarkus.config.JwtPropertyKeys;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
 
 import java.util.HashMap;
 import java.util.Map;

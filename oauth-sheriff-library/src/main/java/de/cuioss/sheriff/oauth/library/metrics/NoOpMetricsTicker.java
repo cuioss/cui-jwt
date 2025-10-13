@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.metrics;
+package de.cuioss.sheriff.oauth.library.metrics;
 
 /**
  * No-operation implementation of {@link MetricsTicker} used when metrics recording is disabled.

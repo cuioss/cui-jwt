@@ -22,10 +22,10 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.ClaimName} - Enumeration of standard JWT claim names with their expected value types</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.ClaimValue} - Represents a claim value with type information</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.ClaimValueType} - Enumeration of supported claim value types</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.CollectionClaimHandler} - Utility for handling collection-based claims like scopes, roles, and groups</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.ClaimName} - Enumeration of standard JWT claim names with their expected value types</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue} - Represents a claim value with type information</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.ClaimValueType} - Enumeration of supported claim value types</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.CollectionClaimHandler} - Utility for handling collection-based claims like scopes, roles, and groups</li>
  * </ul>
  * <p>
  * The claim processing supports:
@@ -37,7 +37,7 @@
  *   <li>Custom claims through extension points</li>
  * </ul>
  * <p>
- * The {@link de.cuioss.jwt.validation.domain.claim.mapper} subpackage contains mappers for converting between JSON and typed claim values.
+ * The {@link de.cuioss.sheriff.oauth.library.domain.claim.mapper} subpackage contains mappers for converting between JSON and typed claim values.
  * <p>
  * This package implements parts of the following requirements:
  * <ul>
@@ -55,4 +55,4 @@
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519">RFC 7519 - JSON Web Token (JWT)</a>
  * @see <a href="https://openid.net/specs/openid-connect-core-1_0.html">OpenID Connect Core 1.0</a>
  */
-package de.cuioss.jwt.validation.domain.claim;
+package de.cuioss.sheriff.oauth.library.domain.claim;

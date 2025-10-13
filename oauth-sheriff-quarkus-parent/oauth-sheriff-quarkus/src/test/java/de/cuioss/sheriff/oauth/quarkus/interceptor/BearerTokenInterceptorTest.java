@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.interceptor;
+package de.cuioss.sheriff.oauth.quarkus.interceptor;
 
-import de.cuioss.jwt.quarkus.annotation.BearerAuth;
-import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
-import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
-import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
-import de.cuioss.jwt.validation.test.generator.ClaimControlParameter;
+import de.cuioss.sheriff.oauth.library.TokenType;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.test.generator.ClaimControlParameter;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerAuth;
+import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenProducer;
+import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import jakarta.interceptor.InvocationContext;

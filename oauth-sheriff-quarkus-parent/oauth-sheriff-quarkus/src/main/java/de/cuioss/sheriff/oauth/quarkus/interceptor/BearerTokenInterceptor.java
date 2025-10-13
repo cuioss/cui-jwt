@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.interceptor;
+package de.cuioss.sheriff.oauth.quarkus.interceptor;
 
-import de.cuioss.jwt.quarkus.annotation.BearerAuth;
-import de.cuioss.jwt.quarkus.producer.BearerTokenProducer;
-import de.cuioss.jwt.quarkus.producer.BearerTokenResult;
+import de.cuioss.sheriff.oauth.quarkus.annotation.BearerAuth;
+import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenProducer;
+import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult;
 import de.cuioss.tools.logging.CuiLogger;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 import jakarta.annotation.Priority;
@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_ANNOTATION_NOT_FOUND;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.WARN.BEARER_TOKEN_ANNOTATION_NOT_FOUND;
 
 /**
  * Interceptor for declarative Bearer token validation at method level.

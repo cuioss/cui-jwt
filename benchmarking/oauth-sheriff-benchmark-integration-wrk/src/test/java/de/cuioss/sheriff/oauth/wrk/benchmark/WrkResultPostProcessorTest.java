@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.wrk.benchmark;
+package de.cuioss.sheriff.oauth.wrk.benchmark;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -26,7 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import static de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor.*;
+import static de.cuioss.sheriff.oauth.wrk.benchmark.WrkResultPostProcessor.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

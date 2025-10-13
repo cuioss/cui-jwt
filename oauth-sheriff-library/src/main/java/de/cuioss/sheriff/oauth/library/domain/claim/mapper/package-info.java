@@ -18,16 +18,16 @@
  * <p>
  * These mappers implement the strategy pattern for claim extraction and conversion, 
  * allowing the library to handle different claim formats and types consistently.
- * They are used by the {@link de.cuioss.jwt.validation.domain.claim.ClaimName} enum
- * to convert JSON claim values to strongly-typed {@link de.cuioss.jwt.validation.domain.claim.ClaimValue} objects.
+ * They are used by the {@link de.cuioss.sheriff.oauth.library.domain.claim.ClaimName} enum
+ * to convert JSON claim values to strongly-typed {@link de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue} objects.
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.mapper.ClaimMapper} - Base interface for claim mappers</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.mapper.IdentityMapper} - Maps string values directly</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.mapper.JsonCollectionMapper} - Maps JSON arrays to collections</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.mapper.OffsetDateTimeMapper} - Maps numeric timestamps to OffsetDateTime</li>
- *   <li>{@link de.cuioss.jwt.validation.domain.claim.mapper.ScopeMapper} - Special mapper for the 'scope' claim</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.mapper.ClaimMapper} - Base interface for claim mappers</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.mapper.IdentityMapper} - Maps string values directly</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.mapper.JsonCollectionMapper} - Maps JSON arrays to collections</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.mapper.OffsetDateTimeMapper} - Maps numeric timestamps to OffsetDateTime</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.domain.claim.mapper.ScopeMapper} - Special mapper for the 'scope' claim</li>
  * </ul>
  * <p>
  * The mappers handle various claim formats including:
@@ -53,7 +53,7 @@
  * 
  * @author Oliver Wolff
  * @since 1.0
- * @see de.cuioss.jwt.validation.domain.claim.ClaimName
- * @see de.cuioss.jwt.validation.domain.claim.ClaimValue
+ * @see de.cuioss.sheriff.oauth.library.domain.claim.ClaimName
+ * @see de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue
  */
-package de.cuioss.jwt.validation.domain.claim.mapper;
+package de.cuioss.sheriff.oauth.library.domain.claim.mapper;

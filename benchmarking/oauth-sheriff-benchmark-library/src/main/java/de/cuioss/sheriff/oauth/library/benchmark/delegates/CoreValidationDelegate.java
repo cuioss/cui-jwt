@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark.delegates;
+package de.cuioss.sheriff.oauth.library.benchmark.delegates;
 
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.benchmark.MockTokenRepository;
-import de.cuioss.jwt.validation.domain.token.AccessTokenContent;
-import de.cuioss.jwt.validation.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.benchmark.MockTokenRepository;
+import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.benchmark;
+package de.cuioss.sheriff.oauth.library.benchmark;
 
 import de.cuioss.benchmarking.common.metrics.MetricsJsonExporter;
-import de.cuioss.jwt.validation.metrics.MeasurementType;
-import de.cuioss.jwt.validation.metrics.TokenValidatorMonitor;
+import de.cuioss.sheriff.oauth.library.metrics.MeasurementType;
+import de.cuioss.sheriff.oauth.library.metrics.TokenValidatorMonitor;
 import de.cuioss.tools.concurrent.StripedRingBufferStatistics;
 import de.cuioss.tools.logging.CuiLogger;
 

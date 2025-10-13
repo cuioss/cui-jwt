@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation;
+package de.cuioss.sheriff.oauth.library;
 
-import de.cuioss.jwt.validation.test.generator.TestTokenGenerators;
+import de.cuioss.sheriff.oauth.library.test.generator.TestTokenGenerators;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 

@@ -21,9 +21,9 @@
  * <p>
  * Key components:
  * <ul>
- *   <li>{@link de.cuioss.jwt.validation.jwks.key.KeyInfo} - Holds information about a key, including the key itself and its algorithm</li>
- *   <li>{@link de.cuioss.jwt.validation.jwks.key.JwkKeyHandler} - Handles parsing and conversion of JWK keys</li>
- *   <li>{@link de.cuioss.jwt.validation.jwks.key.JWKSKeyLoader} - Loads and manages keys from a JWKS</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo} - Holds information about a key, including the key itself and its algorithm</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.key.JwkKeyHandler} - Handles parsing and conversion of JWK keys</li>
+ *   <li>{@link de.cuioss.sheriff.oauth.library.jwks.key.JWKSKeyLoader} - Loads and manages keys from a JWKS</li>
  * </ul>
  * <p>
  * This package supports cryptographic agility by handling different key types and algorithms,
@@ -48,8 +48,8 @@
  * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#_jwksloader">Technical Components Specification - JwksLoader</a>
  * 
  * @since 1.0
- * @see de.cuioss.jwt.validation.jwks.JwksLoader
- * @see de.cuioss.jwt.validation.pipeline.validator.TokenSignatureValidator
+ * @see de.cuioss.sheriff.oauth.library.jwks.JwksLoader
+ * @see de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc7517">RFC 7517 - JSON Web Key (JWK)</a>
  */
-package de.cuioss.jwt.validation.jwks.key;
+package de.cuioss.sheriff.oauth.library.jwks.key;

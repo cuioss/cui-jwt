@@ -5,14 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
         <artifactId>benchmarking</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>benchmark-integration-wrk</artifactId>
-    <name>WRK-based JWT Integration Benchmarks</name>
-    <description>WRK-based HTTP benchmarks for JWT validation endpoints with integration test infrastructure</description>
+    <artifactId>oauth-sheriff-benchmark-integration-wrk</artifactId>
+    <name>OAuth Sheriff WRK-based Integration Benchmarks</name>
+    <description>WRK-based HTTP benchmarks for OAuth/JWT validation endpoints with integration test infrastructure</description>
 
     <properties>
         <!-- Skip benchmarks by default (enable with -Pbenchmark) -->
@@ -22,18 +22,18 @@
         <skip.container.lifecycle>false</skip.container.lifecycle>
 
         <!-- Scripts location -->
-        <integration.scripts.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts</integration.scripts.dir>
+        <integration.scripts.dir>${project.basedir}/../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/scripts</integration.scripts.dir>
 
         <!-- Docker compose directory for WRK benchmarks -->
-        <integration.compose.dir>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</integration.compose.dir>
+        <integration.compose.dir>${project.basedir}/../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests</integration.compose.dir>
 
         <!-- Integration test service URLs (host access via published ports) -->
         <integration.service.url>https://localhost:10443</integration.service.url>
         <keycloak.url>https://localhost:1443</keycloak.url>
         <quarkus.metrics.url>https://localhost:10443</quarkus.metrics.url>
 
-        <!-- Note: WRK runs in docker-compose with service names (cui-jwt-integration-tests:8443) -->
-        <!-- Network topology managed in cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/docker-compose.yml -->
+        <!-- Note: WRK runs in docker-compose with service names (oauth-sheriff-integration-tests:8443) -->
+        <!-- Network topology managed in oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/docker-compose.yml -->
 
         <!-- WRK Configuration Properties -->
         <wrk.duration>60s</wrk.duration>  <!-- Default: 1 minute per benchmark -->
@@ -53,8 +53,8 @@
     <dependencies>
         <!-- Core benchmark common utilities -->
         <dependency>
-            <groupId>de.cuioss.jwt</groupId>
-            <artifactId>cui-benchmarking-common</artifactId>
+            <groupId>de.cuioss.sheriff.oauth</groupId>
+            <artifactId>oauth-sheriff-benchmarking-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -236,7 +236,7 @@
                         </goals>
                         <configuration>
                             <skip>${skip.benchmark}</skip>
-                            <mainClass>de.cuioss.jwt.wrk.benchmark.WrkResultPostProcessor</mainClass>
+                            <mainClass>de.cuioss.sheriff.oauth.wrk.benchmark.WrkResultPostProcessor</mainClass>
                             <arguments>
                                 <argument>${wrk.results.dir}</argument>
                             </arguments>
@@ -297,7 +297,7 @@
                                         <argument>-Pintegration-tests</argument>
                                         <argument>-DskipTests</argument>
                                     </arguments>
-                                    <workingDirectory>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <workingDirectory>${project.basedir}/../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests</workingDirectory>
                                 </configuration>
                             </execution>
 
@@ -401,7 +401,7 @@
                                     <arguments>
                                         <argument>clean</argument>
                                     </arguments>
-                                    <workingDirectory>${project.basedir}/../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests</workingDirectory>
+                                    <workingDirectory>${project.basedir}/../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests</workingDirectory>
                                 </configuration>
                             </execution>
                         </executions>

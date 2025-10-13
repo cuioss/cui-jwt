@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.config;
+package de.cuioss.sheriff.oauth.quarkus.config;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,7 +32,7 @@ class JwtPropertyKeysTest {
         @Test
         @DisplayName("should have correct prefix")
         void shouldHaveCorrectPrefix() {
-            assertEquals("cui.jwt", JwtPropertyKeys.PREFIX);
+            assertEquals("sheriff.oauth", JwtPropertyKeys.PREFIX);
         }
 
         @Test
@@ -49,7 +49,7 @@ class JwtPropertyKeysTest {
         @Test
         @DisplayName("should have correct base path")
         void shouldHaveCorrectBasePath() {
-            assertEquals("cui.jwt.parser", JwtPropertyKeys.PARSER.BASE);
+            assertEquals("sheriff.oauth.parser", JwtPropertyKeys.PARSER.BASE);
         }
 
         @Test
@@ -71,7 +71,7 @@ class JwtPropertyKeysTest {
         @DisplayName("should format issuer base property correctly")
         void shouldFormatIssuerBasePropertyCorrectly() {
             var issuerName = "default";
-            var expected = "cui.jwt.issuers.default.";
+            var expected = "sheriff.oauth.issuers.default.";
             var actual = JwtPropertyKeys.ISSUERS.BASE.formatted(issuerName);
 
             assertEquals(expected, actual);
@@ -81,7 +81,7 @@ class JwtPropertyKeysTest {
         @DisplayName("should format issuer enabled property correctly")
         void shouldFormatIssuerEnabledPropertyCorrectly() {
             var issuerName = "keycloak";
-            var expected = "cui.jwt.issuers.keycloak.enabled";
+            var expected = "sheriff.oauth.issuers.keycloak.enabled";
             var actual = JwtPropertyKeys.ISSUERS.ENABLED.formatted(issuerName);
 
             assertEquals(expected, actual);
@@ -91,7 +91,7 @@ class JwtPropertyKeysTest {
         @DisplayName("should format JWKS URL property correctly")
         void shouldFormatJwksUrlPropertyCorrectly() {
             var issuerName = "auth0";
-            var expected = "cui.jwt.issuers.auth0.jwks.http.url";
+            var expected = "sheriff.oauth.issuers.auth0.jwks.http.url";
             var actual = JwtPropertyKeys.ISSUERS.JWKS_URL.formatted(issuerName);
 
             assertEquals(expected, actual);
@@ -101,7 +101,7 @@ class JwtPropertyKeysTest {
         @DisplayName("should format well-known URL property correctly")
         void shouldFormatWellKnownUrlPropertyCorrectly() {
             var issuerName = "oidc";
-            var expected = "cui.jwt.issuers.oidc.jwks.http.well-known-url";
+            var expected = "sheriff.oauth.issuers.oidc.jwks.http.well-known-url";
             var actual = JwtPropertyKeys.ISSUERS.WELL_KNOWN_URL.formatted(issuerName);
 
             assertEquals(expected, actual);
@@ -115,13 +115,13 @@ class JwtPropertyKeysTest {
         @Test
         @DisplayName("should have correct health base path")
         void shouldHaveCorrectHealthBasePath() {
-            assertEquals("cui.jwt.health", JwtPropertyKeys.HEALTH.BASE);
+            assertEquals("sheriff.oauth.health", JwtPropertyKeys.HEALTH.BASE);
         }
 
         @Test
         @DisplayName("should have correct JWKS health properties")
         void shouldHaveCorrectJwksHealthProperties() {
-            assertEquals("cui.jwt.health.jwks", JwtPropertyKeys.HEALTH.JWKS.BASE);
+            assertEquals("sheriff.oauth.health.jwks", JwtPropertyKeys.HEALTH.JWKS.BASE);
             assertTrue(JwtPropertyKeys.HEALTH.JWKS.CACHE_SECONDS.startsWith(JwtPropertyKeys.HEALTH.JWKS.BASE));
             assertTrue(JwtPropertyKeys.HEALTH.JWKS.TIMEOUT_SECONDS.startsWith(JwtPropertyKeys.HEALTH.JWKS.BASE));
         }
@@ -134,8 +134,8 @@ class JwtPropertyKeysTest {
         @Test
         @DisplayName("should have correct metrics base paths")
         void shouldHaveCorrectMetricsBasePaths() {
-            assertEquals("cui.jwt.validation", JwtPropertyKeys.METRICS.BASE);
-            assertEquals("cui.jwt.jwks", JwtPropertyKeys.METRICS.JWKS_BASE);
+            assertEquals("sheriff.oauth.validation", JwtPropertyKeys.METRICS.BASE);
+            assertEquals("sheriff.oauth.jwks", JwtPropertyKeys.METRICS.JWKS_BASE);
         }
 
         @Test

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.metrics;
+package de.cuioss.sheriff.oauth.quarkus.metrics;
 
-import de.cuioss.jwt.quarkus.config.JwtTestProfile;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
-import de.cuioss.jwt.validation.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.quarkus.config.JwtTestProfile;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.micrometer.core.instrument.Counter;
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Collection;
 import java.util.Objects;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
 import static de.cuioss.test.juli.LogAsserts.assertLogMessagePresent;
 import static org.junit.jupiter.api.Assertions.*;
 

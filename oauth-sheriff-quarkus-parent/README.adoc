@@ -165,7 +165,7 @@ This allows you to monitor and alert on security-related incidents.
 
 The following metrics are available:
 
-* `cui.jwt.validation.errors` - Counter for validation errors by type
+* `sheriff.oauth.validation.errors` - Counter for validation errors by type
 
 Each metric includes relevant tags for filtering:
 

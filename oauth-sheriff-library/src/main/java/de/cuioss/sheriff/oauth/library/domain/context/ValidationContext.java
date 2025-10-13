@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.domain.context;
+package de.cuioss.sheriff.oauth.library.domain.context;
 
 import lombok.Getter;
 

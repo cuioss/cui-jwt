@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.well_known;
+package de.cuioss.sheriff.oauth.library.well_known;
 
 import de.cuioss.http.client.LoaderStatus;
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.jwt.validation.test.dispatcher.WellKnownDispatcher;
+import de.cuioss.sheriff.oauth.library.test.dispatcher.WellKnownDispatcher;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;

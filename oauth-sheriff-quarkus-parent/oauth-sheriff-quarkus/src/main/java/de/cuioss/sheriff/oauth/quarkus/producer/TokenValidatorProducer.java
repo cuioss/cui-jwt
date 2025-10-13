@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.quarkus.producer;
+package de.cuioss.sheriff.oauth.quarkus.producer;
 
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.jwt.quarkus.config.AccessTokenCacheConfigResolver;
-import de.cuioss.jwt.quarkus.config.IssuerConfigResolver;
-import de.cuioss.jwt.quarkus.config.ParserConfigResolver;
-import de.cuioss.jwt.quarkus.config.RetryStrategyConfigResolver;
-import de.cuioss.jwt.validation.IssuerConfig;
-import de.cuioss.jwt.validation.ParserConfig;
-import de.cuioss.jwt.validation.TokenValidator;
-import de.cuioss.jwt.validation.cache.AccessTokenCacheConfig;
-import de.cuioss.jwt.validation.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.quarkus.config.AccessTokenCacheConfigResolver;
+import de.cuioss.sheriff.oauth.quarkus.config.IssuerConfigResolver;
+import de.cuioss.sheriff.oauth.quarkus.config.ParserConfigResolver;
+import de.cuioss.sheriff.oauth.quarkus.config.RetryStrategyConfigResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,7 +33,7 @@ import org.eclipse.microprofile.config.Config;
 
 import java.util.List;
 
-import static de.cuioss.jwt.quarkus.CuiJwtQuarkusLogMessages.INFO;
+import static de.cuioss.sheriff.oauth.quarkus.CuiJwtQuarkusLogMessages.INFO;
 
 /**
  * CDI producer for JWT validation related instances.

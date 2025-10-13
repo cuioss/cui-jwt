@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.jwt.validation.test.junit;
+package de.cuioss.sheriff.oauth.library.test.junit;
 
-import de.cuioss.jwt.validation.TokenType;
-import de.cuioss.jwt.validation.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.library.TokenType;
+import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import java.lang.annotation.*;
@@ -26,7 +26,7 @@ import java.lang.annotation.*;
  * <p>
  * This annotation is used to inject {@link TestTokenHolder}
  * instances into test methods. The token type determines which generator method from
- * {@link de.cuioss.jwt.validation.test.generator.TestTokenGenerators} will be used.
+ * {@link de.cuioss.sheriff.oauth.library.test.generator.TestTokenGenerators} will be used.
  * <p>
  * Example usage:
  * <pre>
@@ -40,7 +40,7 @@ import java.lang.annotation.*;
  * </pre>
  *
  * @author Oliver Wolff
- * @see de.cuioss.jwt.validation.test.generator.TestTokenGenerators
+ * @see de.cuioss.sheriff.oauth.library.test.generator.TestTokenGenerators
  * @see TestTokenHolder
  */
 @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
