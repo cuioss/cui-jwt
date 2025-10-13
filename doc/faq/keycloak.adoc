@@ -20,7 +20,7 @@ Common issues and solutions when integrating the CUI JWT library with Keycloak.
 
 === Problem: Missing 'sub' Claim
 
-*Error:* `CUI_JWT_QUARKUS-124: Bearer token validation failed: Missing mandatory claims: [sub]`
+*Error:* `OAUTH_SHERIFF_QUARKUS-124: Bearer token validation failed: Missing mandatory claims: [sub]`
 
 *Cause:* Keycloak access tokens don't include the `sub` claim by default, which is mandatory for ACCESS_TOKEN and ID_TOKEN types per RFC 7519.
 

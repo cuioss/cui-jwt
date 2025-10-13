@@ -44,8 +44,8 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 
 === Benchmarking
 * xref:../benchmarking/README.adoc[Benchmarking Overview]
-* xref:../benchmarking/benchmark-library/README.adoc[Benchmark Library]
-* xref:../benchmarking/benchmark-integration-wrk/README.adoc[WRK Load Testing]
+* xref:../benchmarking/oauth-sheriff-benchmark-core/README.adoc[Benchmark Library]
+* xref:../benchmarking/oauth-sheriff-benchmark-integration-wrk/README.adoc[WRK Load Testing]
 
 ==== Benchmark Documentation
 * xref:../benchmarking/doc/workflow.adoc[Benchmark Workflow]
@@ -87,5 +87,5 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 * xref:../oauth-sheriff-quarkus-parent/doc/LogMessages.adoc[Log Messages - Quarkus]
 
 == Analysis and Reports
-* xref:../benchmarking/benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis - Library]
+* xref:../benchmarking/oauth-sheriff-benchmark-core/doc/Analysis-08.2025.adoc[Benchmark Analysis - Library]
 * xref:../oauth-sheriff-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[GraalVM RSA Analysis]

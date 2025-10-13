@@ -138,10 +138,10 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-001 |RESOLVING_ISSUER_CONFIGURATIONS |"Resolving issuer configurations from properties" |Indicates the start of issuer configuration resolution from application properties
-|CUI_JWT_QUARKUS-002 |RESOLVED_ISSUER_CONFIGURATION |"Resolved issuer configuration: %s" |Shows a single resolved issuer configuration with its details
-|CUI_JWT_QUARKUS-003 |RESOLVED_ENABLED_ISSUER_CONFIGURATIONS |"Resolved %s enabled issuer configurations" |Summary count of all enabled issuer configurations found
-|CUI_JWT_QUARKUS-004 |RESOLVED_PARSER_CONFIG |"Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s" |Shows the resolved JWT parser configuration limits
+|OAUTH_SHERIFF_QUARKUS-001 |RESOLVING_ISSUER_CONFIGURATIONS |"Resolving issuer configurations from properties" |Indicates the start of issuer configuration resolution from application properties
+|OAUTH_SHERIFF_QUARKUS-002 |RESOLVED_ISSUER_CONFIGURATION |"Resolved issuer configuration: %s" |Shows a single resolved issuer configuration with its details
+|OAUTH_SHERIFF_QUARKUS-003 |RESOLVED_ENABLED_ISSUER_CONFIGURATIONS |"Resolved %s enabled issuer configurations" |Summary count of all enabled issuer configurations found
+|OAUTH_SHERIFF_QUARKUS-004 |RESOLVED_PARSER_CONFIG |"Resolved ParserConfig: maxTokenSize=%s bytes, maxPayloadSize=%s bytes, maxStringLength=%s, maxBufferSize=%s" |Shows the resolved JWT parser configuration limits
 |===
 
 ==== Validation Messages (011-020)
@@ -150,9 +150,9 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-011 |INITIALIZING_JWT_VALIDATION_COMPONENTS |"Initializing JWT validation components from configuration" |Indicates the start of JWT validation component initialization
-|CUI_JWT_QUARKUS-012 |JWT_VALIDATION_COMPONENTS_INITIALIZED |"JWT validation components initialized successfully with %s issuers" |Confirms successful initialization with issuer count
-|CUI_JWT_QUARKUS-013 |RESOLVING_ACCESS_LOG_FILTER_CONFIG |"Resolving access log filter configuration from properties" |Indicates the start of access log filter configuration resolution
+|OAUTH_SHERIFF_QUARKUS-011 |INITIALIZING_JWT_VALIDATION_COMPONENTS |"Initializing JWT validation components from configuration" |Indicates the start of JWT validation component initialization
+|OAUTH_SHERIFF_QUARKUS-012 |JWT_VALIDATION_COMPONENTS_INITIALIZED |"JWT validation components initialized successfully with %s issuers" |Confirms successful initialization with issuer count
+|OAUTH_SHERIFF_QUARKUS-013 |RESOLVING_ACCESS_LOG_FILTER_CONFIG |"Resolving access log filter configuration from properties" |Indicates the start of access log filter configuration resolution
 |===
 
 ==== Metrics Messages (021-030)
@@ -161,8 +161,8 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-021 |INITIALIZING_JWT_METRICS_COLLECTOR |"Initializing JwtMetricsCollector" |Indicates the start of JWT metrics collector initialization
-|CUI_JWT_QUARKUS-022 |JWT_METRICS_COLLECTOR_INITIALIZED |"JwtMetricsCollector initialized with %s event types" |Confirms successful initialization with event type count
+|OAUTH_SHERIFF_QUARKUS-021 |INITIALIZING_JWT_METRICS_COLLECTOR |"Initializing JwtMetricsCollector" |Indicates the start of JWT metrics collector initialization
+|OAUTH_SHERIFF_QUARKUS-022 |JWT_METRICS_COLLECTOR_INITIALIZED |"JwtMetricsCollector initialized with %s event types" |Confirms successful initialization with event type count
 |===
 
 ==== Cache Messages (041-050)
@@ -171,9 +171,9 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-041 |RESOLVING_ACCESS_TOKEN_CACHE_CONFIG |"Resolving access token cache configuration from properties" |Indicates the start of access token cache configuration resolution
-|CUI_JWT_QUARKUS-042 |ACCESS_TOKEN_CACHE_DISABLED |"Access token cache disabled (maxSize=0)" |Indicates that the access token cache is disabled
-|CUI_JWT_QUARKUS-043 |ACCESS_TOKEN_CACHE_CONFIGURED |"Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s" |Shows the configured access token cache settings
+|OAUTH_SHERIFF_QUARKUS-041 |RESOLVING_ACCESS_TOKEN_CACHE_CONFIG |"Resolving access token cache configuration from properties" |Indicates the start of access token cache configuration resolution
+|OAUTH_SHERIFF_QUARKUS-042 |ACCESS_TOKEN_CACHE_DISABLED |"Access token cache disabled (maxSize=0)" |Indicates that the access token cache is disabled
+|OAUTH_SHERIFF_QUARKUS-043 |ACCESS_TOKEN_CACHE_CONFIGURED |"Access token cache configured: maxSize=%s, evictionIntervalSeconds=%s" |Shows the configured access token cache settings
 |===
 
 ==== Metrics Management Messages (051-060)
@@ -182,8 +182,8 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-051 |CLEARING_JWT_METRICS |"Clearing all JWT metrics" |Indicates that all JWT metrics are being cleared
-|CUI_JWT_QUARKUS-052 |JWT_METRICS_CLEARED |"JWT metrics cleared successfully" |Confirms successful clearing of JWT metrics
+|OAUTH_SHERIFF_QUARKUS-051 |CLEARING_JWT_METRICS |"Clearing all JWT metrics" |Indicates that all JWT metrics are being cleared
+|OAUTH_SHERIFF_QUARKUS-052 |JWT_METRICS_CLEARED |"JWT metrics cleared successfully" |Confirms successful clearing of JWT metrics
 |===
 
 ==== JWKS Startup Messages (061-070)
@@ -192,11 +192,11 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-060 |JWKS_STARTUP_SERVICE_INITIALIZED |"JWKS startup service activated for background key loading" |Indicates that the JWKS startup service has been activated
-|CUI_JWT_QUARKUS-061 |STARTING_ASYNCHRONOUS_JWKS_INITIALIZATION |"Starting asynchronous JWKS initialization for %s issuer(s)" |Indicates the start of background JWKS loading with issuer count
-|CUI_JWT_QUARKUS-062 |NO_ISSUER_CONFIGURATIONS_FOUND |"No issuer configurations found - skipping JWKS initialization" |Indicates that JWKS initialization is skipped due to no configured issuers
-|CUI_JWT_QUARKUS-063 |BACKGROUND_JWKS_INITIALIZATION_COMPLETED |"Background JWKS initialization completed successfully" |Confirms successful completion of background JWKS initialization
-|CUI_JWT_QUARKUS-064 |BACKGROUND_JWKS_LOADING_COMPLETED_FOR_ISSUER |"Background JWKS loading completed for issuer: %s with status: %s" |Shows the completion status for a specific issuer's JWKS loading
+|OAUTH_SHERIFF_QUARKUS-060 |JWKS_STARTUP_SERVICE_INITIALIZED |"JWKS startup service activated for background key loading" |Indicates that the JWKS startup service has been activated
+|OAUTH_SHERIFF_QUARKUS-061 |STARTING_ASYNCHRONOUS_JWKS_INITIALIZATION |"Starting asynchronous JWKS initialization for %s issuer(s)" |Indicates the start of background JWKS loading with issuer count
+|OAUTH_SHERIFF_QUARKUS-062 |NO_ISSUER_CONFIGURATIONS_FOUND |"No issuer configurations found - skipping JWKS initialization" |Indicates that JWKS initialization is skipped due to no configured issuers
+|OAUTH_SHERIFF_QUARKUS-063 |BACKGROUND_JWKS_INITIALIZATION_COMPLETED |"Background JWKS initialization completed successfully" |Confirms successful completion of background JWKS initialization
+|OAUTH_SHERIFF_QUARKUS-064 |BACKGROUND_JWKS_LOADING_COMPLETED_FOR_ISSUER |"Background JWKS loading completed for issuer: %s with status: %s" |Shows the completion status for a specific issuer's JWKS loading
 |===
 
 ==== Access Log Filter Messages (065-070)
@@ -205,8 +205,8 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-065 |CUSTOM_ACCESS_LOG_FILTER_INITIALIZED |"CustomAccessLogFilter initialized: %s" |Shows the initialized access log filter configuration
-|CUI_JWT_QUARKUS-066 |ACCESS_LOG_ENTRY |"%s" |Individual access log entry in the configured format
+|OAUTH_SHERIFF_QUARKUS-065 |CUSTOM_ACCESS_LOG_FILTER_INITIALIZED |"CustomAccessLogFilter initialized: %s" |Shows the initialized access log filter configuration
+|OAUTH_SHERIFF_QUARKUS-066 |ACCESS_LOG_ENTRY |"%s" |Individual access log entry in the configured format
 |===
 
 === Quarkus WARN Level (100-199)
@@ -217,7 +217,7 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-100 |ERROR_CHECKING_JWKS_LOADER |"Error checking JWKS loader for issuer %s: %s" |Indicates an error occurred while checking JWKS loader status in health check
+|OAUTH_SHERIFF_QUARKUS-100 |ERROR_CHECKING_JWKS_LOADER |"Error checking JWKS loader for issuer %s: %s" |Indicates an error occurred while checking JWKS loader status in health check
 |===
 
 ==== Bearer Token Warnings (121-130)
@@ -226,7 +226,7 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-128 |BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED |"Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s" |Details about which requirements are missing from a bearer token
+|OAUTH_SHERIFF_QUARKUS-128 |BEARER_TOKEN_REQUIREMENTS_NOT_MET_DETAILED |"Bearer token does not meet requirements. Missing scopes: %s, Missing roles: %s, Missing groups: %s" |Details about which requirements are missing from a bearer token
 |===
 
 ==== JWKS Startup Warnings (131-140)
@@ -235,10 +235,10 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-131 |BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER |"Background JWKS loading failed for issuer %s: %s" |Indicates that background JWKS loading failed for a specific issuer
-|CUI_JWT_QUARKUS-133 |NO_MICROMETER_COUNTER_FOUND |"No Micrometer counter found for event type %s, delta %s lost" |Indicates that a metrics counter was not found and a delta value was lost
-|CUI_JWT_QUARKUS-134 |JWKS_LOADING_RETRY_WARNING |"JWKS loading failed for issuer %s: %s - will retry via background refresh" |Indicates that JWKS loading failed but will be retried
-|CUI_JWT_QUARKUS-135 |BACKGROUND_JWKS_ISSUES_WARNING |"Background JWKS initialization encountered issues: %s - on-demand loading will handle this" |Indicates issues during background JWKS initialization with fallback to on-demand loading
+|OAUTH_SHERIFF_QUARKUS-131 |BACKGROUND_JWKS_LOADING_FAILED_FOR_ISSUER |"Background JWKS loading failed for issuer %s: %s" |Indicates that background JWKS loading failed for a specific issuer
+|OAUTH_SHERIFF_QUARKUS-133 |NO_MICROMETER_COUNTER_FOUND |"No Micrometer counter found for event type %s, delta %s lost" |Indicates that a metrics counter was not found and a delta value was lost
+|OAUTH_SHERIFF_QUARKUS-134 |JWKS_LOADING_RETRY_WARNING |"JWKS loading failed for issuer %s: %s - will retry via background refresh" |Indicates that JWKS loading failed but will be retried
+|OAUTH_SHERIFF_QUARKUS-135 |BACKGROUND_JWKS_ISSUES_WARNING |"Background JWKS initialization encountered issues: %s - on-demand loading will handle this" |Indicates issues during background JWKS initialization with fallback to on-demand loading
 |===
 
 === Quarkus ERROR Level (200-299)
@@ -249,5 +249,5 @@ This section documents log messages specific to the Quarkus integration module (
 |===
 |ID |LogRecord |Template |Description
 
-|CUI_JWT_QUARKUS-201 |VERTX_REQUEST_CONTEXT_UNAVAILABLE |"Vertx HttpServerRequest context is unavailable - no active request context found" |Indicates that the Vertx HTTP server request context could not be resolved
+|OAUTH_SHERIFF_QUARKUS-201 |VERTX_REQUEST_CONTEXT_UNAVAILABLE |"Vertx HttpServerRequest context is unavailable - no active request context found" |Indicates that the Vertx HTTP server request context could not be resolved
 |===

@@ -395,5 +395,5 @@ See link:../../.github/workflows/benchmark.yml[GitHub Actions Benchmark Workflow
 == Related Documentation
 
 * link:../doc/README.adoc[Main Documentation Hub]
-* link:../benchmark-library/README.adoc[Library Benchmarks]
+* link:../oauth-sheriff-benchmark-core/README.adoc[Library Benchmarks]
 * link:../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/README.adoc[Integration Test Infrastructure]

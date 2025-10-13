@@ -10,17 +10,17 @@ Performance benchmarking for JWT token validation core library using JMH.
 [source,bash]
 ----
 # Run all benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark
 
 # Quick validation run (2 iterations, 1 fork, 5s per iteration)
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark,quick
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark,quick
 
 # Manual quick validation run (faster)
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark \
   -Djmh.iterations=1 -Djmh.warmupIterations=1
 
 # With JFR profiling for detailed analysis
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark-jfr
 ----
 
 == Configuration
@@ -48,11 +48,11 @@ Performance benchmarking for JWT token validation core library using JMH.
 [source,bash]
 ----
 # Single benchmark
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark \
   -Djmh.includes=TokenValidatorBenchmark
 
 # Multiple benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark \
   -Djmh.includes="TokenValidator|JwksClient"
 ----
 
@@ -150,7 +150,7 @@ For custom benchmarking:
 ----
 <dependency>
     <groupId>de.cuioss.sheriff.oauth</groupId>
-    <artifactId>benchmark-library</artifactId>
+    <artifactId>oauth-sheriff-benchmark-core</artifactId>
     <scope>test</scope>
 </dependency>
 ----

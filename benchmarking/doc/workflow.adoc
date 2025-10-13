@@ -47,17 +47,17 @@ The benchmark processing is automatically triggered in GitHub Actions:
 [source,bash]
 ----
 # Full micro benchmark suite
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark
 
 # Quick test (1 iteration)
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark \
   -Djmh.iterations=1 -Djmh.warmupIterations=1
 
 # With profiling
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark-jfr
 
 # WRK load testing benchmarks
-./mvnw clean verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
+./mvnw clean verify -pl benchmarking/oauth-sheriff-benchmark-integration-wrk -Pbenchmark
 ----
 
 === Viewing Generated Artifacts
@@ -67,10 +67,10 @@ After running benchmarks, artifacts are automatically generated:
 [source,bash]
 ----
 # View micro benchmark artifacts
-ls -la benchmarking/benchmark-library/target/benchmark-results/
+ls -la benchmarking/oauth-sheriff-benchmark-core/target/benchmark-results/
 
 # View WRK benchmark artifacts
-ls -la benchmarking/benchmark-integration-wrk/target/benchmark-results/
+ls -la benchmarking/oauth-sheriff-benchmark-integration-wrk/target/benchmark-results/
 
 # Serve library benchmark reports for viewing
 cd benchmarking/scripts
