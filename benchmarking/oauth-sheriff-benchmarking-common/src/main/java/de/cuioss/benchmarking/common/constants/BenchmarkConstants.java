@@ -32,7 +32,7 @@ import lombok.experimental.UtilityClass;
         /**
          * The common prefix for all JWT metrics.
          */
-        public static final String PREFIX = "cui.jwt";
+        public static final String PREFIX = "sheriff.oauth";
 
         /**
          * Metrics related to bearer token operations.

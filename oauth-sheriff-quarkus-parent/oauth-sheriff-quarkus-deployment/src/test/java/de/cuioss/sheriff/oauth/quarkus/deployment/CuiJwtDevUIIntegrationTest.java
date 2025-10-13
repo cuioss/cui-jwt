@@ -36,7 +36,7 @@ class CuiJwtDevUIIntegrationTest {
     static final QuarkusUnitTest config = new QuarkusUnitTest()
             .withApplicationRoot(jar -> jar
                     .addClasses(CuiJwtProcessor.class, CuiJwtDevUIJsonRPCService.class))
-            .overrideConfigKey("cui.jwt.enabled", "true")
+            .overrideConfigKey("sheriff.oauth.enabled", "true")
             .overrideConfigKey("quarkus.dev", "true");
 
     @Test
