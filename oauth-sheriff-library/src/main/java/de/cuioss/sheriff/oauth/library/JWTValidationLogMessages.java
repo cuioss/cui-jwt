@@ -20,7 +20,7 @@ import de.cuioss.tools.logging.LogRecordModel;
 import lombok.experimental.UtilityClass;
 
 /**
- * Provides logging messages for the cui-jwt-validation module.
+ * Provides logging messages for the OAuth Sheriff library module.
  * All messages follow the format: JWTValidation-[identifier]: [message]
  * <p>
  * Implements requirements:
