@@ -34,13 +34,13 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.ERROR.F
 /**
  * Converts WRK benchmark output to the central BenchmarkData model
  */
+@SuppressWarnings("java:S5852") // ok for test-data
 public class WrkBenchmarkConverter implements BenchmarkConverter {
 
     private static final CuiLogger LOGGER = new CuiLogger(WrkBenchmarkConverter.class);
 
     // Regex patterns for parsing WRK output
     private static final Pattern REQUESTS_PER_SEC = Pattern.compile("Requests/sec:\\s+([\\d.]+)");
-    @SuppressWarnings("java:S5852") // ok for test-data
     private static final Pattern LATENCY_STATS = Pattern.compile(
             "Latency\\s+([\\d.]+)(\\w+)\\s+([\\d.]+)(\\w+)\\s+([\\d.]+)(\\w+)\\s+([\\d.]+)%");
     private static final Pattern LATENCY_PERCENTILE = Pattern.compile(
