@@ -376,7 +376,7 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                             .body()
                             .asString();
                     // Just wait for any JWT validation metrics to appear
-                    return response.contains("cui_jwt_validation");
+                    return response.contains("sheriff_oauth_validation");
                 });
 
         // Fetch metrics from the /q/metrics endpoint
@@ -394,17 +394,17 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         // Debug: Print relevant metrics lines
         String[] lines = metricsResponse.split("\n");
         for (String line : lines) {
-            if (line.contains("cui_jwt_validation")) {
+            if (line.contains("sheriff_oauth_validation")) {
                 LOGGER.debug("Found JWT validation metric: %s", line);
             }
         }
 
         // Verify we have error metrics (always present)
-        assertTrue(metricsResponse.contains("cui_jwt_validation_errors_total"),
+        assertTrue(metricsResponse.contains("sheriff_oauth_validation_errors_total"),
                 "Should contain error metrics");
 
         // Check if success metrics are present (may not be if no success events occurred)
-        boolean hasSuccessMetrics = metricsResponse.contains("cui_jwt_validation_success_total");
+        boolean hasSuccessMetrics = metricsResponse.contains("sheriff_oauth_validation_success_total");
         LOGGER.debug("Success metrics present: %s", hasSuccessMetrics);
 
         // Parse metrics to check bounds
@@ -413,22 +413,22 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         if (hasSuccessMetrics) {
             // Verify success metrics have reasonable bounds
             // We expect ACCESS_TOKEN_CREATED to be the highest since all tests use access tokens
-            double accessTokensCreated = getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ACCESS_TOKEN_CREATED");
+            double accessTokensCreated = getMetricValue(parsedMetrics, "sheriff_oauth_validation_success_total", "ACCESS_TOKEN_CREATED");
             assertTrue(accessTokensCreated >= 10,
                     "Should have created at least 10 access tokens during integration tests, got: " + accessTokensCreated);
             assertTrue(accessTokensCreated <= 10000,
                     "Access token creation count seems unreasonably high: " + accessTokensCreated);
 
             // Verify cache hits if caching is enabled
-            double accessTokenCacheHits = getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ACCESS_TOKEN_CACHE_HIT");
+            double accessTokenCacheHits = getMetricValue(parsedMetrics, "sheriff_oauth_validation_success_total", "ACCESS_TOKEN_CACHE_HIT");
             // Cache hits should be >= 0 (could be 0 if cache is disabled)
             assertTrue(accessTokenCacheHits >= 0,
                     "Cache hits should be non-negative: " + accessTokenCacheHits);
 
             // Verify total success count is reasonable
             double totalSuccess = accessTokensCreated + accessTokenCacheHits
-                    + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "ID_TOKEN_CREATED")
-                    + getMetricValue(parsedMetrics, "cui_jwt_validation_success_total", "REFRESH_TOKEN_CREATED");
+                    + getMetricValue(parsedMetrics, "sheriff_oauth_validation_success_total", "ID_TOKEN_CREATED")
+                    + getMetricValue(parsedMetrics, "sheriff_oauth_validation_success_total", "REFRESH_TOKEN_CREATED");
             assertTrue(totalSuccess >= 10,
                     "Total successful operations should be at least 10: " + totalSuccess);
 
