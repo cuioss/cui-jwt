@@ -12,7 +12,7 @@ This document provides a reference for all log messages used in the JWT Token Va
 === Document Navigation
 
 * xref:../README.adoc[README] - Project overview and introduction
-* xref:../oauth-sheriff-library/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:Specification.adoc[Specification] - Technical specifications
 * xref:security/Threat-Model.adoc[Threat Model] - Security analysis and mitigations

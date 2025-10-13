@@ -15,12 +15,12 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.producer;
 
-import de.cuioss.sheriff.oauth.library.TokenType;
-import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
-import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
-import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter.EventType;
-import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
-import de.cuioss.sheriff.oauth.library.test.generator.ClaimControlParameter;
+import de.cuioss.sheriff.oauth.core.TokenType;
+import de.cuioss.sheriff.oauth.core.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.core.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.core.security.SecurityEventCounter.EventType;
+import de.cuioss.sheriff.oauth.core.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.core.test.generator.ClaimControlParameter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

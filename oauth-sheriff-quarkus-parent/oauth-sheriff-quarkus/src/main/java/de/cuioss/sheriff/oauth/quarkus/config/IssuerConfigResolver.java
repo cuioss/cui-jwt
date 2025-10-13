@@ -17,11 +17,11 @@ package de.cuioss.sheriff.oauth.quarkus.config;
 
 import de.cuioss.http.client.retry.RetryStrategies;
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultGroupsMapper;
-import de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultRolesMapper;
-import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.domain.claim.mapper.KeycloakDefaultGroupsMapper;
+import de.cuioss.sheriff.oauth.core.domain.claim.mapper.KeycloakDefaultRolesMapper;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.core.security.SignatureAlgorithmPreferences;
 import de.cuioss.tools.logging.CuiLogger;
 import org.eclipse.microprofile.config.Config;
 import org.jspecify.annotations.Nullable;

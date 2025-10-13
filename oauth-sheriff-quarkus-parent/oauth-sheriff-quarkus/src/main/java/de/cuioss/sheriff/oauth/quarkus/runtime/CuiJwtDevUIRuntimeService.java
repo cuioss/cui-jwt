@@ -15,10 +15,10 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.runtime;
 
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.TokenValidator;
-import de.cuioss.sheriff.oauth.library.domain.token.TokenContent;
-import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
+import de.cuioss.sheriff.oauth.core.domain.token.TokenContent;
+import de.cuioss.sheriff.oauth.core.exception.TokenValidationException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.json.JsonException;

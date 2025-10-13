@@ -15,8 +15,8 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.security.SignatureAlgorithmPreferences;
 import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;

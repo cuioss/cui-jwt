@@ -15,9 +15,9 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.interceptor;
 
-import de.cuioss.sheriff.oauth.library.TokenType;
-import de.cuioss.sheriff.oauth.library.test.TestTokenHolder;
-import de.cuioss.sheriff.oauth.library.test.generator.ClaimControlParameter;
+import de.cuioss.sheriff.oauth.core.TokenType;
+import de.cuioss.sheriff.oauth.core.test.TestTokenHolder;
+import de.cuioss.sheriff.oauth.core.test.generator.ClaimControlParameter;
 import de.cuioss.sheriff.oauth.quarkus.annotation.BearerAuth;
 import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenProducer;
 import de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenResult;

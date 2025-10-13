@@ -15,8 +15,8 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.runtime;
 
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.TokenValidator;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
 import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
 import de.cuioss.sheriff.oauth.quarkus.config.JwtTestProfile;
 import de.cuioss.sheriff.oauth.quarkus.test.TestConfig;

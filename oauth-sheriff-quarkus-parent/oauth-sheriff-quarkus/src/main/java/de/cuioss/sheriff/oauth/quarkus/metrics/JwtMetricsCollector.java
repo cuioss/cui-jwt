@@ -15,9 +15,9 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.metrics;
 
-import de.cuioss.sheriff.oauth.library.TokenValidator;
-import de.cuioss.sheriff.oauth.library.security.EventCategory;
-import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
+import de.cuioss.sheriff.oauth.core.security.EventCategory;
+import de.cuioss.sheriff.oauth.core.security.SecurityEventCounter;
 import de.cuioss.sheriff.oauth.quarkus.config.JwtPropertyKeys;
 import de.cuioss.tools.logging.CuiLogger;
 import io.micrometer.core.instrument.Counter;

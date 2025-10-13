@@ -15,17 +15,17 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.deployment;
 
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.IssuerConfigResolver;
-import de.cuioss.sheriff.oauth.library.ParserConfig;
-import de.cuioss.sheriff.oauth.library.TokenValidator;
-import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
-import de.cuioss.sheriff.oauth.library.domain.claim.mapper.IdentityMapper;
-import de.cuioss.sheriff.oauth.library.domain.claim.mapper.ScopeMapper;
-import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
-import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader;
-import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.IssuerConfigResolver;
+import de.cuioss.sheriff.oauth.core.ParserConfig;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
+import de.cuioss.sheriff.oauth.core.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.core.domain.claim.mapper.IdentityMapper;
+import de.cuioss.sheriff.oauth.core.domain.claim.mapper.ScopeMapper;
+import de.cuioss.sheriff.oauth.core.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoader;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.core.security.SecurityEventCounter;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.arc.deployment.UnremovableBeanBuildItem;

@@ -16,11 +16,11 @@
 package de.cuioss.sheriff.oauth.quarkus.producer;
 
 import de.cuioss.http.client.retry.RetryStrategy;
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.ParserConfig;
-import de.cuioss.sheriff.oauth.library.TokenValidator;
-import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
-import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.ParserConfig;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
+import de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.core.security.SecurityEventCounter;
 import de.cuioss.sheriff.oauth.quarkus.config.AccessTokenCacheConfigResolver;
 import de.cuioss.sheriff.oauth.quarkus.config.IssuerConfigResolver;
 import de.cuioss.sheriff.oauth.quarkus.config.ParserConfigResolver;

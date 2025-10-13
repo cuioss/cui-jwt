@@ -57,7 +57,7 @@
             <!-- Internal modules -->
             <dependency>
                 <groupId>de.cuioss.sheriff.oauth</groupId>
-                <artifactId>oauth-sheriff-library</artifactId>
+                <artifactId>oauth-sheriff-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

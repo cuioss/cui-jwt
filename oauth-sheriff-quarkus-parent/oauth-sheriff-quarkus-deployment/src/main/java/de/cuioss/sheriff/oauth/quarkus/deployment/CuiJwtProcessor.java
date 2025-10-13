@@ -15,29 +15,29 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.deployment;
 
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
-import de.cuioss.sheriff.oauth.library.IssuerConfigResolver;
-import de.cuioss.sheriff.oauth.library.ParserConfig;
-import de.cuioss.sheriff.oauth.library.TokenValidator;
-import de.cuioss.sheriff.oauth.library.domain.claim.ClaimName;
-import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValue;
-import de.cuioss.sheriff.oauth.library.domain.claim.ClaimValueType;
-import de.cuioss.sheriff.oauth.library.domain.claim.mapper.*;
-import de.cuioss.sheriff.oauth.library.domain.token.*;
-import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader;
-import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
-import de.cuioss.sheriff.oauth.library.jwks.key.JWKSKeyLoader;
-import de.cuioss.sheriff.oauth.library.jwks.key.KeyInfo;
-import de.cuioss.sheriff.oauth.library.jwks.parser.JwksParser;
-import de.cuioss.sheriff.oauth.library.pipeline.DecodedJwt;
-import de.cuioss.sheriff.oauth.library.pipeline.NonValidatingJwtParser;
-import de.cuioss.sheriff.oauth.library.pipeline.TokenBuilder;
-import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenClaimValidator;
-import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenHeaderValidator;
-import de.cuioss.sheriff.oauth.library.pipeline.validator.TokenSignatureValidator;
-import de.cuioss.sheriff.oauth.library.security.JwkAlgorithmPreferences;
-import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
-import de.cuioss.sheriff.oauth.library.security.SignatureAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.IssuerConfigResolver;
+import de.cuioss.sheriff.oauth.core.ParserConfig;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
+import de.cuioss.sheriff.oauth.core.domain.claim.ClaimName;
+import de.cuioss.sheriff.oauth.core.domain.claim.ClaimValue;
+import de.cuioss.sheriff.oauth.core.domain.claim.ClaimValueType;
+import de.cuioss.sheriff.oauth.core.domain.claim.mapper.*;
+import de.cuioss.sheriff.oauth.core.domain.token.*;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoader;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.core.jwks.key.JWKSKeyLoader;
+import de.cuioss.sheriff.oauth.core.jwks.key.KeyInfo;
+import de.cuioss.sheriff.oauth.core.jwks.parser.JwksParser;
+import de.cuioss.sheriff.oauth.core.pipeline.DecodedJwt;
+import de.cuioss.sheriff.oauth.core.pipeline.NonValidatingJwtParser;
+import de.cuioss.sheriff.oauth.core.pipeline.TokenBuilder;
+import de.cuioss.sheriff.oauth.core.pipeline.validator.TokenClaimValidator;
+import de.cuioss.sheriff.oauth.core.pipeline.validator.TokenHeaderValidator;
+import de.cuioss.sheriff.oauth.core.pipeline.validator.TokenSignatureValidator;
+import de.cuioss.sheriff.oauth.core.security.JwkAlgorithmPreferences;
+import de.cuioss.sheriff.oauth.core.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.core.security.SignatureAlgorithmPreferences;
 import de.cuioss.sheriff.oauth.quarkus.config.AccessLogFilterConfigProducer;
 import de.cuioss.sheriff.oauth.quarkus.config.ParserConfigResolver;
 import de.cuioss.sheriff.oauth.quarkus.interceptor.BearerTokenInterceptor;
@@ -236,10 +236,10 @@ public class CuiJwtProcessor {
 
         // Explicitly register our generated converters as service providers
         serviceProvider.produce(new ServiceProviderBuildItem("com.dslplatform.json.Configuration",
-                "de.cuioss.sheriff.oauth.library.json._WellKnownConfiguration_DslJsonConverter",
-                "de.cuioss.sheriff.oauth.library.json._Jwks_DslJsonConverter",
-                "de.cuioss.sheriff.oauth.library.json._JwkKey_DslJsonConverter",
-                "de.cuioss.sheriff.oauth.library.json._JwtHeader_DslJsonConverter"));
+                "de.cuioss.sheriff.oauth.core.json._WellKnownConfiguration_DslJsonConverter",
+                "de.cuioss.sheriff.oauth.core.json._Jwks_DslJsonConverter",
+                "de.cuioss.sheriff.oauth.core.json._JwkKey_DslJsonConverter",
+                "de.cuioss.sheriff.oauth.core.json._JwtHeader_DslJsonConverter"));
     }
 
 
@@ -260,8 +260,8 @@ public class CuiJwtProcessor {
     @BuildStep
     public void registerJwtValidationResources(BuildProducer<NativeImageResourceBuildItem> resourceProducer) {
         // Include any JWT validation configuration files that might exist
-        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.sheriff.oauth.library.jwks.JwksLoader"));
-        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.sheriff.oauth.library.domain.claim.mapper.ClaimMapper"));
+        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.sheriff.oauth.core.jwks.JwksLoader"));
+        resourceProducer.produce(new NativeImageResourceBuildItem("META-INF/services/de.cuioss.sheriff.oauth.core.domain.claim.mapper.ClaimMapper"));
     }
 
 

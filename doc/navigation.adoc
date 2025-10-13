@@ -8,16 +8,16 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 == Module Documentation
 
 === Core Validation Module
-* xref:../oauth-sheriff-library/README.adoc[JWT Validation Module] - Core validation library
-* xref:../oauth-sheriff-library/doc/usage-guide.adoc[Usage Guide]
-* xref:../oauth-sheriff-library/doc/api-reference.adoc[API Reference]
-* xref:../oauth-sheriff-library/doc/UnitTesting.adoc[Testing Guide]
+* xref:../oauth-sheriff-core/README.adoc[JWT Validation Module] - Core validation library
+* xref:../oauth-sheriff-core/doc/usage-guide.adoc[Usage Guide]
+* xref:../oauth-sheriff-core/doc/api-reference.adoc[API Reference]
+* xref:../oauth-sheriff-core/doc/UnitTesting.adoc[Testing Guide]
 
 ==== Configuration Topics
-* xref:../oauth-sheriff-library/doc/configuration/roles-groups-mapping.adoc[Roles and Groups]
-* xref:../oauth-sheriff-library/doc/configuration/security-settings.adoc[Security Settings]
-* xref:../oauth-sheriff-library/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
-* xref:../oauth-sheriff-library/doc/configuration/openid-discovery.adoc[OpenID Discovery]
+* xref:../oauth-sheriff-core/doc/configuration/roles-groups-mapping.adoc[Roles and Groups]
+* xref:../oauth-sheriff-core/doc/configuration/security-settings.adoc[Security Settings]
+* xref:../oauth-sheriff-core/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
+* xref:../oauth-sheriff-core/doc/configuration/openid-discovery.adoc[OpenID Discovery]
 
 === Quarkus Extension
 * xref:../oauth-sheriff-quarkus-parent/README.adoc[Quarkus Extension Overview]
@@ -56,16 +56,16 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 
 === Getting Started
 1. xref:../README.adoc[Project Overview]
-2. xref:../oauth-sheriff-library/README.adoc[Quick Start - Validation]
+2. xref:../oauth-sheriff-core/README.adoc[Quick Start - Validation]
 3. xref:../oauth-sheriff-quarkus-parent/README.adoc[Quick Start - Quarkus]
 
 === Configuration
-* xref:../oauth-sheriff-library/doc/configuration/security-settings.adoc[Security Configuration]
-* xref:../oauth-sheriff-library/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
+* xref:../oauth-sheriff-core/doc/configuration/security-settings.adoc[Security Configuration]
+* xref:../oauth-sheriff-core/doc/configuration/multi-issuer-setup.adoc[Multi-Issuer Setup]
 * xref:../oauth-sheriff-quarkus-parent/doc/configuration/native-image-configuration.adoc[Native Image Setup]
 
 === Testing
-* xref:../oauth-sheriff-library/doc/UnitTesting.adoc[Unit Testing]
+* xref:../oauth-sheriff-core/doc/UnitTesting.adoc[Unit Testing]
 * xref:../oauth-sheriff-quarkus-parent/doc/configuration/testing-configuration.adoc[Integration Testing]
 * xref:../benchmarking/doc/workflow.adoc[Benchmark Workflow]
 
@@ -75,15 +75,15 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 * xref:../oauth-sheriff-quarkus-parent/doc/performance/native-optimization-guide.adoc[Optimization Guide]
 
 === Development
-* xref:../oauth-sheriff-library/doc/developing.adoc[Core Development]
+* xref:../oauth-sheriff-core/doc/developing.adoc[Core Development]
 * xref:../oauth-sheriff-quarkus-parent/doc/development/quarkus-test-setup.adoc[Quarkus Development]
 * xref:../oauth-sheriff-quarkus-parent/doc/development/devui-implementation.adoc[DevUI Development]
 
 == Standards and Specifications
 * xref:ai-rules.adoc[AI Development Guidelines]
-* xref:../oauth-sheriff-library/doc/specification/technical-components.adoc[Technical Specification]
-* xref:../oauth-sheriff-library/doc/specification/references.adoc[References]
-* xref:../oauth-sheriff-library/doc/LogMessages.adoc[Log Messages - Validation]
+* xref:../oauth-sheriff-core/doc/specification/technical-components.adoc[Technical Specification]
+* xref:../oauth-sheriff-core/doc/specification/references.adoc[References]
+* xref:../oauth-sheriff-core/doc/LogMessages.adoc[Log Messages - Validation]
 * xref:../oauth-sheriff-quarkus-parent/doc/LogMessages.adoc[Log Messages - Quarkus]
 
 == Analysis and Reports

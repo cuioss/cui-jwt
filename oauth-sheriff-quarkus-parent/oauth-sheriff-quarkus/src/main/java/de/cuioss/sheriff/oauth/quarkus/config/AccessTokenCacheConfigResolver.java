@@ -15,7 +15,7 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.RequiredArgsConstructor;
 import org.eclipse.microprofile.config.Config;

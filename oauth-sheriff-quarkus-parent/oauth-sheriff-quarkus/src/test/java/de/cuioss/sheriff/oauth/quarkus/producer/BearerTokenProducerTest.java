@@ -15,10 +15,10 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.producer;
 
-import de.cuioss.sheriff.oauth.library.TokenValidator;
-import de.cuioss.sheriff.oauth.library.domain.token.AccessTokenContent;
-import de.cuioss.sheriff.oauth.library.exception.TokenValidationException;
-import de.cuioss.sheriff.oauth.library.security.SecurityEventCounter;
+import de.cuioss.sheriff.oauth.core.TokenValidator;
+import de.cuioss.sheriff.oauth.core.domain.token.AccessTokenContent;
+import de.cuioss.sheriff.oauth.core.exception.TokenValidationException;
+import de.cuioss.sheriff.oauth.core.security.SecurityEventCounter;
 import de.cuioss.sheriff.oauth.quarkus.servlet.HttpServletRequestResolver;
 import de.cuioss.sheriff.oauth.quarkus.servlet.HttpServletRequestResolverMock;
 import de.cuioss.test.juli.TestLogLevel;

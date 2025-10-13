@@ -54,9 +54,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Build oauth-sheriff-library
+      - name: Build oauth-sheriff-core
         run: |
-          # Build library module first to ensure test artifact is available for benchmarking
+          # Build core module first to ensure test artifact is available for benchmarking
           ./mvnw --no-transfer-progress clean install -DskipTests
 
       - name: Fetch Previous History
@@ -96,12 +96,12 @@ jobs:
         run: |
           # Run micro benchmarks using configuration from pom.xml
           # Pass history directory as system property for trend calculation
-          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+          ./mvnw --no-transfer-progress clean verify -pl benchmarking/benchmark-core -Pbenchmark \
             -Dbenchmark.history.dir="${GITHUB_WORKSPACE}/benchmark-history/micro"
           
           # Verify artifacts were generated
           echo "📊 Micro benchmark artifacts generated:"
-          ls -la benchmarking/benchmark-library/target/benchmark-results/
+          ls -la benchmarking/benchmark-core/target/benchmark-results/
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.7.1
@@ -126,13 +126,13 @@ jobs:
           ARCHIVE_NAME="${TIMESTAMP}-${COMMIT_SHA:0:8}.json"
           
           # Create history directories if they don't exist
-          mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
+          mkdir -p benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/history
           mkdir -p benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history
 
           # Archive current benchmark data if it exists
-          if [ -f "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
-            cp benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
-               "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
+          if [ -f "benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
+            cp benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/data/benchmark-data.json \
+               "benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/history/${ARCHIVE_NAME}"
           fi
 
           if [ -f "benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/data/benchmark-data.json" ]; then
@@ -145,9 +145,9 @@ jobs:
           # Copy previous history to gh-pages-ready if it exists (already fetched before benchmarks)
           if [ -d "previous-pages/OAuth-Sheriff/benchmarks/micro/history" ]; then
             echo "📜 Merging micro benchmark history..."
-            mkdir -p benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history
+            mkdir -p benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/history
             cp -n previous-pages/OAuth-Sheriff/benchmarks/micro/history/*.json \
-               benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
+               benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/history/ 2>/dev/null || true
           fi
 
           if [ -d "previous-pages/OAuth-Sheriff/benchmarks/integration/history" ]; then
@@ -158,7 +158,7 @@ jobs:
           fi
 
           # Enforce retention policy (keep only 10 most recent by filename/date)
-          for dir in benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/history \
+          for dir in benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/history \
                      benchmarking/benchmark-integration-wrk/target/benchmark-results/gh-pages-ready/history; do
             if [ -d "$dir" ]; then
               echo "🧹 Enforcing retention policy in $dir"
@@ -178,14 +178,14 @@ jobs:
           mkdir -p gh-pages/badges
           
           # Copy micro benchmark artifacts to micro subdirectory
-          if [ -d "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready" ]; then
+          if [ -d "benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready" ]; then
             echo "📦 Copying micro benchmark artifacts..."
-            cp -r benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/* gh-pages/micro/
+            cp -r benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/* gh-pages/micro/
             # Copy micro badges to root badges directory
-            if [ -d "benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/badges" ]; then
-              cp benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/badges/performance-badge.json gh-pages/badges/ 2>/dev/null || true
-              cp benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/badges/trend-badge.json gh-pages/badges/ 2>/dev/null || true
-              cp benchmarking/benchmark-library/target/benchmark-results/gh-pages-ready/badges/last-run-badge.json gh-pages/badges/ 2>/dev/null || true
+            if [ -d "benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/badges" ]; then
+              cp benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/badges/performance-badge.json gh-pages/badges/ 2>/dev/null || true
+              cp benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/badges/trend-badge.json gh-pages/badges/ 2>/dev/null || true
+              cp benchmarking/benchmark-core/target/benchmark-results/gh-pages-ready/badges/last-run-badge.json gh-pages/badges/ 2>/dev/null || true
             fi
           fi
           

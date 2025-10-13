@@ -17,7 +17,7 @@ The primary means of discovering OP information is through a well-known URI, spe
 === Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../oauth-sheriff-library/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:technical-components.adoc[Technical Components] - Implementation details
@@ -30,17 +30,17 @@ The well-known discovery functionality has been implemented in the following cla
 
 ==== Core Components
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownResolver.java[WellKnownResolver] - Interface for resolving well-known configuration
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/well_known/HttpWellKnownResolver.java[HttpWellKnownResolver] - HTTP-based implementation for fetching well-known configuration
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownParser.java[WellKnownParser] - Parser for OpenID Connect discovery documents
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownConfig.java[WellKnownConfig] - Configuration data model for well-known metadata
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownEndpointMapper.java[WellKnownEndpointMapper] - Maps issuer URLs to well-known endpoints
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownResolver.java[WellKnownResolver] - Interface for resolving well-known configuration
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/well_known/HttpWellKnownResolver.java[HttpWellKnownResolver] - HTTP-based implementation for fetching well-known configuration
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownParser.java[WellKnownParser] - Parser for OpenID Connect discovery documents
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownConfig.java[WellKnownConfig] - Configuration data model for well-known metadata
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/well_known/WellKnownEndpointMapper.java[WellKnownEndpointMapper] - Maps issuer URLs to well-known endpoints
 
 ==== Integration Components
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] - Integrates with well-known discovery for JWKS retrieval
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfig.java[HttpJwksLoaderConfig] - Configuration supporting well-known URLs
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] - Supports well-known discovery for issuer configuration
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] - Integrates with well-known discovery for JWKS retrieval
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfig.java[HttpJwksLoaderConfig] - Configuration supporting well-known URLs
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] - Supports well-known discovery for issuer configuration
 
 For implementation details, see the JavaDoc of the implementation classes listed above.
 
@@ -48,15 +48,15 @@ For implementation details, see the JavaDoc of the implementation classes listed
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownParserTest.java[WellKnownParserTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownEndpointMapperTest.java[WellKnownEndpointMapperTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownConfigTest.java[WellKnownConfigTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/well_known/HttpWellKnownResolverTest.java[HttpWellKnownResolverTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfigWellKnownTest.java[HttpJwksLoaderConfigWellKnownTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownParserTest.java[WellKnownParserTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownEndpointMapperTest.java[WellKnownEndpointMapperTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/well_known/WellKnownConfigTest.java[WellKnownConfigTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/well_known/HttpWellKnownResolverTest.java[HttpWellKnownResolverTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderConfigWellKnownTest.java[HttpJwksLoaderConfigWellKnownTest]
 
 ==== Test Utilities
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/test/dispatcher/WellKnownDispatcher.java[WellKnownDispatcher] - WireMock-based test utility for simulating OIDC providers
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/dispatcher/WellKnownDispatcher.java[WellKnownDispatcher] - WireMock-based test utility for simulating OIDC providers
 
 == Purpose of `/.well-known/openid-configuration`
 

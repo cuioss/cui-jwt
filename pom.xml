@@ -22,7 +22,7 @@
     <url>https://github.com/cuioss/OAuth-Sheriff/</url>
     <modules>
         <module>bom</module>
-        <module>oauth-sheriff-library</module>
+        <module>oauth-sheriff-core</module>
         <module>oauth-sheriff-quarkus-parent</module>
         <module>benchmarking</module>
     </modules>

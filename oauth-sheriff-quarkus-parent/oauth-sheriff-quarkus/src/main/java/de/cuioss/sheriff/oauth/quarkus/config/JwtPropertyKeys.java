@@ -15,8 +15,8 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.sheriff.oauth.library.jwks.JwksLoader;
-import de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig;
+import de.cuioss.sheriff.oauth.core.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig;
 import lombok.experimental.UtilityClass;
 
 /**
@@ -126,7 +126,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code true}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String ENABLED = BASE + "enabled";
 
@@ -144,7 +144,7 @@ public final class JwtPropertyKeys {
          * <strong>Optional</strong> for {@link #WELL_KNOWN_URL} (extracted from discovery document).
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String ISSUER_IDENTIFIER = BASE + "issuer-identifier";
 
@@ -156,7 +156,7 @@ public final class JwtPropertyKeys {
          * If the token's audience claim matches any of these values, it is considered valid.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String EXPECTED_AUDIENCE = BASE + "expected-audience";
 
@@ -168,7 +168,7 @@ public final class JwtPropertyKeys {
          * If the token's client ID claim matches any of these values, it is considered valid.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String EXPECTED_CLIENT_ID = BASE + "expected-client-id";
 
@@ -181,7 +181,7 @@ public final class JwtPropertyKeys {
          * requiring stronger algorithms or blacklisting weak ones.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String ALGORITHM_PREFERENCES = BASE + "algorithm-preferences";
 
@@ -202,7 +202,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code false} (subject claim is mandatory, RFC compliant).
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig#isClaimSubOptional()
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig#isClaimSubOptional()
          * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
          */
         public static final String CLAIM_SUB_OPTIONAL = BASE + "claim-sub-optional";
@@ -222,7 +222,7 @@ public final class JwtPropertyKeys {
          * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
          */
         public static final String JWKS_URL = HTTP_BASE + "url";
 
@@ -239,7 +239,7 @@ public final class JwtPropertyKeys {
          * Provides {@link #ISSUER_IDENTIFIER} automatically from discovery document.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
          */
         public static final String WELL_KNOWN_URL = HTTP_BASE + "well-known-url";
 
@@ -257,7 +257,7 @@ public final class JwtPropertyKeys {
          * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String JWKS_FILE_PATH = JWKS_BASE + "file-path";
 
@@ -275,7 +275,7 @@ public final class JwtPropertyKeys {
          * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.IssuerConfig
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
          */
         public static final String JWKS_CONTENT = JWKS_BASE + "content";
 
@@ -293,7 +293,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
          */
         public static final String REFRESH_INTERVAL_SECONDS = HTTP_BASE + "refresh-interval-seconds";
 
@@ -308,7 +308,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
          */
         public static final String CONNECT_TIMEOUT_SECONDS = HTTP_BASE + "connect-timeout-seconds";
 
@@ -324,7 +324,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
          */
         public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
 
@@ -365,7 +365,7 @@ public final class JwtPropertyKeys {
          * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
          * @see <a href="https://github.com/cuioss/OAuth-Sheriff/issues/110">Issue #110: Key rotation grace period</a>
          * @since 1.1
          */
@@ -399,7 +399,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code false}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultRolesMapper
+         * @see de.cuioss.sheriff.oauth.core.domain.claim.mapper.KeycloakDefaultRolesMapper
          */
         public static final String KEYCLOAK_DEFAULT_ROLES_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-roles.enabled";
 
@@ -419,7 +419,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code false}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.domain.claim.mapper.KeycloakDefaultGroupsMapper
+         * @see de.cuioss.sheriff.oauth.core.domain.claim.mapper.KeycloakDefaultGroupsMapper
          */
         public static final String KEYCLOAK_DEFAULT_GROUPS_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-groups.enabled";
     }
@@ -696,7 +696,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code 1000}.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig
+         * @see de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig
          */
         public static final String MAX_SIZE = BASE + ".max-size";
 
@@ -712,7 +712,7 @@ public final class JwtPropertyKeys {
          * Default value is {@code 10} seconds.
          * </p>
          *
-         * @see de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig
+         * @see de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig
          */
         public static final String EVICTION_INTERVAL_SECONDS = BASE + ".eviction-interval-seconds";
     }

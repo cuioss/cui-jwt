@@ -15,7 +15,7 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.health;
 
-import de.cuioss.sheriff.oauth.library.IssuerConfig;
+import de.cuioss.sheriff.oauth.core.IssuerConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;

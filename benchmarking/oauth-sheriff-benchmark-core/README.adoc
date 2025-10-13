@@ -1,0 +1,173 @@
+= JWT Library Benchmarks
+:source-highlighter: highlight.js
+
+Performance benchmarking for JWT token validation core library using JMH.
+
+== Building and Running
+
+=== Quick Start
+
+[source,bash]
+----
+# Run all benchmarks
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+
+# Quick validation run (2 iterations, 1 fork, 5s per iteration)
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark,quick
+
+# Manual quick validation run (faster)
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.iterations=1 -Djmh.warmupIterations=1
+
+# With JFR profiling for detailed analysis
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+----
+
+== Configuration
+
+=== JMH Parameters
+
+[source,bash]
+----
+-Djmh.iterations=5           # Measurement iterations (default: 5)
+-Djmh.warmupIterations=3     # Warmup iterations (default: 3)
+-Djmh.forks=2               # JVM forks (default: 2)
+-Djmh.threads=4             # Concurrent threads (default: 4)
+-Djmh.time=10s              # Time per iteration
+-Djmh.includes=*Benchmark   # Benchmark pattern filter
+----
+
+=== Profiles
+
+* `benchmark` - Runs the benchmarks with default settings
+* `benchmark,quick` - Fast validation with reduced iterations (2), forks (1), and time (5s)
+* `benchmark-jfr` - Runs benchmarks with Java Flight Recorder profiling
+
+=== Running Specific Benchmarks
+
+[source,bash]
+----
+# Single benchmark
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.includes=TokenValidatorBenchmark
+
+# Multiple benchmarks
+./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+  -Djmh.includes="TokenValidator|JwksClient"
+----
+
+== Benchmarks
+
+=== Standard Benchmarks
+* `SimpleCoreValidationBenchmark` - Core JWT validation performance (throughput and latency)
+* `SimpleErrorLoadBenchmark` - Streamlined error handling scenarios
+* `ErrorLoadBenchmark` - Comprehensive error scenario testing with various token failures
+* `PerformanceIndicatorBenchmark` - Performance scoring metrics
+
+=== JFR-Enabled Benchmarks
+* `UnifiedJfrBenchmark` - Combined benchmark with Java Flight Recorder integration
+* `CoreJfrBenchmark` - Core validation with JFR profiling
+* `ErrorJfrBenchmark` - Error scenarios with JFR profiling
+* `MixedJfrBenchmark` - Mixed validation scenarios with JFR profiling
+
+== Output
+
+Results are generated in `target/benchmark-results/`:
+
+* `micro-result.json` - Raw JMH results
+* `benchmark-summary.json` - Overall summary with quality gates
+* `badges/` - Performance badges (score, trend, last-run)
+* `data/` - Individual benchmark metrics JSON files
+* `gh-pages-ready/` - GitHub Pages deployment structure
+* `benchmark-run_*.log` - Execution logs
+
+== Performance Score
+
+Composite metric combining:
+
+* **Throughput (57%)** - Operations per second
+* **Latency (40%)** - Response time (inverted)
+* **Error Resilience (3%)** - Error handling efficiency
+
+Score = (Throughput × 0.57) + (Latency_Inverted × 0.40) + (Error_Resilience × 0.03)
+
+== Analysis
+
+=== View Results
+
+[source,bash]
+----
+# Serve results locally with web UI
+cd benchmarking/scripts
+./serve-reports.sh library  # Opens http://localhost:8080
+
+# Or analyze JSON directly
+jq '.[] | {benchmark: .benchmark, score: .primaryMetric.score, unit: .primaryMetric.scoreUnit}' \
+  target/benchmark-results/micro-result.json
+
+# View performance summary
+jq '.overallScore, .grade' target/benchmark-results/benchmark-summary.json
+----
+
+=== JFR Analysis
+
+[source,bash]
+----
+# Analyze variance
+java -cp "target/classes:target/dependency/*" \
+  de.cuioss.sheriff.oauth.core.benchmark.jfr.JfrVarianceAnalyzer \
+  target/benchmark-results/jfr-benchmark.jfr
+
+# View hot methods
+jfr print --events jdk.ExecutionSample \
+  target/benchmark-results/jfr-benchmark.jfr
+----
+
+== Performance Tracking
+
+=== Automatic Tracking
+
+Each run generates:
+
+* `performance-YYYYMMDD-HHMMSS.json` - Timestamped metrics
+* Updates to `performance-tracking.json` - Last 10 runs
+
+=== GitHub Pages
+
+View trends at: https://cuioss.github.io/OAuth-Sheriff/benchmarks/performance-trends.html
+
+Features:
+
+* Interactive performance charts
+* Trend indicators with percentage changes
+* Performance badges (↗ improving, → stable, ↘ declining)
+
+== Maven Dependency
+
+For custom benchmarking:
+
+[source,xml]
+----
+<dependency>
+    <groupId>de.cuioss.sheriff.oauth</groupId>
+    <artifactId>benchmark-library</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+== Documentation
+
+For comprehensive documentation on benchmarking, analysis, and visualization:
+
+📚 **link:../doc/README.adoc[Complete Documentation]**
+
+=== Quick Links
+
+* link:../doc/workflow.adoc[Benchmark Workflow] - Complete workflow guide
+* link:doc/Analysis-08.2025.adoc[Performance Analysis] - Latest benchmark insights
+* link:../doc/performance-scoring.adoc[Performance Scoring] - Methodology details
+* link:../doc/local-testing.adoc[Local Testing] - Development setup
+
+=== Related
+
+* link:../benchmark-integration-wrk/README.adoc[WRK Load Testing Benchmarks]

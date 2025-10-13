@@ -20,7 +20,7 @@ This guide focuses on application-level security practices rather than internal 
 === Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../oauth-sheriff-library/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
@@ -150,23 +150,23 @@ This section provides guidance on configuring the library for secure token valid
 1. **Always validate token signatures**
    * Always use the library's validation methods, never decode tokens without validation
    * Ensure signature verification is mandatory in your application flow
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator.java] enforces signature validation pipeline
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator.java] enforces signature validation pipeline
 
 2. **Enforce strict audience validation**
    * Configure the library to validate the `aud` claim
    * Set the expected audience to your application's client ID
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:233-249] validates audience claims
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:233-249] validates audience claims
 
 3. **Enforce issuer validation**
    * Configure the library to validate the `iss` claim
    * Set the expected issuer to your trusted identity provider's URL
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] enforces issuer validation
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] enforces issuer validation
 
 4. **Implement expiration and issuance time validation**
    * Validate the `exp` (expiration time) claim
    * Validate the `nbf` (not before) claim
    * Validate the `iat` (issued at) claim to prevent token reuse
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:172-183] validates temporal claims
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:172-183] validates temporal claims
 
 ==== Implementation Example
 
@@ -193,18 +193,18 @@ This section provides guidance on securely configuring JWT algorithms. For detai
 1. **Use strong, asymmetric algorithms**
    * Prefer RS256, RS384, RS512, ES256, ES384, or ES512
    * Avoid using HS256, HS384, or HS512 as they require sharing of secrets
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java] automatically rejects HMAC algorithms
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java] automatically rejects HMAC algorithms
 
 2. **Explicitly specify allowed algorithms**
    * Never allow the "none" algorithm
    * Explicitly specify which algorithms are allowed, don't rely on defaults
    * Prevent algorithm confusion attacks by strictly validating algorithm types
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] explicitly rejects "none" and HMAC algorithms
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] explicitly rejects "none" and HMAC algorithms
 
 3. **Enforce consistent algorithm usage**
    * Configure your application to expect tokens signed with a specific algorithm
    * Reject tokens that use unexpected algorithms, even if they validate
-   * *Implementation*: link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:250-262] enforces algorithm-key compatibility
+   * *Implementation*: link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:250-262] enforces algorithm-key compatibility
 
 ==== Implementation Example
 

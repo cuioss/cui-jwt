@@ -303,8 +303,8 @@ quarkus.native.reuse-existing=true
 
 [source,bash]
 ----
-# Build oauth-sheriff-library module first
-./mvnw clean install -pl oauth-sheriff-library
+# Build oauth-sheriff-core module first
+./mvnw clean install -pl oauth-sheriff-core
 
 # Build native integration
 ./mvnw clean install -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests -Pnative
@@ -372,7 +372,7 @@ curl http://localhost:8080/q/health/ready
 
 **Missing Reflection Configuration**:
 
-* Ensure oauth-sheriff-library module is built before native image
+* Ensure oauth-sheriff-core module is built before native image
 * Verify reflection configuration is applied automatically by deployment
 
 **Memory Issues During Build**:

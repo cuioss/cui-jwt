@@ -47,7 +47,7 @@
         </dependency>
         <dependency>
             <groupId>de.cuioss.sheriff.oauth</groupId>
-            <artifactId>oauth-sheriff-library</artifactId>
+            <artifactId>oauth-sheriff-core</artifactId>
             <version>${project.version}</version>
             <classifier>generators</classifier>
             <scope>test</scope>

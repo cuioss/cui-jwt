@@ -82,20 +82,20 @@ Automatically registers these classes for reflection:
 
 **Classes with Methods and Constructors:**
 
-* `de.cuioss.sheriff.oauth.library.TokenValidator` - Main validation component
+* `de.cuioss.sheriff.oauth.core.TokenValidator` - Main validation component
 * `de.cuioss.sheriff.oauth.quarkus.config.IssuerConfigResolver` - Configuration resolver
-* `de.cuioss.sheriff.oauth.library.security.SecurityEventCounter` - Security metrics
+* `de.cuioss.sheriff.oauth.core.security.SecurityEventCounter` - Security metrics
 * `io.micrometer.core.instrument.MeterRegistry` - Metrics registry
 
 **Configuration Classes (Methods Only):**
 
-* `de.cuioss.sheriff.oauth.library.IssuerConfig` - Issuer configuration
-* `de.cuioss.sheriff.oauth.library.ParserConfig` - Parser settings
-* `de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoaderConfig` - JWKS loader configuration
+* `de.cuioss.sheriff.oauth.core.IssuerConfig` - Issuer configuration
+* `de.cuioss.sheriff.oauth.core.ParserConfig` - Parser settings
+* `de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig` - JWKS loader configuration
 
 **Runtime Initialization:**
 
-* `de.cuioss.sheriff.oauth.library.jwks.http.HttpJwksLoader` (runtime initialized for native image compatibility)
+* `de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoader` (runtime initialized for native image compatibility)
 
 === Native Image Support
 Configures GraalVM native image compilation with automatic reflection registration and runtime initialization.

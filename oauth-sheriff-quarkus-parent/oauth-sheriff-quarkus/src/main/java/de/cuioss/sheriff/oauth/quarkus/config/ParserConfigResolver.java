@@ -15,7 +15,7 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.sheriff.oauth.library.ParserConfig;
+import de.cuioss.sheriff.oauth.core.ParserConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.eclipse.microprofile.config.Config;
 

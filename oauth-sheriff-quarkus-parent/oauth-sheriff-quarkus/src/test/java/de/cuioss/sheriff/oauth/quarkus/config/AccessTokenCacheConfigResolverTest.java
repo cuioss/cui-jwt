@@ -15,7 +15,7 @@
  */
 package de.cuioss.sheriff.oauth.quarkus.config;
 
-import de.cuioss.sheriff.oauth.library.cache.AccessTokenCacheConfig;
+import de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig;
 import de.cuioss.test.juli.TestLogLevel;
 import de.cuioss.test.juli.junit5.EnableTestLogger;
 import io.smallrye.config.SmallRyeConfigBuilder;

@@ -15,7 +15,7 @@ This document provides detailed specifications for the technical components of t
 === Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../oauth-sheriff-library/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
@@ -34,8 +34,8 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-2[CUI-JWT-2: Token Representa
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/ParserConfig.java[ParserConfig] (configuration)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/ParserConfig.java[ParserConfig] (configuration)
 
 The `TokenValidator` is the primary entry point for applications using the library. It provides methods for creating and validating different types of tokens (access, ID, refresh) while handling the complexity of token parsing and validation through a pipeline approach.
 
@@ -46,11 +46,11 @@ The `TokenValidator` uses a pipeline of validators and builders to process token
 3. `TokenBuilder` - Creates token content objects
 4. `TokenClaimValidator` - Validates token claims (expiration, audience, etc.)
 
-For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] class.
+For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] class.
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest]
 
 === Token Validation Pipeline
 _See Requirement xref:../Requirements.adoc#CUI-JWT-1.3[CUI-JWT-1.3: Signature Validation]_
@@ -59,11 +59,11 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-1.3[CUI-JWT-1.3: Signature Va
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenBuilder.java[TokenBuilder] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenBuilder.java[TokenBuilder] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser] (class)
 
 Each component in the pipeline has a specific responsibility:
 
@@ -85,11 +85,11 @@ For implementation details, see the JavaDoc of the pipeline component classes.
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidatorTest.java[TokenHeaderValidatorTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenBuilderTest.java[TokenBuilderTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParserTest.java[NonValidatingJwtParserTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidatorTest.java[TokenHeaderValidatorTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenBuilderTest.java[TokenBuilderTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParserTest.java[NonValidatingJwtParserTest]
 
 === Exception-based Validation
 _See Requirement xref:../Requirements.adoc#CUI-JWT-1[CUI-JWT-1: Token Parsing and Validation]_
@@ -98,8 +98,8 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-1[CUI-JWT-1: Token Parsing an
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/exception/TokenValidationException.java[TokenValidationException] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter] (integration)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/exception/TokenValidationException.java[TokenValidationException] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter] (integration)
 
 The validation pipeline uses an exception-based approach for error handling. Instead of returning Optional objects, the validation methods return the validated object directly and throw a TokenValidationException on validation failure.
 
@@ -124,7 +124,7 @@ This approach provides several benefits:
 * Improved integration with HTTP APIs and exception mappers
 * More idiomatic and maintainable code
 
-For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/exception/TokenValidationException.java[TokenValidationException] class.
+For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/exception/TokenValidationException.java[TokenValidationException] class.
 
 === IssuerConfig and Multi-Issuer Support
 _See Requirement xref:../Requirements.adoc#CUI-JWT-3[CUI-JWT-3: Multi-Issuer Support]_
@@ -133,7 +133,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-3[CUI-JWT-3: Multi-Issuer Sup
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] (class)
 
 Each IssuerConfig instance contains all the information needed to validate tokens from a specific issuer:
 
@@ -238,12 +238,12 @@ image::../../doc/plantuml/key-management.png[Key Management]
 
 The key management system handles the retrieval, caching, and rotation of cryptographic keys used for token validation.
 
-For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] class.
+For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] class.
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/IssuerConfigTest.java[IssuerConfigTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/IssuerConfigTest.java[IssuerConfigTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest]
 
 === JwksLoader
 _See Requirement xref:../Requirements.adoc#CUI-JWT-4[CUI-JWT-4: Key Management]_
@@ -252,10 +252,10 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-4[CUI-JWT-4: Key Management]_
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader] (interface)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] (implementation)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader] (implementation)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory] (factory)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader] (interface)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] (implementation)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader] (implementation)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory] (factory)
 
 The `JwksLoader` interface handles the retrieval, caching, and rotation of cryptographic keys used for token validation. It also provides issuer identification capabilities for well-known discovery scenarios. The `JWKSKeyLoader` class is used by the TokenSignatureValidator to validate token signatures. All implementations integrate with the SecurityEventCounter to track security events related to key management.
 
@@ -324,19 +324,19 @@ Each method requires a SecurityEventCounter parameter to track security events.
 
 For implementation details, see the JavaDoc of the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory]
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderTest.java[HttpJwksLoaderTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderGracePeriodTest.java[HttpJwksLoaderGracePeriodTest] - Verifies grace period functionality (Requirement CUI-JWT-4.5)
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderCachingAndFallbackTest.java[HttpJwksLoaderCachingAndFallbackTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/FileJwksLoaderTest.java[FileJwksLoaderTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/InMemoryJwksLoaderTest.java[InMemoryJwksLoaderTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoaderTest.java[JWKSKeyLoaderTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderTest.java[HttpJwksLoaderTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderGracePeriodTest.java[HttpJwksLoaderGracePeriodTest] - Verifies grace period functionality (Requirement CUI-JWT-4.5)
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderCachingAndFallbackTest.java[HttpJwksLoaderCachingAndFallbackTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/FileJwksLoaderTest.java[FileJwksLoaderTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/InMemoryJwksLoaderTest.java[InMemoryJwksLoaderTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoaderTest.java[JWKSKeyLoaderTest]
 
 === SecurityEventCounter
 _See Requirement xref:../Requirements.adoc#CUI-JWT-7.3[CUI-JWT-7.3: Security Events]_
@@ -345,10 +345,10 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-7.3[CUI-JWT-7.3: Security Eve
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (integration)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] (integration)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory] (integration)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (integration)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig] (integration)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactory.java[JwksLoaderFactory] (integration)
 
 The `SecurityEventCounter` provides a thread-safe mechanism for counting security events that occur during token processing. It is created by the TokenValidator and passed to all components in the token validation pipeline, including:
 
@@ -366,12 +366,12 @@ The counter follows the same naming/numbering scheme as JWTTokenLogMessages for 
 
 The implementation is structured to simplify later integration with metrics systems like Micrometer but does not create any dependency on it.
 
-For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter] class.
+For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter] class.
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/SecurityEventCounterTest.java[SecurityEventCounterTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/SecurityEventCounterTest.java[SecurityEventCounterTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest]
 
 === TokenValidatorMonitor
 
@@ -379,9 +379,9 @@ The following tests verify the implementation:
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitor.java[TokenValidatorMonitor] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/metrics/MeasurementType.java[MeasurementType] (enum)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (integration)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitor.java[TokenValidatorMonitor] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/metrics/MeasurementType.java[MeasurementType] (enum)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator] (integration)
 
 The `TokenValidatorMonitor` provides high-performance, thread-safe monitoring of JWT validation pipeline metrics. It measures execution times for different stages of JWT validation with microsecond precision and maintains a configurable rolling window of recent measurements.
 
@@ -412,11 +412,11 @@ In Quarkus environments, the performance metrics are automatically exposed as Mi
 * **Tags**: `step` (measurement type in lowercase)
 * **Description**: Duration of JWT validation pipeline steps
 
-For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitor.java[TokenValidatorMonitor] class.
+For implementation details, see the JavaDoc of the xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitor.java[TokenValidatorMonitor] class.
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitorTest.java[TokenValidatorMonitorTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/metrics/TokenValidatorMonitorTest.java[TokenValidatorMonitorTest]
 * xref:../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus/src/test/java/de/cuioss/jwt/quarkus/metrics/JwtMetricsCollectorTest.java[JwtMetricsCollectorTest] (Quarkus integration)
 
 === Token Architecture and Types
@@ -426,12 +426,12 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-1.2[CUI-JWT-1.2: Token Types]
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/TokenContent.java[TokenContent] (interface)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/BaseTokenContent.java[BaseTokenContent] (abstract class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/MinimalTokenContent.java[MinimalTokenContent] (interface)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/IdTokenContent.java[IdTokenContent] (class)
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContent.java[RefreshTokenContent] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/TokenContent.java[TokenContent] (interface)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/BaseTokenContent.java[BaseTokenContent] (abstract class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/MinimalTokenContent.java[MinimalTokenContent] (interface)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/IdTokenContent.java[IdTokenContent] (class)
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContent.java[RefreshTokenContent] (class)
 
 ==== Architecture
 
@@ -470,18 +470,18 @@ The library provides specialized classes for different token types, each with fu
 
 For implementation details, see the JavaDoc of the following classes:
 
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/TokenContent.java[TokenContent]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/BaseTokenContent.java[BaseTokenContent]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/MinimalTokenContent.java[MinimalTokenContent]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/IdTokenContent.java[IdTokenContent]
-* xref:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContent.java[RefreshTokenContent]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/TokenContent.java[TokenContent]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/BaseTokenContent.java[BaseTokenContent]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/MinimalTokenContent.java[MinimalTokenContent]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/IdTokenContent.java[IdTokenContent]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContent.java[RefreshTokenContent]
 
 The following tests verify the implementation:
 
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/domain/token/AccessTokenContentTest.java[AccessTokenContentTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/domain/token/IdTokenContentTest.java[IdTokenContentTest]
-* xref:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContentTest.java[RefreshTokenContentTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/domain/token/AccessTokenContentTest.java[AccessTokenContentTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/domain/token/IdTokenContentTest.java[IdTokenContentTest]
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContentTest.java[RefreshTokenContentTest]
 
 === Dependency Management
 _See Requirement xref:../Requirements.adoc#CUI-JWT-8[CUI-JWT-8: Security]_

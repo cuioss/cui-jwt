@@ -17,7 +17,7 @@
 
     <modules>
         <module>oauth-sheriff-benchmarking-common</module>
-        <module>oauth-sheriff-benchmark-library</module>
+        <module>oauth-sheriff-benchmark-core</module>
         <module>oauth-sheriff-benchmark-integration-wrk</module>
     </modules>
 

@@ -37,13 +37,13 @@ The library's design enforces signature verification:
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator.java:264-333] - Enforces ordered validation pipeline with mandatory signature validation
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:80-148] - Validates signatures using secure cryptographic operations with standard JDK providers
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator.java:264-333] - Enforces ordered validation pipeline with mandatory signature validation
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:80-148] - Validates signatures using secure cryptographic operations with standard JDK providers
 * No public API methods expose token decoding without signature verification
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Comprehensive tests for the signature validation process:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Comprehensive tests for the signature validation process:
 ** `shouldValidateTokenWithValidSignature()` - Verifies that valid signatures are accepted
 ** `shouldRejectTokenWithInvalidSignature()` - Verifies that invalid signatures are rejected
 ** `shouldRejectTokenWithAlgorithmConfusionAttack()` - Verifies protection against algorithm confusion
@@ -63,13 +63,13 @@ The library explicitly rejects the "none" algorithm. For implementation details,
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - "none" algorithm is explicitly listed in REJECTED_ALGORITHMS
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:229-241] - Signature validator rejects tokens with unsupported algorithms
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:110-132] - Header validator checks algorithm support before signature validation
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - "none" algorithm is explicitly listed in REJECTED_ALGORITHMS
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:229-241] - Signature validator rejects tokens with unsupported algorithms
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:110-132] - Header validator checks algorithm support before signature validation
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorAlgorithmTest.java[TokenSignatureValidatorAlgorithmTest] - Tests algorithm validation
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorAlgorithmTest.java[TokenSignatureValidatorAlgorithmTest] - Tests algorithm validation
 
 === 3. Trivial Secret (Weak HMAC Keys)
 
@@ -86,14 +86,14 @@ The library provides protection against weak keys. For implementation details, s
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms (HS256, HS384, HS512) are explicitly rejected to prevent weak secret vulnerabilities
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms (HS256, HS384, HS512) are explicitly rejected to prevent weak secret vulnerabilities
 * Library exclusively supports asymmetric algorithms (RS*, ES*, PS*) eliminating shared secret vulnerabilities
 * No support for HMAC-based algorithms removes the risk of weak key attacks entirely
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferencesTest.java[SignatureAlgorithmPreferencesTest] - Tests algorithm preferences
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/KeyDisclosureVulnerabilityTest.java[KeyDisclosureVulnerabilityTest] - Tests protection against key disclosure
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferencesTest.java[SignatureAlgorithmPreferencesTest] - Tests algorithm preferences
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/KeyDisclosureVulnerabilityTest.java[KeyDisclosureVulnerabilityTest] - Tests protection against key disclosure
 
 === 4. Algorithm Confusion (RSA to HMAC)
 
@@ -110,13 +110,13 @@ The library implements several protections against algorithm confusion attacks. 
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms are explicitly rejected, preventing RSA-to-HMAC confusion attacks
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:250-262] - Algorithm compatibility validation ensures token algorithm matches key type
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:140-148] - Strict algorithm-key matching prevents confusion attacks
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[SignatureAlgorithmPreferences.java:53] - HMAC algorithms are explicitly rejected, preventing RSA-to-HMAC confusion attacks
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:250-262] - Algorithm compatibility validation ensures token algorithm matches key type
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:140-148] - Strict algorithm-key matching prevents confusion attacks
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests algorithm confusion protection through `shouldRejectAlgorithmConfusionAttack()`
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests algorithm confusion protection through `shouldRejectAlgorithmConfusionAttack()`
 
 === 5. `kid` Injection (Key ID Manipulation)
 
@@ -140,14 +140,14 @@ The library implements several protections against Key ID injection attacks. For
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:96-105] - Mandatory Key ID validation rejects tokens without valid kid
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:129-138] - Key retrieval through secure JwksLoader abstraction prevents direct file/DB access
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader.java:116-128] - Keys are pre-loaded and cached via HTTPS, eliminating dynamic key fetching based on kid values
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:96-105] - Mandatory Key ID validation rejects tokens without valid kid
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java:129-138] - Key retrieval through secure JwksLoader abstraction prevents direct file/DB access
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader.java:116-128] - Keys are pre-loaded and cached via HTTPS, eliminating dynamic key fetching based on kid values
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests rejection of tokens with invalid `kid` values in `shouldRejectTokenWhenKeyNotFound()`
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest] - Comprehensive tests for KID injection attacks:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests rejection of tokens with invalid `kid` values in `shouldRejectTokenWhenKeyNotFound()`
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest] - Comprehensive tests for KID injection attacks:
 
 ** Tests path traversal via `kid` header
 ** Tests SQL injection via `kid` header
@@ -170,13 +170,13 @@ The library mitigates this vulnerability by refusing to accept keys from tokens.
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:93-102] - Embedded JWK detection explicitly rejects tokens containing "jwk" in header
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator.java:93-102] - Embedded JWK detection explicitly rejects tokens containing "jwk" in header
 * All keys must be obtained through secure JwksLoader implementations, never from token headers
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter.java] - Tracks UNSUPPORTED_ALGORITHM events when embedded JWK tokens are detected
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter.java] - Tracks UNSUPPORTED_ALGORITHM events when embedded JWK tokens are detected
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/EmbeddedJwkAttackTest.java[EmbeddedJwkAttackTest] - Tests rejection of tokens with embedded JWK in the header
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/EmbeddedJwkAttackTest.java[EmbeddedJwkAttackTest] - Tests rejection of tokens with embedded JWK in the header
 
 === 7. JKU / X5U Header Abuse
 
@@ -195,13 +195,13 @@ The library prevents JKU/X5U header abuse by not following arbitrary URLs in tok
 **Implementation Details:**
 
 * The library does not process `jku` or `x5u` headers from tokens - these headers are ignored
-* All JWKS URLs must be explicitly configured in link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] during application setup
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader.java] - Only fetches keys from pre-configured, trusted JWKS endpoints with TLS enforcement
+* All JWKS URLs must be explicitly configured in link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] during application setup
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader.java] - Only fetches keys from pre-configured, trusted JWKS endpoints with TLS enforcement
 * No dynamic URL following eliminates SSRF attack vectors
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/JkuX5uAttackTest.java[JkuX5uAttackTest] - Tests rejection of tokens with JKU or X5U headers pointing to malicious URLs
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/JkuX5uAttackTest.java[JkuX5uAttackTest] - Tests rejection of tokens with JKU or X5U headers pointing to malicious URLs
 
 === 8. CVE-2022-21449 (Psychic Signature)
 
@@ -218,13 +218,13 @@ The library is protected against the "Psychic Signature" vulnerability. For impl
 
 **Implementation Details:**
 
-* link:../../oauth-sheriff-library/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java] - Uses Java 21 standard JDK cryptographic providers which include fixes for CVE-2022-21449
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator.java] - Uses Java 21 standard JDK cryptographic providers which include fixes for CVE-2022-21449
 * Java 21 properly validates ECDSA signature components and rejects all-zero signatures
 * The library enforces use of standard JDK providers with Java 21, which includes comprehensive security fixes
 
 ==== Test Coverage
 
-* link:../../oauth-sheriff-library/src/test/java/de/cuioss/jwt/validation/security/PsychicSignatureAttackTest.java[PsychicSignatureAttackTest] - Tests rejection of tokens with all-zero ECDSA signatures (ES256, ES384, ES512)
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/PsychicSignatureAttackTest.java[PsychicSignatureAttackTest] - Tests rejection of tokens with all-zero ECDSA signatures (ES256, ES384, ES512)
 
 == Summary and Recommendations
 

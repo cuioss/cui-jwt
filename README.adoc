@@ -1,4 +1,4 @@
-= oauth-sheriff-library
+= oauth-sheriff-core
 :toc: macro
 :toclevels: 3
 :sectnumlevels: 1
@@ -15,9 +15,9 @@ image:https://img.shields.io/github/last-commit/cuioss/OAuth-Sheriff/main[Last B
 image:http://img.shields.io/:license-apache-blue.svg[License,link=http://www.apache.org/licenses/LICENSE-2.0.html]
 image:https://img.shields.io/maven-central/v/de.cuioss.sheriff.oauth/oauth-sheriff-parent.svg?label=Maven%20Central["Maven Central", link="https://central.sonatype.com/artifact/de.cuioss.sheriff.oauth/oauth-sheriff-parent"]
 
-image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-library&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-library]
-image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-library&metric=ncloc[Lines of Code,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-library]
-image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-library&metric=coverage[Coverage,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-library]
+image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-core&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-core]
+image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-core&metric=ncloc[Lines of Code,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-core]
+image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-core&metric=coverage[Coverage,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-core]
 
 **Performance Benchmarks**
 
@@ -160,7 +160,7 @@ For non-Quarkus applications, use the core validation library:
 ----
 <dependency>
     <groupId>de.cuioss.sheriff.oauth</groupId>
-    <artifactId>oauth-sheriff-library</artifactId>
+    <artifactId>oauth-sheriff-core</artifactId>
 </dependency>
 ----
 
@@ -200,16 +200,16 @@ For detailed architectural information, see:
 == Documentation
 
 * xref:doc/navigation.adoc[📚 Documentation Navigation] - Complete guide to all documentation
-* xref:oauth-sheriff-library/README.adoc[Usage Guide] - Detailed usage examples
+* xref:oauth-sheriff-core/README.adoc[Usage Guide] - Detailed usage examples
 * xref:doc/Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:doc/security/Threat-Model.adoc[Threat Model] - Security analysis
 
-For configuration details including runtime dependencies and test support, see the xref:oauth-sheriff-library/README.adoc[JWT Validation Module documentation].
+For configuration details including runtime dependencies and test support, see the xref:oauth-sheriff-core/README.adoc[JWT Validation Module documentation].
 
 == Performance
 
 The library is continuously benchmarked with results published to GitHub Pages:
 
-* xref:benchmarking/benchmark-library/README.adoc[Micro-benchmarks] - In-memory performance testing
+* xref:benchmarking/benchmark-core/README.adoc[Micro-benchmarks] - In-memory performance testing
 * xref:benchmarking/benchmark-integration-wrk/README.adoc[WRK Load Testing] - HTTP-based load testing with WRK
 * xref:benchmarking/doc/performance-scoring.adoc[Performance Metrics] - Understanding the scoring system

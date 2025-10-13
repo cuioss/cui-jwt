@@ -321,8 +321,8 @@ quarkus.native.container-runtime-options=-m=64m
 
 [source,bash]
 ----
-# Build oauth-sheriff-library module first
-./mvnw clean install -pl oauth-sheriff-library
+# Build oauth-sheriff-core module first
+./mvnw clean install -pl oauth-sheriff-core
 
 # Build native image
 ./mvnw clean package -Pnative
@@ -402,7 +402,7 @@ curl -H "Authorization: Bearer <test-token>" http://localhost:8080/api/test
 
 **Missing Reflection Configuration**:
 
-* Ensure oauth-sheriff-library module is built before native image
+* Ensure oauth-sheriff-core module is built before native image
 * Verify automatic reflection registration is working
 * Check that all JWT validation classes are included
 
