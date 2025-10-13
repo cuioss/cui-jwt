@@ -44,7 +44,7 @@ import java.util.Optional;
  * and semantic behavior.
  * <p>
  * For more details on token structure, see the
- * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#token-structure">Token Structure</a>
+ * <a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/specification/technical-components.adoc#token-structure">Token Structure</a>
  * specification.
  *
  * @author Oliver Wolff

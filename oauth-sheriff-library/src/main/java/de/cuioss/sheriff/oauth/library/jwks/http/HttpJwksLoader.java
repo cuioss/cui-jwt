@@ -60,7 +60,7 @@ import static de.cuioss.sheriff.oauth.library.JWTValidationLogMessages.WARN;
  *
  * @author Oliver Wolff
  * @see HttpJwksLoaderConfig
- * @see <a href="https://github.com/cuioss/cui-jwt/issues/110">Issue #110: Key rotation grace period</a>
+ * @see <a href="https://github.com/cuioss/OAuth-Sheriff/issues/110">Issue #110: Key rotation grace period</a>
  * @since 1.0
  */
 public class HttpJwksLoader implements JwksLoader, LoadingStatusProvider, AutoCloseable {

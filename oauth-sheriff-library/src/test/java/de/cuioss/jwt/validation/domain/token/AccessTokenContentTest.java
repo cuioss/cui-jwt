@@ -45,11 +45,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>
  * Verifies requirements:
  * <ul>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-1.1">CUI-JWT-1.1: Token Structure</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-1.2">CUI-JWT-1.2: Token Types</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-2.1">CUI-JWT-2.1: Base Token Functionality</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-2.2">CUI-JWT-2.2: Access Token Functionality</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-8.4">CUI-JWT-8.4: Claims Validation</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-1.1">CUI-JWT-1.1: Token Structure</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-1.2">CUI-JWT-1.2: Token Types</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-2.1">CUI-JWT-2.1: Base Token Functionality</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-2.2">CUI-JWT-2.2: Access Token Functionality</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-8.4">CUI-JWT-8.4: Claims Validation</a></li>
  * </ul>
  *
  * @author Oliver Wolff

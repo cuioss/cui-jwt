@@ -45,13 +45,13 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>
  * Verifies requirements:
  * <ul>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-1.3">CUI-JWT-1.3: Signature Validation</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-2.1">CUI-JWT-2.1: Base Token Functionality</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-3.1">CUI-JWT-3.1: Issuer Configuration</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-3.3">CUI-JWT-3.3: Issuer Validation</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-7.1">CUI-JWT-7.1: Log Levels</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-7.3">CUI-JWT-7.3: Security Events</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-8.4">CUI-JWT-8.4: Claims Validation</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-1.3">CUI-JWT-1.3: Signature Validation</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-2.1">CUI-JWT-2.1: Base Token Functionality</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-3.1">CUI-JWT-3.1: Issuer Configuration</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-3.3">CUI-JWT-3.3: Issuer Validation</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-7.1">CUI-JWT-7.1: Log Levels</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-7.3">CUI-JWT-7.3: Security Events</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-8.4">CUI-JWT-8.4: Claims Validation</a></li>
  * </ul>
  * 
  * @author Oliver Wolff

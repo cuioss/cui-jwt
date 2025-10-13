@@ -106,13 +106,13 @@
  * 
  * <p>Implements requirements:</p>
  * <ul>
- *   <li><a href="https://github.com/cuioss/cui-jwt/tree/main/doc/Requirements.adoc#CUI-JWT-4.1">CUI-JWT-4.1: JWKS Endpoint Support</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/tree/main/doc/Requirements.adoc#CUI-JWT-8.3">CUI-JWT-8.3: Secure Communication</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/tree/main/doc/Requirements.adoc#CUI-JWT-8.5">CUI-JWT-8.5: Cryptographic Agility</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-4.1">CUI-JWT-4.1: JWKS Endpoint Support</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-8.3">CUI-JWT-8.3: Secure Communication</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/Requirements.adoc#CUI-JWT-8.5">CUI-JWT-8.5: Cryptographic Agility</a></li>
  * </ul>
  * <p>
  * For more detailed specifications, see the
- * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#_jwksloader">Technical Components Specification - JwksLoader</a>
+ * <a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/specification/technical-components.adoc#_jwksloader">Technical Components Specification - JwksLoader</a>
  * 
  * @author Oliver Wolff
  * @since 1.0

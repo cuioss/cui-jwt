@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Supports requirement CUI-JWT-1.2: Multi-Issuer Support.
  *
  * @author Oliver Wolff
- * @see <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#multi-issuer">Multi-Issuer Specification</a>
+ * @see <a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/specification/technical-components.adoc#multi-issuer">Multi-Issuer Specification</a>
  */
 @EnableTestLogger
 @DisplayName("Tests for IssuerConfig")

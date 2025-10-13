@@ -17,7 +17,7 @@
  * Library-level benchmarks for JWT token validation.
  * <p>
  * This package contains JMH benchmarks for measuring the performance of
- * the cui-jwt-validation library in isolation, without any framework overhead.
+ * the oauth-sheriff-library library in isolation, without any framework overhead.
  * </p>
  *
  * @since 1.0.0

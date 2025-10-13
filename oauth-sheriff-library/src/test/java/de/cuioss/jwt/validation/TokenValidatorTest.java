@@ -41,18 +41,18 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>
  * Verifies requirements:
  * <ul>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-1.1">CUI-JWT-1.1: Token Structure</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-1.2">CUI-JWT-1.2: Token Types</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-1.3">CUI-JWT-1.3: Signature Validation</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-3.1">CUI-JWT-3.1: Issuer Configuration</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-3.2">CUI-JWT-3.2: Issuer Selection</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-3.3">CUI-JWT-3.3: Issuer Validation</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-5.1">CUI-JWT-5.1: Token Parsing Methods</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-6.1">CUI-JWT-6.1: Configuration Flexibility</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-7.1">CUI-JWT-7.1: Log Levels</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-7.2">CUI-JWT-7.2: Log Content</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-8.1">CUI-JWT-8.1: Token Size Limits</a></li>
- *   <li><a href="https://github.com/cuioss/cui-jwt/blob/main/doc/Requirements.adoc#CUI-JWT-8.2">CUI-JWT-8.2: Safe Parsing</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-1.1">CUI-JWT-1.1: Token Structure</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-1.2">CUI-JWT-1.2: Token Types</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-1.3">CUI-JWT-1.3: Signature Validation</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-3.1">CUI-JWT-3.1: Issuer Configuration</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-3.2">CUI-JWT-3.2: Issuer Selection</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-3.3">CUI-JWT-3.3: Issuer Validation</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-5.1">CUI-JWT-5.1: Token Parsing Methods</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-6.1">CUI-JWT-6.1: Configuration Flexibility</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-7.1">CUI-JWT-7.1: Log Levels</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-7.2">CUI-JWT-7.2: Log Content</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-8.1">CUI-JWT-8.1: Token Size Limits</a></li>
+ *   <li><a href="https://github.com/cuioss/OAuth-Sheriff/blob/main/doc/Requirements.adoc#CUI-JWT-8.2">CUI-JWT-8.2: Safe Parsing</a></li>
  * </ul>
  *
  * @author Oliver Wolff

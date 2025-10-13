@@ -38,7 +38,7 @@ import de.cuioss.sheriff.oauth.library.json.MapRepresentation;
  * for custom claim mapping logic, making it flexible and extensible.
  * <p>
  * For more details on claim handling, see the
- * <a href="https://github.com/cuioss/cui-jwt/tree/main/doc/specification/technical-components.adoc#token-structure">Token Structure</a>
+ * <a href="https://github.com/cuioss/OAuth-Sheriff/tree/main/doc/specification/technical-components.adoc#token-structure">Token Structure</a>
  * specification.
  *
  * @author Oliver Wolff
