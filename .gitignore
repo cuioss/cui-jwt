@@ -13,10 +13,9 @@
 .output.txt
 **/jmh-result*.json
 /META-INF/MANIFEST.MF
-/cui-jwt-quarkus-parent/cui-jwt-quarkus-deployment/node_modules/
 
-# Exclude test data files from benchmarking templates
-/cui-jwt-benchmarking/doc/templates/data/
+# Node modules in Quarkus deployment module (for DevUI)
+/oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-deployment/node_modules/
 
 # Claude Code configuration
 .claude/
