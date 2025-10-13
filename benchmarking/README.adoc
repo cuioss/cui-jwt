@@ -19,15 +19,15 @@ The benchmarking infrastructure provides:
 |===
 |Module |Purpose |Execution Time
 
-|link:oauth-sheriff-benchmarking-common/[oauth-sheriff-benchmarking-common]
+|link:benchmarking-common/[benchmarking-common]
 |Shared infrastructure and utilities
 |N/A (library)
 
-|link:oauth-sheriff-benchmark-core/[oauth-sheriff-benchmark-core]
+|link:benchmark-core/[benchmark-core]
 |JMH micro-benchmarks for JWT library
 |< 10 minutes
 
-|link:oauth-sheriff-benchmark-integration-wrk/[oauth-sheriff-benchmark-integration-wrk]
+|link:benchmark-integration-wrk/[benchmark-integration-wrk]
 |WRK-based HTTP load testing
 |< 5 minutes
 |===
@@ -39,10 +39,10 @@ The benchmarking infrastructure provides:
 [source,bash]
 ----
 # Library micro-benchmarks
-./mvnw verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark
+./mvnw verify -pl benchmarking/benchmark-core -Pbenchmark
 
 # WRK load testing benchmarks (requires Docker)
-./mvnw verify -pl benchmarking/oauth-sheriff-benchmark-integration-wrk -Pbenchmark
+./mvnw verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
 ----
 
 === Run with Profiling
@@ -50,7 +50,7 @@ The benchmarking infrastructure provides:
 [source,bash]
 ----
 # Library benchmarks with JFR profiling
-./mvnw verify -pl benchmarking/oauth-sheriff-benchmark-core -Pbenchmark-jfr
+./mvnw verify -pl benchmarking/benchmark-core -Pbenchmark-jfr
 ----
 
 === View Results Locally
@@ -68,20 +68,20 @@ See link:doc/local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 == Benchmark Types
 
-=== Micro Benchmarks (oauth-sheriff-benchmark-core)
+=== Micro Benchmarks (benchmark-core)
 
-Located in `benchmarking/oauth-sheriff-benchmark-core`:
+Located in `benchmarking/benchmark-core`:
 
 * `SimpleCoreValidationBenchmark` - Core JWT validation performance
 * `SimpleErrorLoadBenchmark` - Error handling and resilience testing
 * Automatic generation of performance badges and reports
 * Quality gates for throughput and latency
 
-See link:oauth-sheriff-benchmark-core/README.adoc[oauth-sheriff-benchmark-core README] for details.
+See link:benchmark-core/README.adoc[benchmark-core README] for details.
 
-=== Load Testing Benchmarks (oauth-sheriff-benchmark-integration-wrk)
+=== Load Testing Benchmarks (benchmark-integration-wrk)
 
-Located in `benchmarking/oauth-sheriff-benchmark-integration-wrk`:
+Located in `benchmarking/benchmark-integration-wrk`:
 
 * External HTTP load testing using WRK
 * JWT validation endpoint stress testing
@@ -89,13 +89,13 @@ Located in `benchmarking/oauth-sheriff-benchmark-integration-wrk`:
 * System-level CPU and memory monitoring
 * Cross-platform monitoring support (macOS/Linux)
 
-See link:oauth-sheriff-benchmark-integration-wrk/README.adoc[oauth-sheriff-benchmark-integration-wrk README] for details.
+See link:benchmark-integration-wrk/README.adoc[benchmark-integration-wrk README] for details.
 
-=== Common Infrastructure (oauth-sheriff-benchmarking-common)
+=== Common Infrastructure (benchmarking-common)
 
 Shared infrastructure providing benchmark framework, metrics collection, and artifact generation.
 
-See link:oauth-sheriff-benchmarking-common/README.adoc[oauth-sheriff-benchmarking-common README] for details.
+See link:benchmarking-common/README.adoc[benchmarking-common README] for details.
 
 == Results and Artifacts
 
@@ -158,7 +158,7 @@ See link:doc/workflow.adoc[Benchmark Workflow] for the complete process.
 === Performance Analysis
 
 * link:doc/Analysis-10.2025.adoc[Resource Monitoring Enhancement Analysis (October 2025)] - CPU and RAM utilization monitoring implementation and comparative analysis
-* link:oauth-sheriff-benchmark-core/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Performance metrics and optimization insights
+* link:benchmark-core/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Performance metrics and optimization insights
 
 == Development
 

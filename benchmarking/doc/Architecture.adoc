@@ -16,13 +16,13 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
 [cols="1,3", options="header"]
 |===
 |Module |Purpose
-|oauth-sheriff-benchmarking-common
+|benchmarking-common
 |Shared infrastructure, utilities, and framework for all benchmark types
 
-|oauth-sheriff-benchmark-core
+|benchmark-core
 |JMH-based micro-benchmarks for direct JWT validation library performance testing
 
-|oauth-sheriff-benchmark-integration-wrk
+|benchmark-integration-wrk
 |WRK-based HTTP load testing using shell scripts and Docker containers
 |===
 
@@ -36,7 +36,7 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│              oauth-sheriff-benchmarking-common                    │
+│              benchmarking-common                    │
 │  • Benchmark runners and configuration                  │
 │  • Metrics collection and transformation                │
 │  • Report and badge generation                          │
@@ -47,7 +47,7 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
       ┌────────┴────────┐
       ▼                 ▼
 ┌──────────────┐  ┌─────────────────────────┐
-│benchmark-    │  │oauth-sheriff-benchmark-integration-wrk│
+│benchmark-    │  │benchmark-integration-wrk│
 │library       │  │                         │
 │              │  │ Shell-based WRK testing │
 │JMH Benchmarks│  │ 1 Java post-processor   │
@@ -62,7 +62,7 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
 └──────────────┘  └─────────────────────────┘
 ----
 
-== oauth-sheriff-benchmarking-common
+== benchmarking-common
 
 === Responsibility
 Foundation framework providing shared utilities, configuration, metrics processing, and report generation for all benchmark types.
@@ -125,7 +125,7 @@ de.cuioss.benchmarking.common/
 └── util/          # General utilities
 ----
 
-== oauth-sheriff-benchmark-core
+== benchmark-core
 
 === Responsibility
 Executes JMH-based micro-benchmarks directly against the JWT validation library without network or container overhead.
@@ -163,7 +163,7 @@ Configured via pom.xml properties:
 * `jmh.threads=100`, `jmh.time=4s`
 * `jmh.include` - Benchmark class pattern filter
 
-== oauth-sheriff-benchmark-integration-wrk
+== benchmark-integration-wrk
 
 === Responsibility
 Performs HTTP-based load testing using WRK tool via shell scripts. Minimal Java code - orchestration handled by Maven and bash scripts.
@@ -219,27 +219,27 @@ Configured via pom.xml properties:
 [source]
 ----
 Does the code generate reports/badges/artifacts?
-├─YES─> oauth-sheriff-benchmarking-common/report/
+├─YES─> benchmarking-common/report/
 │
 ├─NO──> Does it collect or transform metrics?
-│       ├─YES─> oauth-sheriff-benchmarking-common/metrics/
+│       ├─YES─> benchmarking-common/metrics/
 │       │
 │       └─NO──> Does it manage configuration?
-│               ├─YES─> oauth-sheriff-benchmarking-common/config/
+│               ├─YES─> benchmarking-common/config/
 │               │
 │               └─NO──> Is it a JMH benchmark?
-│                       ├─YES─> oauth-sheriff-benchmark-core/
+│                       ├─YES─> benchmark-core/
 │                       │
 │                       └─NO──> Is it WRK-related?
-│                               ├─YES─> oauth-sheriff-benchmark-integration-wrk/
+│                               ├─YES─> benchmark-integration-wrk/
 │                               │       (or use shell scripts)
 │                               │
-│                               └─NO──> oauth-sheriff-benchmarking-common/util/
+│                               └─NO──> benchmarking-common/util/
 ----
 
 == Placement Guidelines
 
-=== Place in oauth-sheriff-benchmarking-common when:
+=== Place in benchmarking-common when:
 * Used by both library and integration benchmarks
 * General framework component (runner, processor)
 * Metrics collection or transformation
@@ -248,12 +248,12 @@ Does the code generate reports/badges/artifacts?
 * Token management
 * HTTP client utilities
 
-=== Place in oauth-sheriff-benchmark-core when:
+=== Place in benchmark-core when:
 * JMH benchmark methods (`@Benchmark` annotation)
 * JFR instrumentation for library testing
 * Library-specific test utilities
 
-=== Place in oauth-sheriff-benchmark-integration-wrk when:
+=== Place in benchmark-integration-wrk when:
 * Processing WRK output format
 * Rarely needed - most logic is in shell scripts
 

@@ -10,7 +10,7 @@
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>oauth-sheriff-benchmark-integration-wrk</artifactId>
+    <artifactId>benchmark-integration-wrk</artifactId>
     <name>OAuth Sheriff WRK-based Integration Benchmarks</name>
     <description>WRK-based HTTP benchmarks for OAuth/JWT validation endpoints with integration test infrastructure</description>
 
@@ -54,7 +54,7 @@
         <!-- Core benchmark common utilities -->
         <dependency>
             <groupId>de.cuioss.sheriff.oauth</groupId>
-            <artifactId>oauth-sheriff-benchmarking-common</artifactId>
+            <artifactId>benchmarking-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 

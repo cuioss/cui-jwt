@@ -10,7 +10,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>oauth-sheriff-benchmarking-common</artifactId>
+    <artifactId>benchmarking-common</artifactId>
     <name>OAuth Sheriff Benchmarking Common Infrastructure</name>
     <description>Common benchmarking infrastructure with JMH integration for artifact generation during benchmark execution</description>
 

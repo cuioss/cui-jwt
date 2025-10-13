@@ -16,9 +16,9 @@
     <description>Parent module for all benchmarking related modules including library and integration benchmarks</description>
 
     <modules>
-        <module>oauth-sheriff-benchmarking-common</module>
-        <module>oauth-sheriff-benchmark-core</module>
-        <module>oauth-sheriff-benchmark-integration-wrk</module>
+        <module>benchmarking-common</module>
+        <module>benchmark-core</module>
+        <module>benchmark-integration-wrk</module>
     </modules>
 
     <properties>

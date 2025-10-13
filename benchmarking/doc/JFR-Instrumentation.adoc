@@ -6,11 +6,11 @@
 [source,bash]
 ----
 # Run JFR-instrumented benchmarks (from project root)
-./mvnw verify -Pbenchmark-jfr -pl benchmarking/oauth-sheriff-benchmark-core
+./mvnw verify -Pbenchmark-jfr -pl benchmarking/benchmark-core
 
 # Analyze variance using Maven (use absolute path)
-./mvnw verify -Panalyze-jfr -pl benchmarking/oauth-sheriff-benchmark-core \
-  -Djfr.file="$(pwd)/benchmarking/oauth-sheriff-benchmark-core/target/benchmark-jfr-results/jfr-benchmark.jfr"
+./mvnw verify -Panalyze-jfr -pl benchmarking/benchmark-core \
+  -Djfr.file="$(pwd)/benchmarking/benchmark-core/target/benchmark-jfr-results/jfr-benchmark.jfr"
 ----
 
 == What's Measured
@@ -122,7 +122,7 @@ Periodic performance snapshot (emitted every 1 second).
 [source,bash]
 ----
 # Navigate to benchmark-core directory first
-cd benchmarking/oauth-sheriff-benchmark-core
+cd benchmarking/benchmark-core
 
 # View benchmark operation events
 jfr print --events de.cuioss.benchmark.Operation target/benchmark-jfr-results/jfr-benchmark.jfr
@@ -150,11 +150,11 @@ jfr print --categories "Benchmark,Performance" target/benchmark-jfr-results/jfr-
 [source,bash]
 ----
 # Analyze JFR recording using Maven (from project root - requires absolute path)
-./mvnw verify -Panalyze-jfr -pl benchmarking/oauth-sheriff-benchmark-core \
-  -Djfr.file="$(pwd)/benchmarking/oauth-sheriff-benchmark-core/target/benchmark-jfr-results/jfr-benchmark.jfr"
+./mvnw verify -Panalyze-jfr -pl benchmarking/benchmark-core \
+  -Djfr.file="$(pwd)/benchmarking/benchmark-core/target/benchmark-jfr-results/jfr-benchmark.jfr"
 
 # Analyze a different JFR file (use absolute path)
-./mvnw verify -Panalyze-jfr -pl benchmarking/oauth-sheriff-benchmark-core \
+./mvnw verify -Panalyze-jfr -pl benchmarking/benchmark-core \
   -Djfr.file=/absolute/path/to/custom-recording.jfr
 ----
 
@@ -211,7 +211,7 @@ Analyzes JFR recordings to extract variance metrics.
 
 [source,bash]
 ----
-./mvnw verify -Panalyze-jfr -pl benchmarking/oauth-sheriff-benchmark-core \
+./mvnw verify -Panalyze-jfr -pl benchmarking/benchmark-core \
   -Djfr.file=target/benchmark-jfr-results/jfr-benchmark.jfr
 ----
 
@@ -221,7 +221,7 @@ Override benchmark parameters via system properties:
 
 [source,bash]
 ----
-./mvnw verify -Pbenchmark-jfr -pl benchmarking/oauth-sheriff-benchmark-core \
+./mvnw verify -Pbenchmark-jfr -pl benchmarking/benchmark-core \
   -Djmh.iterations=10 \
   -Djmh.threads=32 \
   -Djmh.time=10s \
@@ -229,7 +229,7 @@ Override benchmark parameters via system properties:
   -Djmh.warmupTime=2s
 ----
 
-**Available properties** (from `oauth-sheriff-benchmark-core/pom.xml`):
+**Available properties** (from `benchmark-core/pom.xml`):
 
 * `jmh.iterations` - Number of measurement iterations
 * `jmh.warmupIterations` - Number of warmup iterations
@@ -243,7 +243,7 @@ Override benchmark parameters via system properties:
 
 [source,bash]
 ----
-./mvnw verify -Pbenchmark-jfr -pl benchmarking/oauth-sheriff-benchmark-core \
+./mvnw verify -Pbenchmark-jfr -pl benchmarking/benchmark-core \
   -Djmh.iterations=2 \
   -Djmh.warmupIterations=1 \
   -Djmh.time=3s
@@ -255,7 +255,7 @@ After running with `-Pbenchmark-jfr`, you'll find:
 
 [source]
 ----
-benchmarking/oauth-sheriff-benchmark-core/target/
+benchmarking/benchmark-core/target/
 ├── benchmark-jfr-results/
 │   ├── jfr-benchmark.jfr          # JFR recording file
 │   └── micro-result.json          # JMH benchmark results (JSON)
@@ -278,8 +278,8 @@ a|
 
 |**Analyzer fails with ClassNotFoundException**
 a|
-* Run `./mvnw clean install -pl benchmarking/oauth-sheriff-benchmarking-common` first
-* Ensure benchmark-core module is built: `./mvnw package -pl benchmarking/oauth-sheriff-benchmark-core`
+* Run `./mvnw clean install -pl benchmarking/benchmarking-common` first
+* Ensure benchmark-core module is built: `./mvnw package -pl benchmarking/benchmark-core`
 * Verify correct profile usage: `-Panalyze-jfr`
 
 |**High JFR overhead affecting results**
@@ -297,13 +297,13 @@ a|
 
 |**Wrong analyzer Maven profile**
 a|
-* Use: `./mvnw verify -Panalyze-jfr -pl benchmarking/oauth-sheriff-benchmark-core`
+* Use: `./mvnw verify -Panalyze-jfr -pl benchmarking/benchmark-core`
 * Provide JFR file path: `-Djfr.file=target/benchmark-jfr-results/jfr-benchmark.jfr`
-* The analyzer main class is in the `oauth-sheriff-benchmarking-common` module
+* The analyzer main class is in the `benchmarking-common` module
 
 |**JFR file not found**
 a|
-* Verify file exists: `ls -la benchmarking/oauth-sheriff-benchmark-core/target/benchmark-jfr-results/`
+* Verify file exists: `ls -la benchmarking/benchmark-core/target/benchmark-jfr-results/`
 * **IMPORTANT**: Maven exec plugin requires absolute paths - use `$(pwd)/benchmarking/...` or full path
 * Relative paths will fail with `FileNotFoundException`
 * Check benchmark actually ran with `-Pbenchmark-jfr` profile
@@ -323,13 +323,13 @@ a|
 
 JFR instrumentation is implemented in:
 
-* **Event definitions**: `benchmarking/oauth-sheriff-benchmarking-common/src/main/java/de/cuioss/benchmarking/common/jfr/`
+* **Event definitions**: `benchmarking/benchmarking-common/src/main/java/de/cuioss/benchmarking/common/jfr/`
   - `OperationEvent.java` - Individual operation events
   - `OperationStatisticsEvent.java` - Periodic statistics
   - `BenchmarkPhaseEvent.java` - Benchmark lifecycle phases
 * **Instrumentation**: `JfrInstrumentation.java` - Central recorder and statistics aggregator
-* **Runner**: `benchmarking/oauth-sheriff-benchmark-core/src/main/java/.../JfrBenchmarkRunner.java`
-* **Benchmarks**: `benchmarking/oauth-sheriff-benchmark-core/src/main/java/.../jfr/benchmarks/`
+* **Runner**: `benchmarking/benchmark-core/src/main/java/.../JfrBenchmarkRunner.java`
+* **Benchmarks**: `benchmarking/benchmark-core/src/main/java/.../jfr/benchmarks/`
   - `CoreJfrBenchmark.java` - Core validation benchmarks
   - `ErrorJfrBenchmark.java` - Error path benchmarks
   - `MixedJfrBenchmark.java` - Mixed workload benchmarks

@@ -10,7 +10,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>oauth-sheriff-benchmark-core</artifactId>
+    <artifactId>benchmark-core</artifactId>
     <packaging>jar</packaging>
     <name>OAuth Sheriff Benchmark Core</name>
     <description>Benchmarking module for OAuth/JWT token validation</description>
@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>de.cuioss.sheriff.oauth</groupId>
-            <artifactId>oauth-sheriff-benchmarking-common</artifactId>
+            <artifactId>benchmarking-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
