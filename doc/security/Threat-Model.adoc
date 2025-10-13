@@ -6,7 +6,7 @@
 :source-highlighter: highlight.js
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8[CUI-JWT-8: Security Requirements] and Specification xref:../Specification.adoc[Specification] and xref:security-specifications.adoc[Security Specification]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8[OAUTH-SHERIFF-8: Security Requirements] and Specification xref:../Specification.adoc[Specification] and xref:security-specifications.adoc[Security Specification]_
 
 This document outlines the threat model for the JWT Token Validation library. The threat model follows OWASP recommendations and identifies potential security threats, current mitigations, and additional recommendations.
 
@@ -40,7 +40,7 @@ image::../plantuml/threat-model-dataflow.png[Threat Model Data Flow]
 == STRIDE Threat Analysis
 
 === Spoofing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size Limits] and xref:../Requirements.adoc#CUI-JWT-8.4[CUI-JWT-8.4: Claims Validation]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: Token Size Limits] and xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: Claims Validation]_
 
 ==== Threats
 
@@ -53,7 +53,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size L
 For a detailed analysis of threats, current mitigations, and recommendations, please refer to the xref:threat-coverage-analysis.adoc[Threat Coverage Analysis] document.
 
 === Tampering
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.2[CUI-JWT-8.2: Safe Parsing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.2[OAUTH-SHERIFF-8.2: Safe Parsing]_
 
 ==== Threats
 
@@ -66,7 +66,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-8.2[CUI-JWT-8.2: Safe Parsing
 For a detailed analysis of threats, current mitigations, and recommendations, please refer to the xref:threat-coverage-analysis.adoc[Threat Coverage Analysis] document.
 
 === Repudiation
-_See Requirement xref:../Requirements.adoc#CUI-JWT-7[CUI-JWT-7: Logging Requirements]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-7[OAUTH-SHERIFF-7: Logging Requirements]_
 
 ==== Threats
 
@@ -79,7 +79,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-7[CUI-JWT-7: Logging Requirem
 For a detailed analysis of threats, current mitigations, and recommendations, please refer to the xref:threat-coverage-analysis.adoc[Threat Coverage Analysis] document.
 
 === Information Disclosure
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.3[CUI-JWT-8.3: Secure Communication]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.3[OAUTH-SHERIFF-8.3: Secure Communication]_
 
 ==== Threats
 
@@ -93,7 +93,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-8.3[CUI-JWT-8.3: Secure Commu
 For a detailed analysis of threats, current mitigations, and recommendations, please refer to the xref:threat-coverage-analysis.adoc[Threat Coverage Analysis] document.
 
 === Denial of Service
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size Limits] and xref:../Requirements.adoc#CUI-JWT-9[CUI-JWT-9: Performance]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: Token Size Limits] and xref:../Requirements.adoc#OAUTH-SHERIFF-9[OAUTH-SHERIFF-9: Performance]_
 
 ==== Threats
 
@@ -107,7 +107,7 @@ _See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size L
 For a detailed analysis of threats, current mitigations, and recommendations, please refer to the xref:threat-coverage-analysis.adoc[Threat Coverage Analysis] document.
 
 === Elevation of Privilege
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.4[CUI-JWT-8.4: Claims Validation]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: Claims Validation]_
 
 ==== Threats
 

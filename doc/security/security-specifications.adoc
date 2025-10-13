@@ -8,7 +8,7 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8[CUI-JWT-8: Security] and xref:../security/Threat-Model.adoc[Threat Model]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8[OAUTH-SHERIFF-8: Security] and xref:../security/Threat-Model.adoc[Threat Model]_
 
 This document provides detailed specifications for the security aspects of the JWT Token Validation library.
 
@@ -153,7 +153,7 @@ The library protects against the "Psychic Signature" vulnerability through:
 Test coverage is provided by `PsychicSignatureAttackTest`, which verifies the rejection of tokens with all-zero ECDSA signatures for ES256, ES384, and ES512 algorithms.
 
 === Signature Validation
-_See Requirement xref:../Requirements.adoc#CUI-JWT-1.3[CUI-JWT-1.3: Signature Validation]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-1.3[OAUTH-SHERIFF-1.3: Signature Validation]_
 
 ==== Status: IMPLEMENTED
 
@@ -196,7 +196,7 @@ The following algorithms are explicitly rejected for security reasons:
 Refer to the implementation and associated JavaDoc for detailed behavior.
 
 === Token Size Limits
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size Limits]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: Token Size Limits]_
 
 ==== Status: IMPLEMENTED
 
@@ -205,7 +205,7 @@ To prevent denial of service attacks, the library enforces a maximum token size 
 For detailed information about token size validation, including implementation details, usage examples, and testing strategy, please refer to the xref:token-size-validation.adoc[Token Size Validation] document.
 
 === Safe Parsing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.2[CUI-JWT-8.2: Safe Parsing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.2[OAUTH-SHERIFF-8.2: Safe Parsing]_
 
 ==== Status: IMPLEMENTED
 
@@ -229,7 +229,7 @@ The following tests verify the implementation:
 These security measures protect against common attacks such as memory exhaustion, stack overflow, and malformed input attacks.
 
 === JWKS Size Limits
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size Limits] and link:../Requirements.adoc#CUI-JWT-8.2[CUI-JWT-8.2: Safe Parsing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: Token Size Limits] and link:../Requirements.adoc#OAUTH-SHERIFF-8.2[OAUTH-SHERIFF-8.2: Safe Parsing]_
 
 ==== Status: IMPLEMENTED
 
@@ -245,7 +245,7 @@ The `JWKSKeyLoader` class checks the size of JWKS content against the maximum pa
 For detailed information about JWKS size recommendations, including analysis of typical JWKS content sizes, industry standards, and implementation recommendations, please refer to the xref:jwks-size-recommendations.adoc[JWKS Size Recommendations] document.
 
 === Claims Validation
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.4[CUI-JWT-8.4: Claims Validation]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: Claims Validation]_
 
 ==== Status: IMPLEMENTED
 
@@ -270,7 +270,7 @@ The library provides comprehensive validation for standard JWT claims as defined
 For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator] and link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator] classes.
 
 === Secure Communication
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.3[CUI-JWT-8.3: Secure Communication]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.3[OAUTH-SHERIFF-8.3: Secure Communication]_
 
 ==== Status: IMPLEMENTED
 
@@ -286,7 +286,7 @@ For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core
 Integration tests verify the implementation by connecting to a Keycloak server using HTTPS.
 
 === Cryptographic Agility
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.5[CUI-JWT-8.5: Cryptographic Agility]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.5[OAUTH-SHERIFF-8.5: Cryptographic Agility]_
 
 ==== Status: IMPLEMENTED
 
@@ -330,7 +330,7 @@ The following tests verify the implementation:
 * link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests for the TokenSignatureValidator
 
 === Security Events Monitoring
-_See Requirement xref:../Requirements.adoc#CUI-JWT-7.3[CUI-JWT-7.3: Security Events]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-7.3[OAUTH-SHERIFF-7.3: Security Events]_
 
 ==== Status: IMPLEMENTED
 
@@ -435,7 +435,7 @@ The following tests verify the implementation:
 * link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest] - Tests for the integration with TokenValidator
 
 === Standard JDK Cryptographic Providers
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.5[CUI-JWT-8.5: Cryptographic Agility]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.5[OAUTH-SHERIFF-8.5: Cryptographic Agility]_
 
 ==== Status: IMPLEMENTED
 
@@ -483,7 +483,7 @@ For implementation details, see the JavaDoc of the cryptographic classes.
 Based on research from https://blog.doyensec.com/2025/01/30/oauth-common-vulnerabilities.html[OAuth Common Vulnerabilities (Doyensec, 2025)], this section addresses additional security considerations for JWT Token Validation in OAuth/OIDC scenarios. For a detailed analysis of each vulnerability and our mitigation approach, please refer to the xref:../security/oauth-security-analysis.adoc[OAuth Security Considerations Analysis] document.
 
 === Client Confusion Attack Prevention
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.4[CUI-JWT-8.4: Claims Validation]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: Claims Validation]_
 
 ==== Status: IMPLEMENTED
 
@@ -541,7 +541,7 @@ To provide comprehensive protection against client confusion attacks, applicatio
    * Verify the token is rejected due to `azp` claim mismatch
 
 === Scope Upgrade Attack Prevention
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.4[CUI-JWT-8.4: Claims Validation]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: Claims Validation]_
 
 ==== Status: IMPLEMENTED
 
@@ -557,7 +557,7 @@ The scope upgrade attack occurs when an attacker attempts to add additional scop
 == Security Testing Specifications
 
 === Client Confusion Attack Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.1[CUI-JWT-12.1: Security Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.1[OAUTH-SHERIFF-12.1: Security Testing]_
 
 ==== Test Cases
 
@@ -691,7 +691,7 @@ Please refer to the link:../TODO.adoc[TODO] document for planned security enhanc
 
 [[key-management]]
 === Key Management
-_See Requirement xref:../Requirements.adoc#CUI-JWT-4[CUI-JWT-4: Key Management]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-4[OAUTH-SHERIFF-4: Key Management]_
 
 ==== Status: IMPLEMENTED
 

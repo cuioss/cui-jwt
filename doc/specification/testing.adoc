@@ -8,7 +8,7 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12[CUI-JWT-12: Testing and Quality Assurance]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12[OAUTH-SHERIFF-12: Testing and Quality Assurance]_
 
 This document provides detailed specifications for testing the JWT Token Validation library.
 
@@ -75,7 +75,7 @@ The CUI Quality Standards and Testing Framework defines:
 == Testing Strategy
 
 === Unit Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.2[CUI-JWT-12.2: Unit Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.2[OAUTH-SHERIFF-12.2: Unit Testing]_
 
 ==== Status: IMPLEMENTED
 
@@ -147,7 +147,7 @@ The following test classes demonstrate token parsing and validation:
 ** `shouldRejectIDTokenWithInvalidSignature()` - Tests rejecting ID tokens with invalid signatures
 
 === Integration Testing with TestContainers
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.3[CUI-JWT-12.3: Integration Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.3[OAUTH-SHERIFF-12.3: Integration Testing]_
 
 ==== Status: IMPLEMENTED
 
@@ -173,7 +173,7 @@ The `KeycloakITBase` class from the `cui-test-keycloak-integration` library prov
 Refer to the implementation and associated JavaDoc for detailed behavior.
 
 === Security Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8[CUI-JWT-8: Security]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8[OAUTH-SHERIFF-8: Security]_
 
 ==== Status: IMPLEMENTED
 
@@ -182,7 +182,7 @@ Comprehensive security testing has been implemented to verify the security aspec
 For detailed information about security testing, including test classes, test coverage, and specific security tests like Key Disclosure Vulnerability Tests and Token Cracking Resistance Tests, please refer to the xref:../security/security-specifications.adoc[Security] document, specifically the "Security Testing Specifications" section.
 
 === Performance Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-9[CUI-JWT-9: Performance]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-9[OAUTH-SHERIFF-9: Performance]_
 
 ==== Status: IMPLEMENTED
 
@@ -216,7 +216,7 @@ The implementation uses concurrent testing to simulate real-world load scenarios
 5. Cache efficiency for JWKS loading
 
 === Logging Tests
-_See Requirement xref:../Requirements.adoc#CUI-JWT-7[CUI-JWT-7: Logging]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-7[OAUTH-SHERIFF-7: Logging]_
 
 ==== Status: IMPLEMENTED
 
@@ -290,7 +290,7 @@ TestTokenHolder.TEST_ISSUER = "Token-Test-testIssuer" // Authorization server id
 This ensures compliance with RFC 7519, RFC 9068, and OpenID Connect Core specifications, providing more realistic test scenarios that better reflect production environments.
 
 === Vulnerability Scanning
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.4[CUI-JWT-12.4: Vulnerability Scanning]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.4[OAUTH-SHERIFF-12.4: Vulnerability Scanning]_
 
 ==== Status: IMPLEMENTED
 
@@ -330,7 +330,7 @@ void shouldRejectAccessTokenWithInvalidSignature(String token) {
 This approach ensures that the library is tested against a wide range of inputs, helping to identify potential vulnerabilities that might not be discovered with traditional testing methods.
 
 === Compliance Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.5[CUI-JWT-12.5: Compliance Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.5[OAUTH-SHERIFF-12.5: Compliance Testing]_
 
 ==== Status: IMPLEMENTED
 

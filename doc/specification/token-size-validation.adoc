@@ -8,7 +8,7 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size Limits]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: Token Size Limits]_
 
 === Document Navigation
 

@@ -8,7 +8,7 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-1.4[CUI-JWT-1.4: Token Decryption (Optional - Future Version)]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-1.4[OAUTH-SHERIFF-1.4: Token Decryption (Optional - Future Version)]_
 
 === Document Navigation
 

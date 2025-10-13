@@ -8,7 +8,7 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirements xref:../Requirements.adoc#CUI-JWT-4[CUI-JWT-4: Key Management] and xref:../Requirements.adoc#CUI-JWT-4.1[CUI-JWT-4.1: JWKS Endpoint Support]_
+_See Requirements xref:../Requirements.adoc#OAUTH-SHERIFF-4[OAUTH-SHERIFF-4: Key Management] and xref:../Requirements.adoc#OAUTH-SHERIFF-4.1[OAUTH-SHERIFF-4.1: JWKS Endpoint Support]_
 
 An integral part of OpenID Connect (OIDC) is the discovery mechanism, which allows Relying Parties (RPs) to dynamically discover information about OpenID Providers (OPs). This process simplifies the configuration of RPs and enhances the interoperability of OIDC implementations.
 
