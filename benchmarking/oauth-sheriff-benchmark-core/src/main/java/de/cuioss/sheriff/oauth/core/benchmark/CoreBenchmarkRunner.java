@@ -26,7 +26,7 @@ import java.io.IOException;
 import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
 
 /**
- * Main class for running JWT validation library micro benchmarks.
+ * Main class for running JWT validation core library micro benchmarks.
  * <p>
  * This class collects and runs all benchmark classes in the package.
  * It configures JMH with optimized settings for fast execution (&lt;10 minutes)
@@ -38,9 +38,9 @@ import static de.cuioss.benchmarking.common.util.BenchmarkingLogMessages.INFO;
  *   <li><strong>SimpleErrorLoadBenchmark</strong>: Streamlined error handling scenarios</li>
  * </ul>
  */
-public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
+public class CoreBenchmarkRunner extends AbstractBenchmarkRunner {
 
-    private static final CuiLogger LOGGER = new CuiLogger(LibraryBenchmarkRunner.class);
+    private static final CuiLogger LOGGER = new CuiLogger(CoreBenchmarkRunner.class);
 
     @Override protected BenchmarkConfiguration createConfiguration() {
         // Configuration from Maven system properties:
@@ -75,6 +75,6 @@ public class LibraryBenchmarkRunner extends AbstractBenchmarkRunner {
      * @throws RunnerException if benchmark execution fails
      */
     public static void main(String[] args) throws IOException, RunnerException {
-        new LibraryBenchmarkRunner().runBenchmark();
+        new CoreBenchmarkRunner().runBenchmark();
     }
 }
