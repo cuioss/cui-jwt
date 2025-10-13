@@ -15,9 +15,9 @@ image:https://img.shields.io/github/last-commit/cuioss/OAuth-Sheriff/main[Last B
 image:http://img.shields.io/:license-apache-blue.svg[License,link=http://www.apache.org/licenses/LICENSE-2.0.html]
 image:https://img.shields.io/maven-central/v/de.cuioss.sheriff.oauth/oauth-sheriff-parent.svg?label=Maven%20Central["Maven Central", link="https://central.sonatype.com/artifact/de.cuioss.sheriff.oauth/oauth-sheriff-parent"]
 
-image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-core&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-core]
-image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-core&metric=ncloc[Lines of Code,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-core]
-image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-core&metric=coverage[Coverage,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-core]
+image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_OAuth-Sheriff&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=cuioss_OAuth-Sheriff]
+image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_OAuth-Sheriff&metric=ncloc[Lines of Code,link=https://sonarcloud.io/summary/new_code?id=cuioss_OAuth-Sheriff]
+image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_OAuth-Sheriff&metric=coverage[Coverage,link=https://sonarcloud.io/summary/new_code?id=cuioss_OAuth-Sheriff]
 
 **Performance Benchmarks**
 
