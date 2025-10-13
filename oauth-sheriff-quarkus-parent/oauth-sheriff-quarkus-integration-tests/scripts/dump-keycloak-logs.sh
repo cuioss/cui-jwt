@@ -10,7 +10,7 @@
 set -euo pipefail
 
 # Configuration
-KEYCLOAK_CONTAINER_NAME="cui-jwt-quarkus-integration-tests-keycloak-1"
+KEYCLOAK_CONTAINER_NAME="oauth-sheriff-quarkus-integration-tests-keycloak-1"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 KEYCLOAK_LOG_FILENAME="keycloak-logs-${TIMESTAMP}.txt"
 

@@ -64,14 +64,14 @@ services:
       retries: 12
       start_period: 30s
 
-  cui-jwt-integration-tests:
+  oauth-sheriff-integration-tests:
     # Use separate Dockerfiles for different variants
     # For distroless: DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless
     # For JFR:       DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr
-    image: "cui-jwt-integration-tests:${DOCKER_IMAGE_TAG:-distroless}"
+    image: "oauth-sheriff-integration-tests:${DOCKER_IMAGE_TAG:-distroless}"
     build:
       context: ../..
-      dockerfile: cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/src/main/docker/${DOCKERFILE:-Dockerfile.native.distroless}
+      dockerfile: oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/src/main/docker/${DOCKERFILE:-Dockerfile.native.distroless}
       cache_from:
         - quay.io/quarkus/quarkus-distroless-image:2.0
         - registry.access.redhat.com/ubi8/ubi-minimal:8.10
@@ -131,7 +131,7 @@ services:
     restart: unless-stopped
 
   # WRK HTTP benchmarking tool - used by integration benchmarks
-  # Usage: docker compose run --rm wrk -t5 -c50 -d30s --latency https://cui-jwt-integration-tests:8443/q/health/live
+  # Usage: docker compose run --rm wrk -t5 -c50 -d30s --latency https://oauth-sheriff-integration-tests:8443/q/health/live
   wrk:
     build:
       context: ../..

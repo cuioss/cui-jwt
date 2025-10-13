@@ -360,11 +360,11 @@ trap cleanup INT TERM
 
 echo "🔨 Step 1: Building integration tests (~6 seconds)..."
 cd "$PROJECT_ROOT"
-$MAVEN_CMD clean install -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -q
+$MAVEN_CMD clean install -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests -q
 
 echo "🔨 Step 2: Force clean rebuild of native executable and container (~90 seconds)..."
 # Ensure clean rebuild includes updated application.properties
-$MAVEN_CMD clean package -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests -Pintegration-tests -q
+$MAVEN_CMD clean package -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests -Pintegration-tests -q
 # Force Docker to rebuild container with updated configuration
 docker system prune -f --volumes >/dev/null 2>&1 || true
 

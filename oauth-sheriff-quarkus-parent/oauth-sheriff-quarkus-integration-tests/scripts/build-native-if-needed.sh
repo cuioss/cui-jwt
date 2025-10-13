@@ -17,7 +17,7 @@ if [[ -z "$RUNNER_FILE" ]]; then
     # Find the root directory with mvnw
     ROOT_DIR=$(cd "${PROJECT_DIR}/../.." && pwd)
     cd "${ROOT_DIR}"
-    ./mvnw --no-transfer-progress -Pintegration-tests quarkus:build -pl cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests
+    ./mvnw --no-transfer-progress -Pintegration-tests quarkus:build -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
     
     # Verify it was created
     RUNNER_FILE=$(find "${PROJECT_DIR}/target" -name "*-runner" -type f 2>/dev/null | head -n 1)
