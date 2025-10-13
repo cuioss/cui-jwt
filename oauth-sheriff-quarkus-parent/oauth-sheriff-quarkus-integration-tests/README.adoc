@@ -59,7 +59,7 @@ The integration tests support two optimized container variants for different use
 [source,bash]
 ----
 # Build distroless variant
-DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build cui-jwt-integration-tests
+DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compose build oauth-sheriff-integration-tests
 
 # Run integration tests with distroless
 ./mvnw clean verify -Pintegration-tests -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
@@ -77,7 +77,7 @@ DOCKERFILE=Dockerfile.native.distroless DOCKER_IMAGE_TAG=distroless docker compo
 [source,bash]
 ----
 # Build JFR variant
-DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build cui-jwt-integration-tests
+DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build oauth-sheriff-integration-tests
 
 # Run JFR profiling tests
 ./mvnw clean verify -Pjfr -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
@@ -346,7 +346,7 @@ DOCKERFILE=Dockerfile.native.jfr DOCKER_IMAGE_TAG=jfr docker compose build
 ./scripts/dump-keycloak-logs.sh target
 
 # Manual log inspection
-docker logs oauth-sheriff-quarkus-integration-tests-cui-jwt-integration-tests-1
+docker logs oauth-sheriff-quarkus-integration-tests-oauth-sheriff-integration-tests-1
 docker logs oauth-sheriff-quarkus-integration-tests-keycloak-1
 
 # Check container status

@@ -144,7 +144,7 @@ import static jakarta.servlet.http.HttpServletResponse.*;
               {
                 "metric": {
                   "__name__": "process_cpu_usage",
-                  "instance": "cui-jwt-integration-tests:8443",
+                  "instance": "oauth-sheriff-integration-tests:8443",
                   "job": "quarkus-benchmark"
                 },
                 "values": [

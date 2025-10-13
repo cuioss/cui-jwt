@@ -149,7 +149,7 @@ For custom benchmarking:
 [source,xml]
 ----
 <dependency>
-    <groupId>de.cuioss.jwt</groupId>
+    <groupId>de.cuioss.sheriff.oauth</groupId>
     <artifactId>benchmark-library</artifactId>
     <scope>test</scope>
 </dependency>

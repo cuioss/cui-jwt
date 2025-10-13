@@ -59,7 +59,7 @@ Configuration files:
 Key settings:
 
 * Scrape interval: 2 seconds
-* Target: `cui-jwt-integration-tests:8443/q/metrics` (internal service name)
+* Target: `oauth-sheriff-integration-tests:8443/q/metrics` (internal service name)
 * HTTPS with self-signed certificates (`insecure_skip_verify: true`)
 * Data retention: 1 hour (sufficient for benchmarking)
 

@@ -77,9 +77,9 @@ import org.jboss.jandex.DotName;
 public class CuiJwtProcessor {
 
     /**
-     * The feature name for the CUI JWT extension.
+     * The feature name for the OAuth Sheriff extension.
      */
-    private static final String FEATURE = "cui-jwt";
+    private static final String FEATURE = "oauth-sheriff";
 
     /**
      * Logger for build-time processing.

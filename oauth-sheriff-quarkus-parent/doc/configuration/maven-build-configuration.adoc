@@ -51,7 +51,7 @@ Test logging via `logging.properties`:
 handlers=java.util.logging.ConsoleHandler
 .level=INFO
 io.quarkus.level=INFO
-de.cuioss.jwt.level=INFO
+de.cuioss.sheriff.oauth.level=INFO
 ----
 
 Application logging in `application.properties`:
@@ -59,7 +59,7 @@ Application logging in `application.properties`:
 [source,properties]
 ----
 quarkus.log.level=INFO
-quarkus.log.category."de.cuioss.jwt".level=DEBUG
+quarkus.log.category."de.cuioss.sheriff.oauth".level=DEBUG
 quarkus.log.console.format=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n
 ----
 

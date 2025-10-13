@@ -182,7 +182,7 @@ cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 
 # Run and extract JFR recordings (JFR variant only)
 docker compose up -d
-docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./
+docker cp oauth-sheriff-integration-tests:/tmp/jfr-output/jwt-distro-profile.jfr ./
 ----
 
 == Network and Security Configuration

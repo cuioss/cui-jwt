@@ -380,7 +380,7 @@ class WrkResultPostProcessorTest {
                       "labels": {
                         "job": "quarkus-benchmark",
                         "__name__": "system_cpu_usage",
-                        "instance": "cui-jwt-integration-tests:8443"
+                        "instance": "oauth-sheriff-integration-tests:8443"
                       },
                       "data_points": 2,
                       "statistics": {
@@ -404,7 +404,7 @@ class WrkResultPostProcessorTest {
                       "labels": {
                         "job": "quarkus-benchmark",
                         "__name__": "system_cpu_usage",
-                        "instance": "cui-jwt-integration-tests:8443"
+                        "instance": "oauth-sheriff-integration-tests:8443"
                       },
                       "data_points": 3,
                       "statistics": {

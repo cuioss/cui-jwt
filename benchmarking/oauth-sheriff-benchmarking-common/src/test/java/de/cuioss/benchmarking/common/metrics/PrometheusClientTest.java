@@ -71,7 +71,7 @@ class PrometheusClientTest {
         // Verify labels
         Map<String, String> labels = timeSeries.labels();
         assertEquals("process_cpu_usage", labels.get("__name__"));
-        assertEquals("cui-jwt-integration-tests:8443", labels.get("instance"));
+        assertEquals("oauth-sheriff-integration-tests:8443", labels.get("instance"));
         assertEquals("quarkus-benchmark", labels.get("job"));
 
         // Verify data points
@@ -254,7 +254,7 @@ class PrometheusClientTest {
               {
                 "metric": {
                   "__name__": "cui_jwt_validation_success_operations_total",
-                  "instance": "cui-jwt-integration-tests:8443",
+                  "instance": "oauth-sheriff-integration-tests:8443",
                   "job": "quarkus-benchmark",
                   "event_type": "ACCESS_TOKEN_CREATED",
                   "result": "success"

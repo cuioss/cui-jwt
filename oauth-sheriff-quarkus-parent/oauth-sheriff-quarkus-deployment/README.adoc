@@ -56,7 +56,7 @@ To use the Quarkus extension, add the deployment module dependency:
 [source, xml]
 ----
 <dependency>
-    <groupId>de.cuioss.jwt</groupId>
+    <groupId>de.cuioss.sheriff.oauth</groupId>
     <artifactId>oauth-sheriff-quarkus-deployment</artifactId>
 </dependency>
 ----
@@ -83,7 +83,7 @@ Automatically registers these classes for reflection:
 **Classes with Methods and Constructors:**
 
 * `de.cuioss.sheriff.oauth.library.TokenValidator` - Main validation component
-* `de.cuioss.jwt.quarkus.config.IssuerConfigResolver` - Configuration resolver
+* `de.cuioss.sheriff.oauth.quarkus.config.IssuerConfigResolver` - Configuration resolver
 * `de.cuioss.sheriff.oauth.library.security.SecurityEventCounter` - Security metrics
 * `io.micrometer.core.instrument.MeterRegistry` - Metrics registry
 

@@ -13,7 +13,7 @@ image:https://github.com/cuioss/OAuth-Sheriff/actions/workflows/integration-test
 
 image:https://img.shields.io/github/last-commit/cuioss/OAuth-Sheriff/main[Last Build,link=https://github.com/cuioss/OAuth-Sheriff/commits/main]
 image:http://img.shields.io/:license-apache-blue.svg[License,link=http://www.apache.org/licenses/LICENSE-2.0.html]
-image:https://img.shields.io/maven-central/v/de.cuioss.jwt/cui-jwt-parent.svg?label=Maven%20Central["Maven Central", link="https://central.sonatype.com/artifact/de.cuioss.jwt/cui-jwt-parent"]
+image:https://img.shields.io/maven-central/v/de.cuioss.sheriff.oauth/oauth-sheriff-parent.svg?label=Maven%20Central["Maven Central", link="https://central.sonatype.com/artifact/de.cuioss.sheriff.oauth/oauth-sheriff-parent"]
 
 image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-library&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-library]
 image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_oauth-sheriff-library&metric=ncloc[Lines of Code,link=https://sonarcloud.io/summary/new_code?id=cuioss_oauth-sheriff-library]
@@ -81,7 +81,7 @@ For Quarkus applications, use our dedicated extension for seamless integration:
 [source,xml]
 ----
 <dependency>
-    <groupId>de.cuioss.jwt</groupId>
+    <groupId>de.cuioss.sheriff.oauth</groupId>
     <artifactId>oauth-sheriff-quarkus</artifactId>
 </dependency>
 ----
@@ -159,7 +159,7 @@ For non-Quarkus applications, use the core validation library:
 [source,xml]
 ----
 <dependency>
-    <groupId>de.cuioss.jwt</groupId>
+    <groupId>de.cuioss.sheriff.oauth</groupId>
     <artifactId>oauth-sheriff-library</artifactId>
 </dependency>
 ----

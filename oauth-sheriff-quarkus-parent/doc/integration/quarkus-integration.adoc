@@ -20,7 +20,7 @@ The extension follows the standard Quarkus extension architecture with separate 
 
 The `CuiJwtProcessor` class handles build-time processing for the extension:
 
-* Registers the `cui-jwt` feature
+* Registers the `oauth-sheriff` feature
 * Sets up reflection for configuration classes:
   ** `JwtValidationConfig` and its nested classes
   ** Core JWT validation classes like `TokenValidator`, `IssuerConfig`, etc.

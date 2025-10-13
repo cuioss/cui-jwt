@@ -70,9 +70,9 @@ sun.rmi.level=SEVERE
 sun.rmi.transport.tcp.level=SEVERE
 
 # Project specific logging
-de.cuioss.jwt.level=INFO
-de.cuioss.jwt.quarkus.level=INFO
-de.cuioss.jwt.quarkus.deployment.level=INFO
+de.cuioss.sheriff.oauth.level=INFO
+de.cuioss.sheriff.oauth.quarkus.level=INFO
+de.cuioss.sheriff.oauth.quarkus.deployment.level=INFO
 
 # Core logging
 java.sql.level=INFO

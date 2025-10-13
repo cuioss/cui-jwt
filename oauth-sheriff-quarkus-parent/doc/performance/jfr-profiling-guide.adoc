@@ -99,7 +99,7 @@ cd oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 ./mvnw clean verify -Pjfr
 
 # Manual extraction alternative (if needed)
-docker cp cui-jwt-integration-tests:/tmp/jfr-output/jwt-profile.jfr ./target/jfr-results/
+docker cp oauth-sheriff-integration-tests:/tmp/jfr-output/jwt-profile.jfr ./target/jfr-results/
 ----
 
 == Native Image JFR Challenges and Solutions

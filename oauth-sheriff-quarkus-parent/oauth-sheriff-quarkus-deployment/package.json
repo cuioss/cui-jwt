@@ -1,7 +1,7 @@
 {
-  "name": "cui-jwt-quarkus-devui",
+  "name": "oauth-sheriff-quarkus-devui",
   "version": "1.0.0-SNAPSHOT",
-  "description": "DevUI components for CUI JWT Quarkus extension",
+  "description": "DevUI components for OAuth Sheriff Quarkus extension",
   "type": "module",
   "private": true,
   "scripts": {

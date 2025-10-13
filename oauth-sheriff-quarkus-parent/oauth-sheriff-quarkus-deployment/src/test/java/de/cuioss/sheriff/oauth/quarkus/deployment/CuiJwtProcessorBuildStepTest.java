@@ -57,7 +57,7 @@ class CuiJwtProcessorBuildStepTest {
 
         // Assert
         assertNotNull(featureItem);
-        assertEquals("cui-jwt", featureItem.getName());
+        assertEquals("oauth-sheriff", featureItem.getName());
     }
 
     @Test
