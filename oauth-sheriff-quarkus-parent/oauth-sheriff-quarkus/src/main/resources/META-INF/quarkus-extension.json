@@ -16,13 +16,13 @@
     "status": "stable"
   },
   "artifact": {
-    "group-id": "de.cuioss.jwt",
-    "artifact-id": "cui-jwt-quarkus",
+    "group-id": "de.cuioss.sheriff.oauth",
+    "artifact-id": "oauth-sheriff-quarkus",
     "version": "1.0.0-SNAPSHOT"
   },
   "deployment-artifact": {
-    "group-id": "de.cuioss.jwt", 
-    "artifact-id": "cui-jwt-quarkus-deployment",
+    "group-id": "de.cuioss.sheriff.oauth",
+    "artifact-id": "oauth-sheriff-quarkus-deployment",
     "version": "1.0.0-SNAPSHOT"
   }
 }

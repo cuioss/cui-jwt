@@ -55,7 +55,7 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
       │                      │
       ▼                      ▼
 ┌──────────────┐  ┌─────────────────────────┐
-│cui-jwt-      │  │Docker Containers:       │
+│oauth-sheriff-      │  │Docker Containers:       │
 │validation    │  │ • Quarkus App           │
 │              │  │ • Keycloak              │
 │              │  │ • Prometheus            │

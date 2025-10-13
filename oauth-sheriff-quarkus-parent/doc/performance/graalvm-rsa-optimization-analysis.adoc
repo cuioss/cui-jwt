@@ -203,7 +203,7 @@ native-image -march=native -O2
 **Implementation Steps**:
 
 1. Update Keycloak realm configuration to use ES256 or EdDSA
-2. Verify cui-jwt library compatibility
+2. Verify oauth-sheriff library compatibility
 3. Run comparative benchmarks
 4. Deploy and validate
 

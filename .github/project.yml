@@ -1,6 +1,6 @@
-name: cui-jwt-validation
-pages-reference: cui-jwt-validation
-sonar-project-key: cuioss_cui-jwt-validation
+name: oauth-sheriff-core
+pages-reference: oauth-sheriff-core
+sonar-project-key: cuioss_oauth-sheriff-core
 release:
   current-version: 1.0.0
   next-version: 1.1.0-SNAPSHOT

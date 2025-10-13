@@ -16,7 +16,7 @@ updates:
       interval: daily
 
   - package-ecosystem: docker
-    directory: "/cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests"
+    directory: "/oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests"
     schedule:
       interval: "weekly"
     # Note: This tracks Dockerfiles only. For docker-compose.yml images,
@@ -26,6 +26,6 @@ updates:
     # - prom/prometheus:v3.6.0
 
   - package-ecosystem: npm
-    directory: "/cui-jwt-quarkus-parent/cui-jwt-quarkus-deployment"
+    directory: "/oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-deployment"
     schedule:
       interval: "weekly"
