@@ -90,7 +90,8 @@ public class KeycloakTokenRepository implements TokenProvider {
      * If the pool is empty, fetches a single token directly from Keycloak.
      * </p>
      */
-    @Override public String getNextToken() {
+    @Override
+    public String getNextToken() {
         if (tokenPool.isEmpty()) {
             LOGGER.warn(TOKEN_POOL_EMPTY);
             return fetchSingleToken();
@@ -106,7 +107,8 @@ public class KeycloakTokenRepository implements TokenProvider {
      * Returns the current size of the token pool.
      * </p>
      */
-    @Override public int getTokenPoolSize() {
+    @Override
+    public int getTokenPoolSize() {
         return tokenPool.size();
     }
 
@@ -216,7 +218,8 @@ public class KeycloakTokenRepository implements TokenProvider {
      *
      * @throws TokenFetchException if unable to fetch new tokens from Keycloak
      */
-    @Override public void refreshTokens() {
+    @Override
+    public void refreshTokens() {
         LOGGER.debug("Refreshing token pool with %s tokens", config.getTokenPoolSize());
 
         tokenPool.clear();

@@ -53,7 +53,8 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
     private static final CuiLogger LOGGER = new CuiLogger(JfrBenchmarkRunner.class);
     private static final String RESULTS_DIR = "target/benchmark-jfr-results";
 
-    @Override protected BenchmarkConfiguration createConfiguration() {
+    @Override
+    protected BenchmarkConfiguration createConfiguration() {
         return BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.MICRO)
                 .withThroughputBenchmarkName("measureThroughput")  // JFR benchmarks also measure throughput
@@ -70,14 +71,16 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
                 .build();
     }
 
-    @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
+    @Override
+    protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
         LOGGER.info(INFO.JFR_BENCHMARKS_STARTING);
         LOGGER.info(INFO.JFR_RECORDING_PATH, config.resultsDirectory(), "/jfr-benchmark.jfr");
     }
 
-    @Override protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
+    @Override
+    protected OptionsBuilder buildCommonOptions(BenchmarkConfiguration config) {
         // Get base options from parent
         OptionsBuilder builder = super.buildCommonOptions(config);
 
@@ -91,12 +94,14 @@ public class JfrBenchmarkRunner extends AbstractBenchmarkRunner {
         return builder;
     }
 
-    @Override protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
+    @Override
+    protected void afterBenchmark(Collection<RunResult> results, BenchmarkConfiguration config) {
         LOGGER.info(INFO.JFR_BENCHMARK_COMPLETED);
         LOGGER.info(INFO.JFR_VARIANCE_COMMAND, config.resultsDirectory(), "/jfr-benchmark.jfr");
     }
 
-    @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
+    @Override
+    protected void cleanup(BenchmarkConfiguration config) throws IOException {
         // No special cleanup required for JFR benchmarks
         LOGGER.debug("JFR benchmark cleanup completed");
     }

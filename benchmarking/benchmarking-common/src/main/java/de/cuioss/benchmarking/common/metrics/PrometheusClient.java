@@ -230,7 +230,8 @@ public class PrometheusClient {
     /**
      * Exception thrown when Prometheus operations fail.
      */
-    @Getter public static class PrometheusException extends Exception {
+    @Getter
+    public static class PrometheusException extends Exception {
         private final int statusCode;
 
         public PrometheusException(String message) {

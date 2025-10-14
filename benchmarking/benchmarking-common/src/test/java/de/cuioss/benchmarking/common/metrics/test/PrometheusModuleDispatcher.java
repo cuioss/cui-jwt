@@ -35,7 +35,8 @@ import static jakarta.servlet.http.HttpServletResponse.*;
  * Handles the mocking of Prometheus API endpoints for testing PrometheusClient functionality.
  * Supports /api/v1/query_range endpoint with real Prometheus JSON responses.
  */
-@SuppressWarnings("UnusedReturnValue") public class PrometheusModuleDispatcher implements ModuleDispatcherElement {
+@SuppressWarnings("UnusedReturnValue")
+public class PrometheusModuleDispatcher implements ModuleDispatcherElement {
 
     /**
      * "/api/v1/query_range"
@@ -94,7 +95,8 @@ import static jakarta.servlet.http.HttpServletResponse.*;
         return this;
     }
 
-    @Override public Optional<MockResponse> handleGet(RecordedRequest recordedRequest) {
+    @Override
+    public Optional<MockResponse> handleGet(RecordedRequest recordedRequest) {
         callCounter++;
 
         String path = recordedRequest.getPath();
@@ -188,11 +190,13 @@ import static jakarta.servlet.http.HttpServletResponse.*;
         """;
     }
 
-    @Override public Set<HttpMethodMapper> supportedMethods() {
+    @Override
+    public Set<HttpMethodMapper> supportedMethods() {
         return Set.of(HttpMethodMapper.GET);
     }
 
-    @Override public String getBaseUrl() {
+    @Override
+    public String getBaseUrl() {
         return PROMETHEUS_QUERY_RANGE_PATH;
     }
 

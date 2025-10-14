@@ -38,7 +38,8 @@ class BadgeGeneratorEnhancedTest {
     private static final DateTimeFormatter DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
 
-    @Test void performanceBadgeWithMetrics() {
+    @Test
+    void performanceBadgeWithMetrics() {
         BadgeGenerator generator = new BadgeGenerator();
 
         // Test A+ grade with high throughput and low latency
@@ -111,7 +112,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals("Grade A+ (150k ops/s, 0.05ms)", jsonHigh.get("message").getAsString());
     }
 
-    @Test void trendBadgeWithMetrics() {
+    @Test
+    void trendBadgeWithMetrics() {
         BadgeGenerator generator = new BadgeGenerator();
 
         // Test upward trend
@@ -142,7 +144,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals("→ 0.5%", jsonStable.get("message").getAsString());
     }
 
-    @Test void defaultTrendBadge() {
+    @Test
+    void defaultTrendBadge() {
         BadgeGenerator generator = new BadgeGenerator();
 
         String badge = generator.generateDefaultTrendBadge();
@@ -154,7 +157,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals("lightgray", json.get("color").getAsString());
     }
 
-    @Test void lastRunBadgeWithSpecificTime() {
+    @Test
+    void lastRunBadgeWithSpecificTime() {
         BadgeGenerator generator = new BadgeGenerator();
 
         // Create specific instant for testing
@@ -169,7 +173,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals("blue", json.get("color").getAsString());
     }
 
-    @Test void writeBadgeFiles(@TempDir Path tempDir) throws IOException {
+    @Test
+    void writeBadgeFiles(@TempDir Path tempDir) throws IOException {
         BadgeGenerator generator = new BadgeGenerator();
 
         BenchmarkMetrics metrics = new BenchmarkMetrics(
@@ -211,7 +216,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals(DATE_FORMAT.format(Instant.now()), lastRunJson.get("message").getAsString());
     }
 
-    @Test void writeBadgeFilesWithoutTrendMetrics(@TempDir Path tempDir) throws IOException {
+    @Test
+    void writeBadgeFilesWithoutTrendMetrics(@TempDir Path tempDir) throws IOException {
         BadgeGenerator generator = new BadgeGenerator();
 
         BenchmarkMetrics metrics = new BenchmarkMetrics(
@@ -233,7 +239,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals("lightgray", trendJson.get("color").getAsString());
     }
 
-    @Test void badgeJsonStructure() {
+    @Test
+    void badgeJsonStructure() {
         BadgeGenerator generator = new BadgeGenerator();
 
         BenchmarkMetrics metrics = new BenchmarkMetrics(
@@ -265,7 +272,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals(4, json.size());
     }
 
-    @Test void percentageFormatting() {
+    @Test
+    void percentageFormatting() {
         BadgeGenerator generator = new BadgeGenerator();
 
         // Test various percentage values for proper formatting
@@ -291,7 +299,8 @@ class BadgeGeneratorEnhancedTest {
         assertEquals("↑ 101.0%", json3.get("message").getAsString());
     }
 
-    @Test void performanceBadgeWithCorrectUnitConversionFromMicroseconds() {
+    @Test
+    void performanceBadgeWithCorrectUnitConversionFromMicroseconds() {
         // TEST: Verify that latency in microseconds is correctly converted to milliseconds
         // when passed to the badge generator.
         //

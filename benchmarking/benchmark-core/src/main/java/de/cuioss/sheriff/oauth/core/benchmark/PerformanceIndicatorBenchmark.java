@@ -48,12 +48,15 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Benchmark) @SuppressWarnings("java:S112") public class PerformanceIndicatorBenchmark {
+@State(Scope.Benchmark)
+@SuppressWarnings("java:S112")
+public class PerformanceIndicatorBenchmark {
 
     private TokenValidator tokenValidator;
     private CoreValidationDelegate validationDelegate;
 
-    @Setup(Level.Trial) public void setup() {
+    @Setup(Level.Trial)
+    public void setup() {
         MockTokenRepository tokenRepository;
         // Initialize token repository with cache size configured for 10% of tokens
         MockTokenRepository.Config config = MockTokenRepository.Config.builder()
@@ -74,7 +77,8 @@ import java.util.concurrent.TimeUnit;
     }
 
 
-    @TearDown(Level.Trial) public void exportMetrics() {
+    @TearDown(Level.Trial)
+    public void exportMetrics() {
         // Export metrics using LibraryMetricsExporter
         if (tokenValidator != null) {
             try {
@@ -94,7 +98,10 @@ import java.util.concurrent.TimeUnit;
      *
      * @return validated access token content
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureAverageTime() {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureAverageTime() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -107,7 +114,10 @@ import java.util.concurrent.TimeUnit;
      *
      * @return validated access token content
      */
-    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public AccessTokenContent measureThroughput() {
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public AccessTokenContent measureThroughput() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -120,7 +130,10 @@ import java.util.concurrent.TimeUnit;
      *
      * @return validated access token content
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureConcurrentValidation() {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureConcurrentValidation() {
         return validationDelegate.validateWithRotation();
     }
 

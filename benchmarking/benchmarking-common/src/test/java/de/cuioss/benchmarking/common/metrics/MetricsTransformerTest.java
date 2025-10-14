@@ -28,12 +28,14 @@ class MetricsTransformerTest {
     private MetricsTransformer transformer;
     private Map<String, Double> testMetrics;
 
-    @BeforeEach void setUp() {
+    @BeforeEach
+    void setUp() {
         transformer = new MetricsTransformer();
         testMetrics = new HashMap<>();
     }
 
-    @Test void shouldTransformEmptyMetrics() {
+    @Test
+    void shouldTransformEmptyMetrics() {
         Map<String, Object> result = transformer.transformToQuarkusRuntimeMetrics(new HashMap<>());
 
         assertNotNull(result);
@@ -48,7 +50,8 @@ class MetricsTransformerTest {
         assertTrue(((Map<?, ?>) result.get("sheriff_oauth_validation_errors")).isEmpty());
     }
 
-    @Test void shouldTransformSystemMetrics() {
+    @Test
+    void shouldTransformSystemMetrics() {
         testMetrics.put("system_cpu_count", 4.0);
         testMetrics.put("system_load_average_1m", 2.5);
         testMetrics.put("jdk_threads_peak_threads", 86.0);
@@ -69,7 +72,8 @@ class MetricsTransformerTest {
         assertEquals(47L, system.get("memory_nonheap_used_mb"));  // ~47MB
     }
 
-    @Test void shouldTransformJwtSuccessMetrics() {
+    @Test
+    void shouldTransformJwtSuccessMetrics() {
         testMetrics.put("sheriff_oauth_validation_success_operations_total{event_type=\"ACCESS_TOKEN_CREATED\"}", 500.0);
         testMetrics.put("sheriff_oauth_validation_success_operations_total{event_type=\"ID_TOKEN_CREATED\"}", 300.0);
 
@@ -80,7 +84,8 @@ class MetricsTransformerTest {
         assertEquals(300L, successOps.get("ID_TOKEN_CREATED"));
     }
 
-    @Test void shouldTransformJwtErrorMetrics() {
+    @Test
+    void shouldTransformJwtErrorMetrics() {
         testMetrics.put("sheriff_oauth_validation_errors_total{category=\"INVALID_SIGNATURE\",event_type=\"KEY_NOT_FOUND\"}", 10.0);
         testMetrics.put("sheriff_oauth_validation_errors_total{category=\"SEMANTIC_ISSUES\",event_type=\"TOKEN_EXPIRED\"}", 5.0);
 
@@ -100,7 +105,8 @@ class MetricsTransformerTest {
         assertEquals(5L, semError.get("count"));
     }
 
-    @Test void shouldIgnoreZeroValues() {
+    @Test
+    void shouldIgnoreZeroValues() {
         testMetrics.put("sheriff_oauth_validation_success_operations_total{event_type=\"ACCESS_TOKEN_CREATED\"}", 0.0);
         testMetrics.put("jvm_memory_used_bytes{area=\"heap\"}", 0.0);
 
@@ -113,7 +119,8 @@ class MetricsTransformerTest {
         assertFalse(system.containsKey("memory_heap_used_mb"), "Should not include zero memory values");
     }
 
-    @Test void shouldHandleCompleteRealWorldMetrics() {
+    @Test
+    void shouldHandleCompleteRealWorldMetrics() {
         // Simulate real-world metrics
         testMetrics.put("system_cpu_count", 4.0);
         testMetrics.put("process_cpu_usage", 0.025);

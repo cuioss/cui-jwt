@@ -46,7 +46,8 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
     private static final Pattern LATENCY_PERCENTILE = Pattern.compile(
             "\\s+(\\d+(?:\\.\\d+)?)%\\s+([\\d.]+)(\\w+)");
 
-    @Override public BenchmarkData convert(Path sourcePath) throws IOException {
+    @Override
+    public BenchmarkData convert(Path sourcePath) throws IOException {
         if (sourcePath.toFile().isDirectory()) {
             // Convert all WRK output files in directory
             return convertDirectory(sourcePath);
@@ -56,7 +57,8 @@ public class WrkBenchmarkConverter implements BenchmarkConverter {
         }
     }
 
-    @Override public boolean canConvert(Path sourcePath) {
+    @Override
+    public boolean canConvert(Path sourcePath) {
         if (sourcePath.toFile().isDirectory()) {
             return sourcePath.getFileName().toString().contains("wrk");
         }

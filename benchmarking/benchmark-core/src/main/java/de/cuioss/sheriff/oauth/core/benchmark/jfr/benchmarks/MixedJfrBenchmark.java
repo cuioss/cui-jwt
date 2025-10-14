@@ -30,18 +30,22 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread) @SuppressWarnings("java:S112") public class MixedJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread)
+@SuppressWarnings("java:S112")
+public class MixedJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String MIXED_VALIDATION_OPERATION = "mixed-validation";
 
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
 
-    @Override protected String getJfrPhase() {
+    @Override
+    protected String getJfrPhase() {
         return "mixed-measurement";
     }
 
-    @Setup(Level.Trial) public void setup() {
+    @Setup(Level.Trial)
+    public void setup() {
         // Use base class setup
         setupJfrBase();
 
@@ -55,7 +59,10 @@ import java.util.concurrent.TimeUnit;
     /**
      * Measures validation performance with mixed valid/invalid tokens (0% error rate) with JFR instrumentation.
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMixedTokens0WithJfr(Blackhole blackhole) {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public Object validateMixedTokens0WithJfr(Blackhole blackhole) {
         String token = errorLoadDelegate0.selectToken();
         String errorType = errorLoadDelegate0.getErrorType(token);
         boolean isValid = "valid".equals(errorType);
@@ -77,7 +84,10 @@ import java.util.concurrent.TimeUnit;
     /**
      * Measures validation performance with mixed valid/invalid tokens (50% error rate) with JFR instrumentation.
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public Object validateMixedTokens50WithJfr(Blackhole blackhole) {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public Object validateMixedTokens50WithJfr(Blackhole blackhole) {
         String token = errorLoadDelegate50.selectToken();
         String errorType = errorLoadDelegate50.getErrorType(token);
         boolean isValid = "valid".equals(errorType);

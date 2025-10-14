@@ -30,12 +30,15 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread) @SuppressWarnings("java:S112") public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
+@State(Scope.Thread)
+@SuppressWarnings("java:S112")
+public class SimpleErrorLoadBenchmark extends AbstractBenchmark {
 
     private ErrorLoadDelegate errorLoadDelegate0;
     private ErrorLoadDelegate errorLoadDelegate50;
 
-    @Setup(Level.Trial) public void setup() {
+    @Setup(Level.Trial)
+    public void setup() {
         // Use base class setup
         setupBase();
 
@@ -49,14 +52,20 @@ import java.util.concurrent.TimeUnit;
     /**
      * Benchmarks mixed error load scenarios with 0% error rate (baseline performance).
      */
-    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public Object validateMixedTokens0(Blackhole blackhole) {
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Object validateMixedTokens0(Blackhole blackhole) {
         return errorLoadDelegate0.validateMixed(blackhole);
     }
 
     /**
      * Benchmarks mixed error load scenarios with 50% error rate (balanced mix).
      */
-    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public Object validateMixedTokens50(Blackhole blackhole) {
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public Object validateMixedTokens50(Blackhole blackhole) {
         return errorLoadDelegate50.validateMixed(blackhole);
     }
 

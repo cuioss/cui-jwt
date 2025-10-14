@@ -32,7 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class HistoricalDataManagerTest {
 
-    @Test void archiveCurrentRun(@TempDir Path tempDir) throws IOException {
+    @Test
+    void archiveCurrentRun(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
 
         Map<String, Object> testData = new HashMap<>();
@@ -63,7 +64,8 @@ class HistoricalDataManagerTest {
         assertTrue(content.contains("123"));
     }
 
-    @Test void archiveWithNullCommitSha(@TempDir Path tempDir) throws IOException {
+    @Test
+    void archiveWithNullCommitSha(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
 
         Map<String, Object> testData = new HashMap<>();
@@ -79,7 +81,8 @@ class HistoricalDataManagerTest {
         assertTrue(filename.endsWith("-unknown.json"), "File should end with 'unknown' for null SHA");
     }
 
-    @Test void enforceRetentionPolicy(@TempDir Path tempDir) throws IOException {
+    @Test
+    void enforceRetentionPolicy(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
@@ -113,7 +116,8 @@ class HistoricalDataManagerTest {
         }
     }
 
-    @Test void getHistoricalFiles(@TempDir Path tempDir) throws IOException {
+    @Test
+    void getHistoricalFiles(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
@@ -133,7 +137,8 @@ class HistoricalDataManagerTest {
         assertTrue(files.get(2).toString().contains("2025-01-10"));
     }
 
-    @Test void getHistoricalFilesEmptyDirectory(@TempDir Path tempDir) throws IOException {
+    @Test
+    void getHistoricalFilesEmptyDirectory(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
@@ -142,7 +147,8 @@ class HistoricalDataManagerTest {
         assertTrue(files.isEmpty());
     }
 
-    @Test void getHistoricalFilesNonExistentDirectory(@TempDir Path tempDir) throws IOException {
+    @Test
+    void getHistoricalFilesNonExistentDirectory(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
         Path historyDir = tempDir.resolve("non-existent");
 
@@ -150,7 +156,8 @@ class HistoricalDataManagerTest {
         assertTrue(files.isEmpty());
     }
 
-    @Test void hasHistoricalData(@TempDir Path tempDir) throws IOException {
+    @Test
+    void hasHistoricalData(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
 
         // Test with no history directory
@@ -166,7 +173,8 @@ class HistoricalDataManagerTest {
         assertTrue(manager.hasHistoricalData(tempDir.toString()));
     }
 
-    @Test void retentionPolicyWithExactlyTenFiles(@TempDir Path tempDir) throws IOException {
+    @Test
+    void retentionPolicyWithExactlyTenFiles(@TempDir Path tempDir) throws IOException {
         HistoricalDataManager manager = new HistoricalDataManager();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);

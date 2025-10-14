@@ -254,7 +254,8 @@ public final class StatisticsCalculator {
     /**
      * Statistical summary containing basic statistics for a dataset.
      */
-    @Getter public static class Statistics {
+    @Getter
+    public static class Statistics {
         private final double min;
         private final double max;
         private final double mean;

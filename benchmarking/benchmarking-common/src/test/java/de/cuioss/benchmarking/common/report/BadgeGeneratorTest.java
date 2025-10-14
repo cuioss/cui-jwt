@@ -38,7 +38,8 @@ class BadgeGeneratorTest {
 
     private final Gson gson = new Gson();
 
-    @Test void integrationBadgeGeneration(@TempDir Path tempDir) throws Exception {
+    @Test
+    void integrationBadgeGeneration(@TempDir Path tempDir) throws Exception {
         // Use real integration benchmark JSON
         Path jsonFile = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
         assertTrue(Files.exists(jsonFile));
@@ -73,7 +74,8 @@ class BadgeGeneratorTest {
                 "Message should start with 'Grade '");
     }
 
-    @Test void microBadgeGeneration(@TempDir Path tempDir) throws Exception {
+    @Test
+    void microBadgeGeneration(@TempDir Path tempDir) throws Exception {
         // Use real micro benchmark JSON
         Path jsonFile = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         assertTrue(Files.exists(jsonFile));
@@ -107,7 +109,8 @@ class BadgeGeneratorTest {
                 "Message should start with 'Grade '");
     }
 
-    @Test void trendBadgeGeneration(@TempDir Path tempDir) throws Exception {
+    @Test
+    void trendBadgeGeneration(@TempDir Path tempDir) throws Exception {
         Path jsonFile = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
         assertTrue(Files.exists(jsonFile));
 
@@ -127,7 +130,8 @@ class BadgeGeneratorTest {
         assertEquals("lightgray", badge.get(COLOR).getAsString());
     }
 
-    @Test void lastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
+    @Test
+    void lastRunBadgeGeneration(@TempDir Path tempDir) throws Exception {
         BadgeGenerator generator = new BadgeGenerator();
         String badgeJson = generator.generateLastRunBadge(Instant.now());
         Path badgeFile = tempDir.resolve(LAST_RUN_BADGE_JSON);

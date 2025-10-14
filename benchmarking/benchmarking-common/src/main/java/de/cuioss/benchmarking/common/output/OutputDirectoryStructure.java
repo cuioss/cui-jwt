@@ -204,7 +204,8 @@ public class OutputDirectoryStructure {
         }
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "OutputDirectoryStructure{" +
                 "benchmarkResultsDir=" + benchmarkResultsDir +
                 ", deploymentDir=" + deploymentDir +

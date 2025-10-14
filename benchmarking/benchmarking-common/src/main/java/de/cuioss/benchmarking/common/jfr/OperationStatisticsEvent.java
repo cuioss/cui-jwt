@@ -21,7 +21,13 @@ import jdk.jfr.*;
  * Periodic JFR event that captures operation statistics over time windows.
  * This event is emitted periodically to track variance and performance trends.
  */
-@Name("de.cuioss.benchmark.OperationStatistics") @Label("Operation Statistics") @Description("Periodic statistics for benchmark operations including latency percentiles and variance metrics") @Category({"Benchmark", "Performance", "Statistics"}) @Period("1 s") @StackTrace(false) public class OperationStatisticsEvent extends Event {
+@Name("de.cuioss.benchmark.OperationStatistics")
+@Label("Operation Statistics")
+@Description("Periodic statistics for benchmark operations including latency percentiles and variance metrics")
+@Category({"Benchmark", "Performance", "Statistics"})
+@Period("1 s")
+@StackTrace(false)
+public class OperationStatisticsEvent extends Event {
 
     @Label("Benchmark Name")
     @Description("Name of the benchmark")

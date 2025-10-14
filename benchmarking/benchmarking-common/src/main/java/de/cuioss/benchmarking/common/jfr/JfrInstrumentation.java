@@ -166,7 +166,8 @@ public class JfrInstrumentation {
             return this;
         }
 
-        @Override public void close() {
+        @Override
+        public void close() {
             concurrentOperations.decrementAndGet();
             event.end();
 

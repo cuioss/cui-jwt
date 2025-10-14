@@ -36,7 +36,8 @@ class TrendDataProcessorTest {
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    @Test void loadHistoricalDataFromEmptyDirectory(@TempDir Path tempDir) {
+    @Test
+    void loadHistoricalDataFromEmptyDirectory(@TempDir Path tempDir) {
         TrendDataProcessor processor = new TrendDataProcessor();
         Path historyDir = tempDir.resolve("history");
 
@@ -44,7 +45,8 @@ class TrendDataProcessorTest {
         assertTrue(data.isEmpty());
     }
 
-    @Test void loadHistoricalDataWithValidFiles(@TempDir Path tempDir) throws IOException {
+    @Test
+    void loadHistoricalDataWithValidFiles(@TempDir Path tempDir) throws IOException {
         TrendDataProcessor processor = new TrendDataProcessor();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
@@ -67,7 +69,8 @@ class TrendDataProcessorTest {
         assertEquals(75.0, data.get(2).performanceScore());
     }
 
-    @Test void calculateTrendsNoHistory() {
+    @Test
+    void calculateTrendsNoHistory() {
         TrendDataProcessor processor = new TrendDataProcessor();
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
                 "testBenchmark", "latencyBenchmark", 1000.0, 50.0, 75.0, "B"
@@ -82,7 +85,8 @@ class TrendDataProcessorTest {
         assertEquals(75.0, trends.movingAverage());
     }
 
-    @Test void calculateTrendsImprovement() {
+    @Test
+    void calculateTrendsImprovement() {
         TrendDataProcessor processor = new TrendDataProcessor();
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
                 "testBenchmark", "latencyBenchmark", 1200.0, 40.0, 85.0, "A"
@@ -103,7 +107,8 @@ class TrendDataProcessorTest {
         assertEquals(-20.0, trends.latencyTrend()); // 20% better (lower is better)
     }
 
-    @Test void calculateTrendsDecline() {
+    @Test
+    void calculateTrendsDecline() {
         TrendDataProcessor processor = new TrendDataProcessor();
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
                 "testBenchmark", "latencyBenchmark", 900.0, 60.0, 65.0, "C"
@@ -124,7 +129,8 @@ class TrendDataProcessorTest {
         assertEquals(20.0, trends.latencyTrend()); // 20% worse (higher is worse)
     }
 
-    @Test void calculateTrendsStable() {
+    @Test
+    void calculateTrendsStable() {
         TrendDataProcessor processor = new TrendDataProcessor();
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
                 "testBenchmark", "latencyBenchmark", 1010.0, 49.5, 75.5, "B"
@@ -144,7 +150,8 @@ class TrendDataProcessorTest {
         assertTrue(Math.abs(trends.changePercentage()) < 2.0);
     }
 
-    @Test void movingAverage() {
+    @Test
+    void movingAverage() {
         TrendDataProcessor processor = new TrendDataProcessor();
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
                 "testBenchmark", "latencyBenchmark", 1000.0, 50.0, 90.0, "A"
@@ -173,7 +180,8 @@ class TrendDataProcessorTest {
         assertEquals(80.0, trends.movingAverage());
     }
 
-    @Test void generateTrendChartData() {
+    @Test
+    void generateTrendChartData() {
         TrendDataProcessor processor = new TrendDataProcessor();
         BenchmarkMetrics currentMetrics = new BenchmarkMetrics(
                 "testBenchmark", "latencyBenchmark", 1200.0, 40.0, 90.0, "A"
@@ -208,7 +216,8 @@ class TrendDataProcessorTest {
         assertEquals(90.0, scores.get(2)); // Current
     }
 
-    @Test void loadHistoricalDataWithCorruptFile(@TempDir Path tempDir) throws IOException {
+    @Test
+    void loadHistoricalDataWithCorruptFile(@TempDir Path tempDir) throws IOException {
         TrendDataProcessor processor = new TrendDataProcessor();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
@@ -226,7 +235,8 @@ class TrendDataProcessorTest {
         assertEquals(1, data.size()); // Only valid file loaded
     }
 
-    @Test void maxHistoryEntries(@TempDir Path tempDir) throws IOException {
+    @Test
+    void maxHistoryEntries(@TempDir Path tempDir) throws IOException {
         TrendDataProcessor processor = new TrendDataProcessor();
         Path historyDir = tempDir.resolve("history");
         Files.createDirectories(historyDir);
@@ -248,7 +258,8 @@ class TrendDataProcessorTest {
         assertEquals(84.0, data.get(1).performanceScore()); // Day 14: 70+14=84
     }
 
-    @Test void calculateTrendsWithEWMAAfterMajorImprovement(@TempDir Path tempDir) throws IOException {
+    @Test
+    void calculateTrendsWithEWMAAfterMajorImprovement(@TempDir Path tempDir) throws IOException {
         // TEST: Verify EWMA detects improvement even when current score equals most recent history
         // Uses REAL benchmark data from /private/tmp/benchmark-verify/integration/history
         // Real scenario: scores were 28 for many runs, then jumped to 79, then stayed at 79

@@ -42,7 +42,8 @@ public class CoreBenchmarkRunner extends AbstractBenchmarkRunner {
 
     private static final CuiLogger LOGGER = new CuiLogger(CoreBenchmarkRunner.class);
 
-    @Override protected BenchmarkConfiguration createConfiguration() {
+    @Override
+    protected BenchmarkConfiguration createConfiguration() {
         // Configuration from Maven system properties:
         // - jmh.include: Pattern for benchmark classes to include
         // - jmh.forks, jmh.iterations, jmh.time, etc.: JMH execution parameters
@@ -56,13 +57,15 @@ public class CoreBenchmarkRunner extends AbstractBenchmarkRunner {
                 .build();
     }
 
-    @Override protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
+    @Override
+    protected void prepareBenchmark(BenchmarkConfiguration config) throws IOException {
         // Initialize key cache before benchmarks start
         BenchmarkKeyCache.initialize();
         LOGGER.info(INFO.JWT_BENCHMARKS_STARTING);
     }
 
-    @Override protected void cleanup(BenchmarkConfiguration config) throws IOException {
+    @Override
+    protected void cleanup(BenchmarkConfiguration config) throws IOException {
         // No cleanup required for library benchmarks
         LOGGER.debug("Library benchmark cleanup completed");
     }

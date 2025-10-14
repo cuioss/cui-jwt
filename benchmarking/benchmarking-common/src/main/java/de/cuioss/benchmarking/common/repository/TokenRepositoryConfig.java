@@ -24,7 +24,9 @@ import lombok.Value;
  *
  * @since 1.0
  */
-@Value @Builder public class TokenRepositoryConfig {
+@Value
+@Builder
+public class TokenRepositoryConfig {
 
     /**
      * System property keys for token repository configuration.

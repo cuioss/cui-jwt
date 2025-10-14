@@ -30,12 +30,15 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread) @SuppressWarnings("java:S112") public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
+@State(Scope.Thread)
+@SuppressWarnings("java:S112")
+public class SimpleCoreValidationBenchmark extends AbstractBenchmark {
 
     private CoreValidationDelegate validationDelegate;
 
 
-    @Setup(Level.Trial) public void setup() {
+    @Setup(Level.Trial)
+    public void setup() {
         // Use base class setup with our benchmark names
         setupBase();
 
@@ -50,7 +53,10 @@ import java.util.concurrent.TimeUnit;
      *
      * @return validated access token content
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureAverageTime() {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureAverageTime() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -62,7 +68,10 @@ import java.util.concurrent.TimeUnit;
      *
      * @return validated access token content
      */
-    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public AccessTokenContent measureThroughput() {
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public AccessTokenContent measureThroughput() {
         return validationDelegate.validateWithFullSpectrum();
     }
 
@@ -74,7 +83,10 @@ import java.util.concurrent.TimeUnit;
      *
      * @return validated access token content
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureConcurrentValidation() {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureConcurrentValidation() {
         return validationDelegate.validateWithRotation();
     }
 }

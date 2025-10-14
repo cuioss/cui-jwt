@@ -37,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class BenchmarkResultProcessorTest {
 
-    @Test void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
+    @Test
+    void completeArtifactGeneration(@TempDir Path tempDir) throws Exception {
         // Use TestResourceLoader to copy test JSON file to expected location
         Path targetJson = tempDir.resolve("micro-result.json");
         TestResourceLoader.copyResourceToFile("/library-benchmark-results/micro-result.json", targetJson.toFile());
@@ -79,7 +80,8 @@ class BenchmarkResultProcessorTest {
         assertTrue(badgeContent.contains("\"color\""), "Badge should have color");
     }
 
-    @Test void emptyResultsHandling(@TempDir Path tempDir) {
+    @Test
+    void emptyResultsHandling(@TempDir Path tempDir) {
         BenchmarkResultProcessor processor = new BenchmarkResultProcessor(
                 BenchmarkType.MICRO
         );
@@ -93,7 +95,8 @@ class BenchmarkResultProcessorTest {
                 "Processing should fail when JSON file doesn't exist");
     }
 
-    @Test void directoryCreation(@TempDir Path tempDir) throws Exception {
+    @Test
+    void directoryCreation(@TempDir Path tempDir) throws Exception {
         // Copy test JSON file to expected location
         Path nestedDir = tempDir.resolve("nested/benchmark/results");
         Files.createDirectories(nestedDir);

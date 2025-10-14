@@ -45,12 +45,14 @@ class MetricsJsonExporterTest {
     private MetricsJsonExporter exporter;
     private Gson gson = new Gson();
 
-    @BeforeEach void setUp() {
+    @BeforeEach
+    void setUp() {
         targetDir = tempDir.resolve("target");
         exporter = new MetricsJsonExporter(targetDir);
     }
 
-    @Test void shouldCreateTargetDirectoryOnInitialization() {
+    @Test
+    void shouldCreateTargetDirectoryOnInitialization() {
         Path newTargetDir = tempDir.resolve("new-target");
         assertFalse(Files.exists(newTargetDir), "Directory should not exist initially");
 
@@ -59,7 +61,8 @@ class MetricsJsonExporterTest {
         assertTrue(Files.exists(newTargetDir), "Directory should be created during initialization");
     }
 
-    @Test void shouldExportToFileSuccessfully() throws IOException {
+    @Test
+    void shouldExportToFileSuccessfully() throws IOException {
         Map<String, Object> testData = new HashMap<>();
         testData.put("test_key", "test_value");
         testData.put("number", 42);
@@ -79,7 +82,8 @@ class MetricsJsonExporterTest {
         assertEquals(42.0, parsedData.get("number"));
     }
 
-    @Test void shouldExportJwtValidationMetricsForValidBenchmark() throws IOException {
+    @Test
+    void shouldExportJwtValidationMetricsForValidBenchmark() throws IOException {
         Map<String, Double> metricsData = createJwtValidationMetrics();
         Instant timestamp = Instant.now();
 
@@ -101,7 +105,8 @@ class MetricsJsonExporterTest {
         assertTrue(benchmarkData.containsKey("security_event_counter_metrics"), "Should contain security event metrics");
     }
 
-    @Test void shouldNotExportForNonJwtValidationBenchmark() throws IOException {
+    @Test
+    void shouldNotExportForNonJwtValidationBenchmark() throws IOException {
         Map<String, Double> metricsData = createJwtValidationMetrics();
         Instant timestamp = Instant.now();
 
@@ -111,7 +116,8 @@ class MetricsJsonExporterTest {
         assertFalse(Files.exists(integrationFile), "Integration metrics file should not be created for non-JWT benchmark");
     }
 
-    @Test void shouldExportResourceMetrics() throws IOException {
+    @Test
+    void shouldExportResourceMetrics() throws IOException {
         Map<String, Double> resourceMetrics = createResourceMetrics();
         Instant timestamp = Instant.now();
 
@@ -139,7 +145,8 @@ class MetricsJsonExporterTest {
         assertTrue(memoryMetrics.containsKey("nonheap_used_bytes"), "Should contain non-heap memory");
     }
 
-    @Test void shouldUpdateAggregatedMetrics() throws IOException {
+    @Test
+    void shouldUpdateAggregatedMetrics() throws IOException {
         Map<String, Object> benchmarkData1 = new HashMap<>();
         benchmarkData1.put("timestamp", "2025-01-01T10:00:00Z");
         benchmarkData1.put("sample_count", 1000);
@@ -169,7 +176,8 @@ class MetricsJsonExporterTest {
         assertEquals(2000.0, benchmark2Data.get("sample_count"));
     }
 
-    @Test void shouldReadExistingMetrics() throws IOException {
+    @Test
+    void shouldReadExistingMetrics() throws IOException {
         Map<String, Object> originalData = new HashMap<>();
         originalData.put("existing_key", "existing_value");
         originalData.put("number", 123);
@@ -183,13 +191,15 @@ class MetricsJsonExporterTest {
         assertEquals(123.0, readData.get("number"));
     }
 
-    @Test void shouldReturnEmptyMapForNonExistentFile() {
+    @Test
+    void shouldReturnEmptyMapForNonExistentFile() {
         Map<String, Object> readData = exporter.readExistingMetrics("non-existent.json");
 
         assertTrue(readData.isEmpty(), "Should return empty map for non-existent file");
     }
 
-    @Test void shouldReturnEmptyMapForEmptyFile() throws IOException {
+    @Test
+    void shouldReturnEmptyMapForEmptyFile() throws IOException {
         Path emptyFile = targetDir.resolve("empty.json");
         Files.createFile(emptyFile);
 
@@ -198,7 +208,8 @@ class MetricsJsonExporterTest {
         assertTrue(readData.isEmpty(), "Should return empty map for empty file");
     }
 
-    @Test void shouldHandleCorruptedJsonFile() throws IOException {
+    @Test
+    void shouldHandleCorruptedJsonFile() throws IOException {
         Path corruptedFile = targetDir.resolve("corrupted.json");
         Files.write(corruptedFile, "{ invalid json content".getBytes());
 
@@ -208,7 +219,8 @@ class MetricsJsonExporterTest {
         assertFalse(Files.exists(corruptedFile), "Corrupted file should be deleted");
     }
 
-    @Test void shouldRecognizeJwtValidationBenchmarks() throws IOException {
+    @Test
+    void shouldRecognizeJwtValidationBenchmarks() throws IOException {
         Map<String, Double> metricsData = createJwtValidationMetrics();
         Instant timestamp = Instant.now();
 
@@ -235,7 +247,8 @@ class MetricsJsonExporterTest {
         assertEquals(4, parsedData.size(), "Should contain 4 unique benchmarks (validateAccessToken appears twice)");
     }
 
-    @Test void shouldExtractTimedMetricsCorrectly() throws IOException {
+    @Test
+    void shouldExtractTimedMetricsCorrectly() throws IOException {
         Map<String, Double> metricsData = new HashMap<>();
         metricsData.put("sheriff_oauth_bearer_token_validation_seconds_count{class=\"de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenProducer\",exception=\"none\",method=\"getBearerTokenResult\"}", 1000.0);
         metricsData.put("sheriff_oauth_bearer_token_validation_seconds_sum{class=\"de.cuioss.sheriff.oauth.quarkus.producer.BearerTokenProducer\",exception=\"none\",method=\"getBearerTokenResult\"}", 2.5);
@@ -260,7 +273,8 @@ class MetricsJsonExporterTest {
         assertTrue(validationMetric.containsKey("p99_us"), "Should contain p99 percentile");
     }
 
-    @Test void shouldExtractSecurityEventMetricsCorrectly() throws IOException {
+    @Test
+    void shouldExtractSecurityEventMetricsCorrectly() throws IOException {
         Map<String, Double> metricsData = new HashMap<>();
         metricsData.put("sheriff_oauth_validation_errors_total{category=\"INVALID_STRUCTURE\",event_type=\"TOKEN_EMPTY\",result=\"failure\"}", 5.0);
         metricsData.put("sheriff_oauth_validation_errors_total{category=\"SEMANTIC_ISSUES\",event_type=\"TOKEN_EXPIRED\",result=\"failure\"}", 10.0);
@@ -285,7 +299,8 @@ class MetricsJsonExporterTest {
         assertTrue(securityMetrics.containsKey("success_by_type"), "Should contain success by type");
     }
 
-    @Test void shouldFormatNumbersCorrectly() throws IOException {
+    @Test
+    void shouldFormatNumbersCorrectly() throws IOException {
         Map<String, Object> testData = new HashMap<>();
         testData.put("small_number", 5.67);
         testData.put("large_number", 123.456);
@@ -304,7 +319,8 @@ class MetricsJsonExporterTest {
         assertEquals(100.0, ((Number) parsedData.get("integer_value")).doubleValue());
     }
 
-    @Test void shouldExtractCpuMetricsCorrectly() throws IOException {
+    @Test
+    void shouldExtractCpuMetricsCorrectly() throws IOException {
         Map<String, Double> resourceMetrics = new HashMap<>();
         resourceMetrics.put("system_cpu_usage", 0.25);
         resourceMetrics.put("process_cpu_usage", 0.15);
@@ -325,7 +341,8 @@ class MetricsJsonExporterTest {
         assertEquals(8.0, ((Number) cpuMetrics.get("cpu_count")).doubleValue());
     }
 
-    @Test void shouldExtractMemoryMetricsCorrectly() throws IOException {
+    @Test
+    void shouldExtractMemoryMetricsCorrectly() throws IOException {
         Map<String, Double> resourceMetrics = new HashMap<>();
         resourceMetrics.put("jvm_memory_used_bytes{area=\"heap\",id=\"eden space\"}", 100000.0);
         resourceMetrics.put("jvm_memory_used_bytes{area=\"nonheap\",id=\"metaspace\"}", 50000.0);
@@ -344,7 +361,8 @@ class MetricsJsonExporterTest {
         assertEquals(50000.0, ((Number) memoryMetrics.get("nonheap_used_bytes")).doubleValue());
     }
 
-    @Test void shouldHandleEmptyTimedMetrics() throws IOException {
+    @Test
+    void shouldHandleEmptyTimedMetrics() throws IOException {
         Map<String, Double> metricsData = new HashMap<>();
 
         Instant timestamp = Instant.now();
@@ -366,7 +384,8 @@ class MetricsJsonExporterTest {
         assertEquals(0.0, validationMetric.get("p99_us"));
     }
 
-    @Test void shouldExtractSimpleBenchmarkNameCorrectly() throws IOException {
+    @Test
+    void shouldExtractSimpleBenchmarkNameCorrectly() throws IOException {
         Map<String, Double> metricsData = createJwtValidationMetrics();
         Instant timestamp = Instant.now();
 
@@ -382,7 +401,8 @@ class MetricsJsonExporterTest {
         assertFalse(parsedData.containsKey("com.example.package.JwtValidationBenchmark.validateAccessToken"), "Should not contain full package name");
     }
 
-    @Test void shouldHandleNullValues() throws IOException {
+    @Test
+    void shouldHandleNullValues() throws IOException {
         Map<String, Object> testData = new HashMap<>();
         testData.put("null_value", null);
         testData.put("valid_value", "test");
@@ -400,7 +420,9 @@ class MetricsJsonExporterTest {
         assertEquals("test", parsedData.get("valid_value"));
     }
 
-    @SuppressWarnings("java:S5961") @Test void shouldCreateQuarkusRuntimeMetricsStructure() throws IOException {
+    @SuppressWarnings("java:S5961")
+    @Test
+    void shouldCreateQuarkusRuntimeMetricsStructure() throws IOException {
         // Load real metrics data from test resources
         Map<String, Double> realMetrics = loadRealMetricsFromTestResources();
 

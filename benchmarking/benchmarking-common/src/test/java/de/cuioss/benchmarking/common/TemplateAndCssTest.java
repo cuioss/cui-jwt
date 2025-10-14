@@ -36,7 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TemplateAndCssTest {
 
-    @Test void templateResourcesExist() {
+    @Test
+    void templateResourcesExist() {
         // Verify that required template resources are available in classpath
         assertDoesNotThrow(() -> {
             try (InputStream is = getClass().getResourceAsStream("/templates/index.html")) {
@@ -57,7 +58,8 @@ class TemplateAndCssTest {
         });
     }
 
-    @Test void supportingFilesExist() {
+    @Test
+    void supportingFilesExist() {
         // Verify that supporting files are available in classpath
         assertDoesNotThrow(() -> {
             try (InputStream is = getClass().getResourceAsStream("/templates/report-styles.css")) {
@@ -72,7 +74,8 @@ class TemplateAndCssTest {
         });
     }
 
-    @Test void templatesCopiedToOutput(@TempDir Path tempDir) throws Exception {
+    @Test
+    void templatesCopiedToOutput(@TempDir Path tempDir) throws Exception {
         // Test that template files are properly copied to output directory
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
@@ -97,7 +100,8 @@ class TemplateAndCssTest {
         assertTrue(Files.exists(Path.of(outputDir, "data-loader.js")), "JavaScript should be copied");
     }
 
-    @Test void dataJsonIsGeneratedNotTemplates(@TempDir Path tempDir) throws Exception {
+    @Test
+    void dataJsonIsGeneratedNotTemplates(@TempDir Path tempDir) throws Exception {
         // Verify that the actual output is JSON data, not modified templates
         Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
         Path jsonFile = tempDir.resolve("integration-result.json");

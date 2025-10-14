@@ -44,11 +44,13 @@ class AbstractBenchmarkBaseTest {
 
     private TestBenchmarkImplementation testBenchmark;
 
-    @BeforeEach void setUp() {
+    @BeforeEach
+    void setUp() {
         testBenchmark = new TestBenchmarkImplementation();
     }
 
-    @Test void shouldInitializeFieldsOnSetup() {
+    @Test
+    void shouldInitializeFieldsOnSetup() {
         // Before setup
         assertNull(testBenchmark.serviceUrl);
         assertNull(testBenchmark.benchmarkResultsDir);
@@ -62,7 +64,8 @@ class AbstractBenchmarkBaseTest {
         assertTrue(testBenchmark.additionalSetupCalled);
     }
 
-    @Test void shouldUseBenchmarkResultsDirFromSystemProperty() {
+    @Test
+    void shouldUseBenchmarkResultsDirFromSystemProperty() {
         String customDir = tempDir.toString() + "/custom-results";
         System.setProperty("benchmark.results.dir", customDir);
 
@@ -72,12 +75,14 @@ class AbstractBenchmarkBaseTest {
         System.clearProperty("benchmark.results.dir");
     }
 
-    @Test void shouldUseDefaultBenchmarkResultsDir() {
+    @Test
+    void shouldUseDefaultBenchmarkResultsDir() {
         testBenchmark.setupBase();
         assertEquals("target/benchmark-results", testBenchmark.benchmarkResultsDir);
     }
 
-    @Test void shouldCreateBaseRequestWithFullUrl() {
+    @Test
+    void shouldCreateBaseRequestWithFullUrl() {
         testBenchmark.setupBase();
         HttpRequest.Builder builder = testBenchmark.createBaseRequest("https://example.com/api/test");
 
@@ -89,7 +94,8 @@ class AbstractBenchmarkBaseTest {
         assertEquals("application/json", request.headers().firstValue("Accept").get());
     }
 
-    @Test void shouldCreateBaseRequestWithBaseUrlAndPath() {
+    @Test
+    void shouldCreateBaseRequestWithBaseUrlAndPath() {
         testBenchmark.setupBase();
         HttpRequest.Builder builder = testBenchmark.createBaseRequest("https://example.com", "/api/test");
 
@@ -97,14 +103,16 @@ class AbstractBenchmarkBaseTest {
         assertEquals("https://example.com/api/test", request.uri().toString());
     }
 
-    @Test void shouldValidateResponseSuccessfully() {
+    @Test
+    void shouldValidateResponseSuccessfully() {
         HttpResponse<String> mockResponse = createMockResponse(200, "OK");
 
         // Should not throw exception
         assertDoesNotThrow(() -> testBenchmark.validateResponse(mockResponse, 200));
     }
 
-    @Test void shouldThrowExceptionForUnexpectedStatus() {
+    @Test
+    void shouldThrowExceptionForUnexpectedStatus() {
         HttpResponse<String> mockResponse = createMockResponse(404, "Not Found");
 
         IllegalStateException exception = assertThrows(
@@ -116,13 +124,15 @@ class AbstractBenchmarkBaseTest {
         assertTrue(exception.getMessage().contains("Not Found"));
     }
 
-    @Test void shouldCallTeardownMethods() {
+    @Test
+    void shouldCallTeardownMethods() {
         testBenchmark.tearDown();
 
         assertTrue(testBenchmark.additionalTeardownCalled);
     }
 
-    @Test void shouldThrowExceptionWhenSendingRequestWithoutSetup() {
+    @Test
+    void shouldThrowExceptionWhenSendingRequestWithoutSetup() {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://example.com"))
                 .build();
@@ -144,15 +154,18 @@ class AbstractBenchmarkBaseTest {
         boolean additionalTeardownCalled = false;
         boolean exportMetricsCalled = false;
 
-        @Override protected void performAdditionalSetup() {
+        @Override
+        protected void performAdditionalSetup() {
             additionalSetupCalled = true;
         }
 
-        @Override protected void performAdditionalTeardown() {
+        @Override
+        protected void performAdditionalTeardown() {
             additionalTeardownCalled = true;
         }
 
-        @Override public void exportBenchmarkMetrics() {
+        @Override
+        public void exportBenchmarkMetrics() {
             exportMetricsCalled = true;
         }
     }
@@ -162,35 +175,43 @@ class AbstractBenchmarkBaseTest {
      */
     private HttpResponse<String> createMockResponse(int statusCode, String body) {
         return new HttpResponse<>() {
-            @Override public int statusCode() {
+            @Override
+            public int statusCode() {
                 return statusCode;
             }
 
-            @Override public HttpRequest request() {
+            @Override
+            public HttpRequest request() {
                 return null;
             }
 
-            @Override public Optional<HttpResponse<String>> previousResponse() {
+            @Override
+            public Optional<HttpResponse<String>> previousResponse() {
                 return Optional.empty();
             }
 
-            @Override public HttpHeaders headers() {
+            @Override
+            public HttpHeaders headers() {
                 return HttpHeaders.of(Map.of(), (s1, s2) -> true);
             }
 
-            @Override public String body() {
+            @Override
+            public String body() {
                 return body;
             }
 
-            @Override public Optional<SSLSession> sslSession() {
+            @Override
+            public Optional<SSLSession> sslSession() {
                 return Optional.empty();
             }
 
-            @Override public URI uri() {
+            @Override
+            public URI uri() {
                 return URI.create("https://example.com");
             }
 
-            @Override public HttpClient.Version version() {
+            @Override
+            public HttpClient.Version version() {
                 return HttpClient.Version.HTTP_1_1;
             }
         };

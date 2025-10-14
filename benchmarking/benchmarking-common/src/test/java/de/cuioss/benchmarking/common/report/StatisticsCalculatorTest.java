@@ -26,20 +26,23 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class StatisticsCalculatorTest {
 
-    @Test void calculateEWMAWithSingleValue() {
+    @Test
+    void calculateEWMAWithSingleValue() {
         List<Double> values = List.of(50.0);
         double result = StatisticsCalculator.calculateEWMA(values, 0.25);
         assertEquals(50.0, result, 0.001);
     }
 
-    @Test void calculateEWMAWithUniformValues() {
+    @Test
+    void calculateEWMAWithUniformValues() {
         // All values the same should return that value
         List<Double> values = List.of(30.0, 30.0, 30.0, 30.0, 30.0);
         double result = StatisticsCalculator.calculateEWMA(values, 0.25);
         assertEquals(30.0, result, 0.001);
     }
 
-    @Test void calculateEWMAWithIncreasingValues() {
+    @Test
+    void calculateEWMAWithIncreasingValues() {
         // Recent values weighted more: [50, 40, 30, 20, 10] (newest first)
         // EWMA = (50×1.0 + 40×0.25 + 30×0.0625 + 20×0.015625 + 10×0.00390625) / (1.0 + 0.25 + 0.0625 + 0.015625 + 0.00390625)
         //      = (50 + 10 + 1.875 + 0.3125 + 0.0390625) / 1.33203125
@@ -49,7 +52,8 @@ class StatisticsCalculatorTest {
         assertTrue(result > 46.0 && result < 48.0, "EWMA should be weighted toward recent higher values");
     }
 
-    @Test void calculateEWMAWithRealScenario() {
+    @Test
+    void calculateEWMAWithRealScenario() {
         // Real scenario: score jumped from 28 to 79
         // History (newest first): [79, 28, 28, 28, 27, 28, 28, 28, 28]
         List<Double> values = List.of(79.0, 28.0, 28.0, 28.0, 27.0, 28.0, 28.0, 28.0, 28.0);
@@ -68,29 +72,34 @@ class StatisticsCalculatorTest {
         assertTrue(result > 28.0, "EWMA should be greater than historical values");
     }
 
-    @Test void calculateEWMAInvalidLambdaTooSmall() {
+    @Test
+    void calculateEWMAInvalidLambdaTooSmall() {
         List<Double> values = List.of(50.0);
         assertThrows(IllegalArgumentException.class,
                 () -> StatisticsCalculator.calculateEWMA(values, 0.0));
     }
 
-    @Test void calculateEWMAInvalidLambdaTooLarge() {
+    @Test
+    void calculateEWMAInvalidLambdaTooLarge() {
         List<Double> values = List.of(50.0);
         assertThrows(IllegalArgumentException.class,
                 () -> StatisticsCalculator.calculateEWMA(values, 1.1));
     }
 
-    @Test void calculateEWMANullValues() {
+    @Test
+    void calculateEWMANullValues() {
         assertThrows(NullPointerException.class,
                 () -> StatisticsCalculator.calculateEWMA(null, 0.25));
     }
 
-    @Test void calculateEWMAEmptyList() {
+    @Test
+    void calculateEWMAEmptyList() {
         double result = StatisticsCalculator.calculateEWMA(List.of(), 0.25);
         assertEquals(0.0, result, 0.001);
     }
 
-    @Test void calculateEWMADifferentLambdaValues() {
+    @Test
+    void calculateEWMADifferentLambdaValues() {
         List<Double> values = List.of(100.0, 50.0, 50.0, 50.0);
 
         // Smaller lambda = more weight on recent values
