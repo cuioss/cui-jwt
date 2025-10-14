@@ -3,7 +3,7 @@
 ## ./mvnw -Ppre-commit clean install
 
 ### Last Execution Duration
-- **Duration**: 344000ms (5 minutes 44 seconds)
+- **Duration**: 385000ms (6 minutes 25 seconds)
 - **Last Updated**: 2025-10-14
 
 ### Acceptable Warnings
@@ -13,8 +13,16 @@
 ## ./mvnw clean verify -Pintegration-tests -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests
 
 ### Last Execution Duration
-- **Duration**: 120000ms (2 minutes)
-- **Last Updated**: Not yet executed
+- **Duration**: 160000ms (2 minutes 40 seconds)
+- **Last Updated**: 2025-10-14
 
 ### Acceptable Warnings
-- None recorded yet
+- `WARN [io.mic.cor.ins.MeterRegistry] (vert.x-acceptor-thread-0) This Gauge has been already registered (MeterId{name='http.server.active.connections', tags=[]})` (Quarkus Micrometer warning about duplicate gauge registration)
+- `WARNING: A terminally deprecated method in sun.misc.Unsafe has been called` (Netty library using deprecated Unsafe methods)
+- `WARNING: sun.misc.Unsafe::arrayBaseOffset` (Follow-up details for Unsafe deprecation)
+- `WARNING: A restricted method in java.lang.System has been called` (Brotli4j native library access)
+- `WARNING: java.lang.System::loadLibrary` (Follow-up details for restricted method)
+- `WARNING [de.cui.she.oau.cor.IssuerConfig] JWTValidation-134: IssuerConfig for issuer ... has claimSubOptional=true` (Intentional test configuration for non-standard token validation)
+- `WARNING [de.cui.she.oau.cor.pip.val.TokenClaimValidator] JWTValidation-112: Missing recommended element: expectedAudience` (Test configuration without audience validation)
+- `WARN [org.keycloak.storage.datastore.DefaultExportImportManager] Referenced client scope ... doesn't exist` (Keycloak realm import warnings - expected during initial setup)
+- `WARN [org.keycloak.models.utils.RepresentationToModel] Referenced client scope ... doesn't exist. Ignoring` (Keycloak realm import follow-up warnings)
