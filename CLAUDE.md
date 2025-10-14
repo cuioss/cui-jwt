@@ -177,3 +177,37 @@ Execute comprehensive quality verification and commit workflow for a specific mo
 - **NEVER commit with failing builds** - Only commit when everything passes
 - **NEVER commit with source artifacts** - Source directories must be clean of .class files
 - **ALWAYS fix issues systematically** - Address root causes, not symptoms
+
+## Slash Commands
+
+The project includes custom slash commands located in `.claude/commands/` (gitignored, user-local):
+
+### /verify-project [push]
+
+Comprehensive project verification workflow that runs the full Maven build with pre-commit profile.
+
+- Reads execution duration from `doc/commands.md`
+- Runs: `./mvnw -Ppre-commit clean install`
+- Analyzes all errors, warnings, and OpenRewrite markers
+- Fixes issues and repeats until clean
+- Updates execution duration if changed >10%
+- Optional `push` parameter: automatically commits and pushes changes after successful verification
+
+**Usage:** `/verify-project` or `/verify-project push`
+
+### /verify-integration-tests
+
+Integration tests verification with comprehensive Quarkus/Keycloak log analysis.
+
+- Reads execution duration from `doc/commands.md`
+- Runs: `./mvnw clean verify -Pintegration-tests -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests`
+- Thoroughly analyzes Maven output AND all Quarkus/Keycloak logs in target directory
+- Checks warnings against acceptable list in `doc/commands.md`
+- **ASKS USER** before adding warnings to acceptable list
+- Fixes issues in any module and repeats until clean
+- Runs `/verify-project` if code changes were made
+- Updates execution duration if changed >10%
+
+**Usage:** `/verify-integration-tests`
+
+**Note:** Slash command files are in the gitignored `.claude/commands/` directory. If you need to recreate them, refer to the global `/verify-project` command structure in `/Users/oliver/.claude/commands/`.
