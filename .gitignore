@@ -18,4 +18,4 @@
 /oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-deployment/node_modules/
 
 # Claude Code configuration
-.claude/
+.claude/settings.local.json
