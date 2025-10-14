@@ -1,0 +1,720 @@
+/*
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.cuioss.sheriff.oauth.quarkus.config;
+
+import de.cuioss.sheriff.oauth.core.jwks.JwksLoader;
+import de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig;
+import lombok.experimental.UtilityClass;
+
+/**
+ * Constants for JWT property keys used in the OAuth Sheriff Quarkus module.
+ * <p>
+ * This class follows the DSL-style nested constants pattern to organize
+ * property keys in a hierarchical, discoverable manner.
+ * </p>
+ * <p>
+ * All properties are prefixed with "sheriff.oauth".
+ * </p>
+ *
+ * @since 1.0
+ */
+@UtilityClass
+public final class JwtPropertyKeys {
+
+    /**
+     * The common prefix for all JWT properties.
+     */
+    public static final String PREFIX = "sheriff.oauth";
+    public static final String DOT_JWKS = ".jwks";
+    public static final String DOT_ENABLED = ".enabled";
+
+    /**
+     * Properties related to JWT parser configuration.
+     */
+    @UtilityClass
+    public static final class PARSER {
+        /**
+         * Base path for parser configurations.
+         */
+        public static final String BASE = PREFIX + ".parser";
+
+        /**
+         * Maximum size of a JWT token in bytes to prevent overflow attacks.
+         */
+        public static final String MAX_TOKEN_SIZE = BASE + ".max-token-size";
+
+        /**
+         * Maximum size of decoded JSON payload in bytes.
+         */
+        public static final String MAX_PAYLOAD_SIZE = BASE + ".max-payload-size";
+
+        /**
+         * Maximum string size for JSON parsing.
+         */
+        public static final String MAX_STRING_SIZE = BASE + ".max-string-size";
+
+        /**
+         * Maximum array size for JSON parsing.
+         */
+        public static final String MAX_ARRAY_SIZE = BASE + ".max-array-size";
+
+        /**
+         * Maximum depth for JSON parsing.
+         */
+        public static final String MAX_DEPTH = BASE + ".max-depth";
+    }
+
+    /**
+     * Properties related to JWT issuers configuration.
+     * <p>
+     * These keys use a template system for dynamic issuer configuration.
+     * Usage pattern: KEY.formatted("issuerName") where "issuerName" is an arbitrary string.
+     * </p>
+     * <p>
+     * Example: ENABLED.formatted("default") -> "sheriff.oauth.issuers.default.enabled"
+     * </p>
+     * <p>
+     * <strong>JWKS Source Configuration (Mutually Exclusive):</strong>
+     * Only one JWKS source may be configured per issuer:
+     * <ul>
+     *   <li>{@link #JWKS_URL} - Direct JWKS endpoint (requires {@link #ISSUER_IDENTIFIER})</li>
+     *   <li>{@link #WELL_KNOWN_URL} - Well-known discovery (provides issuer identifier automatically)</li>
+     *   <li>{@link #JWKS_FILE_PATH} - Local file (requires {@link #ISSUER_IDENTIFIER})</li>
+     *   <li>{@link #JWKS_CONTENT} - Inline content (requires {@link #ISSUER_IDENTIFIER})</li>
+     * </ul>
+     */
+    @UtilityClass
+    public static final class ISSUERS {
+        /**
+         * Base template for issuer configurations.
+         */
+        public static final String BASE = PREFIX + ".issuers.%s.";
+
+        /**
+         * Base template for JWKS configurations.
+         */
+        public static final String JWKS_BASE = BASE + "jwks.";
+
+        /**
+         * Base template for HTTP configurations.
+         */
+        public static final String HTTP_BASE = JWKS_BASE + "http.";
+
+        // === Core Configuration ===
+
+        /**
+         * Whether this issuer configuration is enabled.
+         * Template: "sheriff.oauth.issuers.%s.enabled"
+         * <p>
+         * When set to {@code false}, this issuer configuration will be ignored during
+         * token validation and will not attempt to use the underlying {@link JwksLoader}.
+         * This allows for easy enabling/disabling of specific issuers without removing
+         * their configuration.
+         * Default value is {@code true}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String ENABLED = BASE + "enabled";
+
+        /**
+         * The issuer identifier that will be matched against the "iss" claim in JWT tokens.
+         * Template: "sheriff.oauth.issuers.%s.issuer-identifier"
+         * <p>
+         * This field is required for all JWKS loading variants except well-known discovery.
+         * For well-known discovery, the issuer identifier is automatically extracted from
+         * the discovery document and this field is optional.
+         * This identifier must match the "iss" claim in validated tokens.
+         * </p>
+         * <p>
+         * <strong>Required</strong> for {@link #JWKS_URL}, {@link #JWKS_FILE_PATH}, and {@link #JWKS_CONTENT}.
+         * <strong>Optional</strong> for {@link #WELL_KNOWN_URL} (extracted from discovery document).
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String ISSUER_IDENTIFIER = BASE + "issuer-identifier";
+
+        /**
+         * Set of expected audience values (comma-separated).
+         * Template: "sheriff.oauth.issuers.%s.expected-audience"
+         * <p>
+         * These values are matched against the "aud" claim in the token.
+         * If the token's audience claim matches any of these values, it is considered valid.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String EXPECTED_AUDIENCE = BASE + "expected-audience";
+
+        /**
+         * Set of expected client ID values (comma-separated).
+         * Template: "sheriff.oauth.issuers.%s.expected-client-id"
+         * <p>
+         * These values are matched against the "azp" or "client_id" claim in the token.
+         * If the token's client ID claim matches any of these values, it is considered valid.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String EXPECTED_CLIENT_ID = BASE + "expected-client-id";
+
+        /**
+         * Signature algorithm preferences (comma-separated).
+         * Template: "sheriff.oauth.issuers.%s.algorithm-preferences"
+         * <p>
+         * This configuration controls which signature algorithms are preferred and allowed
+         * during token validation. It can be used to enforce security policies, such as
+         * requiring stronger algorithms or blacklisting weak ones.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String ALGORITHM_PREFERENCES = BASE + "algorithm-preferences";
+
+        /**
+         * Whether the "sub" (subject) claim is optional for this issuer.
+         * Template: "sheriff.oauth.issuers.%s.claim-sub-optional"
+         * <p>
+         * When set to {@code true}, the mandatory claims validator will not require the "sub" claim
+         * to be present in tokens from this issuer. This provides a workaround for identity providers
+         * that don't include the subject claim in access tokens by default.
+         * </p>
+         * <p>
+         * <strong>Warning:</strong> Setting this to {@code true} relaxes RFC 7519 compliance.
+         * According to RFC 7519 Section 4.1.2, the "sub" claim is required for ACCESS_TOKEN and ID_TOKEN types.
+         * Use this option only when necessary and ensure appropriate alternative validation mechanisms.
+         * </p>
+         * <p>
+         * Default value is {@code false} (subject claim is mandatory, RFC compliant).
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig#isClaimSubOptional()
+         * @see <a href="https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.2">RFC 7519 - 4.1.2. "sub" (Subject) Claim</a>
+         */
+        public static final String CLAIM_SUB_OPTIONAL = BASE + "claim-sub-optional";
+
+        // === JWKS Source Configuration (Mutually Exclusive) ===
+
+        /**
+         * The URL of the JWKS endpoint for direct loading.
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.url"
+         * <p>
+         * This method configures the issuer to load JWKS (JSON Web Key Set) from a remote HTTP endpoint.
+         * This is the most common configuration for production environments where JWKS are served
+         * by an identity provider or authorization server.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #WELL_KNOWN_URL}, {@link #JWKS_FILE_PATH}, and {@link #JWKS_CONTENT}.
+         * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String JWKS_URL = HTTP_BASE + "url";
+
+        /**
+         * The URL of the OpenID Connect discovery document (well-known endpoint).
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.well-known-url"
+         * <p>
+         * This method configures the JWKS loading using well-known endpoint discovery from a URL string.
+         * This method creates a WellKnownConfig internally for dynamic JWKS URI resolution.
+         * The JWKS URI will be extracted at runtime from the well-known discovery document.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #JWKS_URL}, {@link #JWKS_FILE_PATH}, and {@link #JWKS_CONTENT}.
+         * Provides {@link #ISSUER_IDENTIFIER} automatically from discovery document.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String WELL_KNOWN_URL = HTTP_BASE + "well-known-url";
+
+        /**
+         * File path for loading JWKS from a local file.
+         * Template: "sheriff.oauth.issuers.%s.jwks.file-path"
+         * <p>
+         * This method configures the issuer to load JWKS (JSON Web Key Set) from a local file.
+         * This is useful for development environments, testing, or scenarios where JWKS are
+         * distributed as part of the application deployment.
+         * The file should contain a valid JWKS JSON structure with public keys only.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #JWKS_URL}, {@link #WELL_KNOWN_URL}, and {@link #JWKS_CONTENT}.
+         * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String JWKS_FILE_PATH = JWKS_BASE + "file-path";
+
+        /**
+         * JWKS content directly as a JSON string.
+         * Template: "sheriff.oauth.issuers.%s.jwks.content"
+         * <p>
+         * This method configures the issuer to use JWKS (JSON Web Key Set) provided directly
+         * as a JSON string. This is useful for testing, embedded configurations, or scenarios
+         * where JWKS are generated or provided programmatically.
+         * The content should be a valid JWKS JSON structure containing public keys only.
+         * </p>
+         * <p>
+         * <strong>Mutually exclusive</strong> with {@link #JWKS_URL}, {@link #WELL_KNOWN_URL}, and {@link #JWKS_FILE_PATH}.
+         * <strong>Requires</strong> {@link #ISSUER_IDENTIFIER}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.IssuerConfig
+         */
+        public static final String JWKS_CONTENT = JWKS_BASE + "content";
+
+        // === HTTP Configuration (Only for JWKS_URL and WELL_KNOWN_URL) ===
+
+        /**
+         * The refresh interval in seconds for HTTP-based JWKS loading.
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.refresh-interval-seconds"
+         * <p>
+         * The interval in seconds at which to refresh the keys.
+         * If set to 0, no time-based caching will be used.
+         * It defaults to 10 minutes (600 seconds).
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String REFRESH_INTERVAL_SECONDS = HTTP_BASE + "refresh-interval-seconds";
+
+        /**
+         * The connection timeout in seconds for HTTP requests.
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.connect-timeout-seconds"
+         * <p>
+         * Sets the connection timeout in seconds for HTTP requests to JWKS endpoints.
+         * This timeout controls how long to wait when establishing a connection to the remote server.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String CONNECT_TIMEOUT_SECONDS = HTTP_BASE + "connect-timeout-seconds";
+
+        /**
+         * The read timeout in seconds for HTTP requests.
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.read-timeout-seconds"
+         * <p>
+         * Sets the read timeout in seconds for HTTP requests to JWKS endpoints.
+         * This timeout controls how long to wait for data to be received from the remote server
+         * after the connection has been established.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig
+         */
+        public static final String READ_TIMEOUT_SECONDS = HTTP_BASE + "read-timeout-seconds";
+
+        /**
+         * The grace period in seconds for retired keys during rotation.
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.key-rotation-grace-period-seconds"
+         * <p>
+         * Sets the grace period for which retired keys remain valid after key rotation.
+         * During this period, tokens signed with recently rotated keys can still be validated,
+         * preventing service disruptions for in-flight requests. Set to 0 to immediately
+         * invalidate old keys upon rotation.
+         * </p>
+         * <p>
+         * Default value is {@code 300} (5 minutes).
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see HttpJwksLoaderConfig#getKeyRotationGracePeriod()
+         * @see <a href="https://github.com/cuioss/OAuth-Sheriff/issues/110">Issue #110: Key rotation grace period</a>
+         * @since 1.1
+         */
+        public static final String KEY_ROTATION_GRACE_PERIOD_SECONDS = HTTP_BASE + "key-rotation-grace-period-seconds";
+
+        /**
+         * The maximum number of retired key sets to retain.
+         * Template: "sheriff.oauth.issuers.%s.jwks.http.max-retired-key-sets"
+         * <p>
+         * Sets the maximum number of retired key sets to keep in memory during the grace period.
+         * This prevents unbounded memory growth when keys rotate frequently. Older retired
+         * key sets beyond this limit are removed even if still within the grace period.
+         * </p>
+         * <p>
+         * Default value is {@code 10}.
+         * </p>
+         * <p>
+         * <strong>Only applicable</strong> for {@link #JWKS_URL} and {@link #WELL_KNOWN_URL}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.jwks.http.HttpJwksLoaderConfig#getMaxRetiredKeySets()
+         * @see <a href="https://github.com/cuioss/OAuth-Sheriff/issues/110">Issue #110: Key rotation grace period</a>
+         * @since 1.1
+         */
+        public static final String MAX_RETIRED_KEY_SETS = HTTP_BASE + "max-retired-key-sets";
+
+        // === Keycloak Configuration ===
+
+        /**
+         * Base template for Keycloak configurations.
+         */
+        public static final String KEYCLOAK_BASE = BASE + "keycloak.";
+
+        /**
+         * Base template for Keycloak mapper configurations.
+         */
+        public static final String KEYCLOAK_MAPPERS_BASE = KEYCLOAK_BASE + "mappers.";
+
+        /**
+         * Enable Keycloak default roles mapper for realm_access.roles claim.
+         * Template: "sheriff.oauth.issuers.%s.keycloak.mappers.default-roles.enabled"
+         * <p>
+         * When enabled, this mapper extracts roles from Keycloak's standard
+         * {@code realm_access.roles} claim and maps them to the expected
+         * {@code roles} claim format used by the CUI JWT library.
+         * </p>
+         * <p>
+         * This eliminates the need for custom protocol mappers in Keycloak
+         * to expose realm roles in the expected format.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.domain.claim.mapper.KeycloakDefaultRolesMapper
+         */
+        public static final String KEYCLOAK_DEFAULT_ROLES_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-roles.enabled";
+
+        /**
+         * Enable Keycloak default groups mapper for groups claim.
+         * Template: "sheriff.oauth.issuers.%s.keycloak.mappers.default-groups.enabled"
+         * <p>
+         * When enabled, this mapper processes Keycloak's standard {@code groups}
+         * claim and ensures they are properly formatted for the CUI JWT library's
+         * authorization mechanisms.
+         * </p>
+         * <p>
+         * This provides compatibility with Keycloak's default group membership
+         * mapper without requiring additional configuration.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.domain.claim.mapper.KeycloakDefaultGroupsMapper
+         */
+        public static final String KEYCLOAK_DEFAULT_GROUPS_ENABLED = KEYCLOAK_MAPPERS_BASE + "default-groups.enabled";
+    }
+
+    /**
+     * Properties related to health checks.
+     */
+    @UtilityClass
+    public static final class HEALTH {
+        /**
+         * Base path for health check configurations.
+         */
+        public static final String BASE = PREFIX + ".health";
+
+        /**
+         * Whether health checks are enabled.
+         */
+        public static final String ENABLED = BASE + DOT_ENABLED;
+
+        /**
+         * Properties related to JWKS endpoint health checks.
+         */
+        @UtilityClass
+        public static final class JWKS {
+            /**
+             * Base path for JWKS health check configurations.
+             */
+            public static final String BASE = HEALTH.BASE + DOT_JWKS;
+
+            /**
+             * The cache time-to-live in seconds for health check results.
+             */
+            public static final String CACHE_SECONDS = BASE + ".cache-seconds";
+
+            /**
+             * The timeout in seconds for health check requests.
+             */
+            public static final String TIMEOUT_SECONDS = BASE + ".timeout-seconds";
+
+        }
+    }
+
+    /**
+     * Properties related to metrics.
+     */
+    @UtilityClass
+    public static final class METRICS {
+        /**
+         * Base path for metrics configurations.
+         */
+        public static final String BASE = PREFIX + ".validation";
+
+        /**
+         * Counter for validation errors by type.
+         */
+        public static final String VALIDATION_ERRORS = BASE + ".errors";
+
+        /**
+         * Timer for JWT validation pipeline steps.
+         */
+        public static final String VALIDATION_DURATION = BASE + ".duration";
+
+        /**
+         * Interval for metrics collection in seconds.
+         * Template: "sheriff.oauth.metrics.collection.interval"
+         * <p>
+         * Controls how frequently the {@link de.cuioss.sheriff.oauth.quarkus.metrics.JwtMetricsCollector}
+         * updates Micrometer metrics from the internal counters and monitors.
+         * </p>
+         * <p>
+         * Default value is {@code 10s} for production environments.
+         * For integration tests, this can be set to {@code 2s} for faster testing.
+         * </p>
+         */
+        public static final String COLLECTION_INTERVAL = PREFIX + ".metrics.collection.interval";
+
+        /**
+         * Base path for JWKS metrics.
+         */
+        public static final String JWKS_BASE = PREFIX + DOT_JWKS;
+
+        /**
+         * Gauge for JWKS cache size.
+         */
+        public static final String JWKS_CACHE_SIZE = JWKS_BASE + ".cache.size";
+
+    }
+
+    /**
+     * Properties related to HTTP access log filtering configuration.
+     * <p>
+     * These properties control the custom access log filter that provides
+     * more granular logging control than Quarkus built-in access logging.
+     * The filter is controlled by DEBUG log level and can filter by status codes and paths.
+     * </p>
+     * <p>
+     * All properties are prefixed with "cui.http.access-log.filter".
+     * Control via log level: quarkus.log.category."cui.http.access-log.filter".level=DEBUG
+     * </p>
+     */
+    @UtilityClass
+    public static final class ACCESSLOG {
+        /**
+         * Base path for access log filter configurations.
+         */
+        public static final String BASE = "cui.http.access-log.filter";
+
+        /**
+         * Minimum HTTP status code to log.
+         * Template: "cui.http.access-log.filter.min-status-code"
+         * <p>
+         * Only responses with status codes >= this value will be logged.
+         * Common values:
+         * - 200: Log all responses (equivalent to standard access log)
+         * - 400: Log only client and server errors (default)
+         * - 500: Log only server errors
+         * </p>
+         * <p>
+         * Default value is {@code 400}.
+         * </p>
+         */
+        public static final String MIN_STATUS_CODE = BASE + ".min-status-code";
+
+        /**
+         * Maximum HTTP status code to log.
+         * Template: "cui.http.access-log.filter.max-status-code"
+         * <p>
+         * Only responses with status codes {@code <=} this value will be logged.
+         * Set to 599 to include all error codes.
+         * </p>
+         * <p>
+         * Default value is {@code 599}.
+         * </p>
+         */
+        public static final String MAX_STATUS_CODE = BASE + ".max-status-code";
+
+        /**
+         * Specific HTTP status codes to always log (comma-separated).
+         * Template: "cui.http.access-log.filter.include-status-codes"
+         * <p>
+         * These status codes will be logged regardless of min/max range.
+         * Useful for logging specific success codes (like 201, 202) along with errors.
+         * </p>
+         * <p>
+         * Example: "201,202,204" to log created and accepted responses.
+         * </p>
+         */
+        public static final String INCLUDE_STATUS_CODES = BASE + ".include-status-codes";
+
+        /**
+         * URL path patterns to include in logging (comma-separated).
+         * Template: "cui.http.access-log.filter.include-paths"
+         * <p>
+         * If specified, only requests matching these patterns will be considered for logging.
+         * Uses simple glob patterns (* and **).
+         * Empty list means all paths are eligible.
+         * </p>
+         * <p>
+         * Example: "/api/**,/health/**" to log only API and health endpoints.
+         * </p>
+         */
+        public static final String INCLUDE_PATHS = BASE + ".include-paths";
+
+        /**
+         * URL path patterns to exclude from logging (comma-separated).
+         * Template: "cui.http.access-log.filter.exclude-paths"
+         * <p>
+         * These patterns override include patterns.
+         * Uses simple glob patterns (* and **).
+         * Common exclusions: /health/*, /metrics/*, /jwt/validate
+         * </p>
+         * <p>
+         * Example: "/health/**,/metrics/**" to exclude health and metrics endpoints.
+         * </p>
+         */
+        public static final String EXCLUDE_PATHS = BASE + ".exclude-paths";
+
+        /**
+         * Log format pattern.
+         * Template: "cui.http.access-log.filter.pattern"
+         * <p>
+         * Supports placeholders:
+         * - {method}: HTTP method (GET, POST, etc.)
+         * - {path}: Request path
+         * - {status}: HTTP status code
+         * - {duration}: Request duration in milliseconds
+         * - {remoteAddr}: Remote IP address
+         * - {userAgent}: User-Agent header
+         * </p>
+         * <p>
+         * Default pattern: "{remoteAddr} {method} {path} -> {status} ({duration}ms)"
+         * </p>
+         */
+        public static final String PATTERN = BASE + ".pattern";
+
+        /**
+         * Whether the access log filter is enabled.
+         * Template: "cui.http.access-log.filter.enabled"
+         * <p>
+         * When set to true, the access log filter will process HTTP requests and responses
+         * according to the configured filtering rules. When false, the filter is disabled
+         * and no access logging will occur.
+         * </p>
+         * <p>
+         * Default value is {@code false}.
+         * </p>
+         */
+        public static final String ENABLED = BASE + DOT_ENABLED;
+    }
+
+    /**
+     * Properties related to HTTP retry configuration.
+     */
+    @UtilityClass
+    public static final class RETRY {
+        private static final String PREFIX_RETRY = PREFIX + ".retry";
+
+        /**
+         * Whether retry is enabled globally.
+         * Default: true
+         */
+        public static final String ENABLED = PREFIX_RETRY + DOT_ENABLED;
+
+        /**
+         * Maximum number of retry attempts.
+         * Default: 5
+         */
+        public static final String MAX_ATTEMPTS = PREFIX_RETRY + ".max-attempts";
+
+        /**
+         * Initial retry delay in milliseconds.
+         * Default: 1000
+         */
+        public static final String INITIAL_DELAY_MS = PREFIX_RETRY + ".initial-delay-ms";
+
+        /**
+         * Maximum retry delay in milliseconds.
+         * Default: 30000
+         */
+        public static final String MAX_DELAY_MS = PREFIX_RETRY + ".max-delay-ms";
+
+        /**
+         * Exponential backoff multiplier.
+         * Default: 2.0
+         */
+        public static final String BACKOFF_MULTIPLIER = PREFIX_RETRY + ".backoff-multiplier";
+
+        /**
+         * Jitter factor for randomization.
+         * Default: 0.1
+         */
+        public static final String JITTER_FACTOR = PREFIX_RETRY + ".jitter-factor";
+    }
+
+    /**
+     * Properties related to access token caching configuration.
+     */
+    @UtilityClass
+    public static final class CACHE {
+        /**
+         * Base path for cache configurations.
+         */
+        public static final String BASE = PREFIX + ".cache.access-token";
+
+        /**
+         * Maximum number of access tokens to cache.
+         * Template: "sheriff.oauth.cache.access-token.max-size"
+         * <p>
+         * Controls the maximum number of validated access tokens that will be cached
+         * to improve performance by avoiding redundant validations.
+         * Set to 0 to disable caching completely.
+         * </p>
+         * <p>
+         * Default value is {@code 1000}.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig
+         */
+        public static final String MAX_SIZE = BASE + ".max-size";
+
+        /**
+         * Interval in seconds between cache eviction runs.
+         * Template: "sheriff.oauth.cache.access-token.eviction-interval-seconds"
+         * <p>
+         * Controls how frequently the cache checks for and removes expired tokens.
+         * This helps maintain cache size and ensures expired tokens are not served
+         * from the cache.
+         * </p>
+         * <p>
+         * Default value is {@code 10} seconds.
+         * </p>
+         *
+         * @see de.cuioss.sheriff.oauth.core.cache.AccessTokenCacheConfig
+         */
+        public static final String EVICTION_INTERVAL_SECONDS = BASE + ".eviction-interval-seconds";
+    }
+
+}

@@ -1,0 +1,217 @@
+= CUI JWT DevUI Implementation
+:toc: left
+:toclevels: 3
+:source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
+== Overview
+
+This document describes the Quarkus DevUI integration implementation for the CUI JWT validation extension. The DevUI provides comprehensive development tools for JWT validation monitoring, configuration debugging, and token testing.
+
+== Architecture
+
+=== Component Structure
+
+The DevUI implementation consists of frontend web components and backend services:
+
+[source]
+----
+oauth-sheriff-quarkus-deployment/src/main/resources/dev-ui/
+└── components/
+    ├── qwc-jwt-validation-status.js  # Real-time validation status monitoring
+    ├── qwc-jwks-endpoints.js         # JWKS endpoint status and monitoring
+    ├── qwc-jwt-debugger.js           # Token validation and debugging tools
+    └── qwc-jwt-config.js             # Configuration viewer
+----
+
+=== Backend Integration
+
+==== Build-Time Registration
+
+DevUI components are registered during build time in `OAuthSheriffProcessor.java`:
+
+[source,java]
+----
+@BuildStep(onlyIf = IsDevelopment.class)
+CardPageBuildItem createJwtDevUICard() {
+    CardPageBuildItem cardPageBuildItem = new CardPageBuildItem();
+
+    // Register web component pages with icons and component links
+    cardPageBuildItem.addPage(Page.webComponentPageBuilder()
+        .icon("font-awesome-solid:shield-check")
+        .title("JWT Validation Status")
+        .componentLink("components/qwc-jwt-validation-status.js")
+        .staticLabel("View Status"));
+
+    // Additional pages...
+    return cardPageBuildItem;
+}
+----
+
+==== JSON-RPC Service
+
+Backend data access is provided through `OAuthSheriffDevUIJsonRPCService.java`:
+
+[source,java]
+----
+@BuildStep(onlyIf = IsDevelopment.class)
+JsonRPCProvidersBuildItem createJwtDevUIJsonRPCService() {
+    return new JsonRPCProvidersBuildItem("OAuthSheriffDevUI", OAuthSheriffDevUIJsonRPCService.class);
+}
+----
+
+== Web Components Implementation
+
+=== Technology Stack
+
+- **Frontend Framework**: Lit Element for reactive web components
+- **Communication**: JSON-RPC over WebSockets
+- **Styling**: CSS with responsive design
+- **Icons**: Font Awesome integration
+
+=== Component Details
+
+==== JWT Validation Status (`qwc-jwt-validation-status.js`)
+
+Provides real-time monitoring of JWT validation processes:
+
+- **Auto-refresh**: 5-second intervals for live status updates
+- **Status indicators**: Visual representation of validation health
+- **Security events**: Counter display for validation attempts
+- **Error handling**: Graceful degradation for connection issues
+
+==== JWKS Endpoints (`qwc-jwks-endpoints.js`)
+
+Monitors JWKS endpoint connectivity and health:
+
+- **Endpoint status**: Real-time connectivity verification
+- **Key refresh tracking**: Statistics on key loading operations
+- **Configuration validation**: Verification of JWKS settings
+- **Manual refresh**: On-demand endpoint testing
+
+==== Token Debugger (`qwc-jwt-debugger.js`)
+
+Interactive JWT token validation and debugging:
+
+- **Token input**: Multi-line text area for JWT tokens
+- **Claims visualization**: Structured display of token claims
+- **Validation results**: Detailed error reporting
+- **Sample tokens**: Pre-loaded examples for testing
+
+==== Configuration Viewer (`qwc-jwt-config.js`)
+
+Complete configuration overview and diagnostics:
+
+- **Hierarchical display**: Nested configuration structure
+- **Health indicators**: Visual status for configuration sections
+- **Issue detection**: Automatic identification of configuration problems
+- **Refresh capability**: Manual configuration reload
+
+== Development Features
+
+=== Build-Time vs Runtime Data
+
+The implementation distinguishes between build-time and runtime data access:
+
+- **Build-time**: Static configuration, placeholder status messages
+- **Runtime**: Live validation status, real-time health checks, active token validation
+
+=== Security Considerations
+
+- **No sensitive data exposure**: Tokens and keys are not logged or stored
+- **Development-only**: All DevUI components are excluded from production builds
+- **Graceful error handling**: Failed operations display user-friendly messages
+
+=== Testing Integration
+
+The DevUI components include comprehensive test coverage:
+
+- **Unit tests**: Individual component functionality testing
+- **Integration tests**: End-to-end DevUI workflow validation
+- **Mock services**: Isolated testing with stubbed JSON-RPC responses
+
+== JSON-RPC Methods
+
+The backend service provides the following methods for frontend components:
+
+[cols="2,3,4"]
+|===
+|Method |Purpose |Response Structure
+
+|`getValidationStatus()`
+|Current JWT validation status
+|`{ enabled, status, statusMessage, validatorPresent }`
+
+|`getConfiguration()`
+|Complete extension configuration
+|`{ enabled, healthEnabled, buildTime, parser, httpJwksLoader, issuers }`
+
+|`getJwksStatus()`
+|JWKS endpoint connectivity status
+|`{ status, message, issuers: {...} }`
+
+|`validateToken(token)`
+|Token validation testing
+|`{ valid, error?, claims?, validatedBy? }`
+
+|`getHealthInfo()`
+|Overall extension health status
+|`{ configurationValid, tokenValidatorAvailable, overallStatus }`
+|===
+
+== Usage Instructions
+
+=== Accessing the DevUI
+
+. Start the Quarkus application in development mode:
++
+[source,bash]
+----
+./mvnw quarkus:dev
+----
+
+. Navigate to the Quarkus DevUI:
++
+[source]
+----
+http://localhost:8080/q/dev-ui/
+----
+
+. Locate the "CUI JWT" card in the extensions section
+
+. Access the following pages:
+- **JWT Validation Status**: Real-time monitoring and statistics
+- **JWKS Endpoints**: Endpoint health and connectivity
+- **Token Debugger**: Interactive token validation testing
+- **Configuration**: Complete configuration overview
+
+=== Development Workflow
+
+. **Configuration Debugging**: Use the Configuration page to verify extension settings
+. **Endpoint Monitoring**: Monitor JWKS connectivity through the JWKS Endpoints page
+. **Token Testing**: Validate JWT tokens using the Token Debugger
+. **Status Monitoring**: Track validation performance via the Validation Status page
+
+== Implementation Notes
+
+=== Component Lifecycle
+
+- **Automatic registration**: Components are discovered and registered during build
+- **Lazy loading**: Web components are loaded on-demand when pages are accessed
+- **Auto-refresh**: Status components automatically update at regular intervals
+- **Resource cleanup**: Proper disposal of intervals and event listeners
+
+=== Error Handling Strategy
+
+- **Connection failures**: Graceful degradation with informative error messages
+- **Invalid responses**: Robust parsing with fallback to default values
+- **Component errors**: Isolated error boundaries prevent cascading failures
+- **User feedback**: Clear error messages with actionable guidance
+
+=== Performance Considerations
+
+- **Minimal footprint**: Components load only required resources
+- **Efficient updates**: Selective DOM updates based on data changes
+- **Background operations**: Non-blocking JSON-RPC calls
+- **Development-only**: Zero impact on production application performance

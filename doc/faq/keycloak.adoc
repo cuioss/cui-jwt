@@ -9,7 +9,7 @@ Common issues and solutions when integrating the CUI JWT library with Keycloak.
 == Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
@@ -20,7 +20,7 @@ Common issues and solutions when integrating the CUI JWT library with Keycloak.
 
 === Problem: Missing 'sub' Claim
 
-*Error:* `CUI_JWT_QUARKUS-124: Bearer token validation failed: Missing mandatory claims: [sub]`
+*Error:* `OAUTH_SHERIFF_QUARKUS-124: Bearer token validation failed: Missing mandatory claims: [sub]`
 
 *Cause:* Keycloak access tokens don't include the `sub` claim by default, which is mandatory for ACCESS_TOKEN and ID_TOKEN types per RFC 7519.
 
@@ -31,7 +31,7 @@ The simplest solution is to configure the CUI JWT library to make the `sub` clai
 [source,properties]
 ----
 # Make subject claim optional for Keycloak issuer
-cui.jwt.issuers.keycloak.claim-sub-optional=true
+sheriff.oauth.issuers.keycloak.claim-sub-optional=true
 ----
 
 *Benefits:*
@@ -190,8 +190,8 @@ Use built-in mappers instead of custom protocol mappers (CUI JWT v1.0+):
 [source,properties]
 ----
 # Enable Keycloak default mappers per issuer
-cui.jwt.issuers.my-keycloak.keycloak.mappers.default-roles.enabled=true
-cui.jwt.issuers.my-keycloak.keycloak.mappers.default-groups.enabled=true
+sheriff.oauth.issuers.my-keycloak.keycloak.mappers.default-roles.enabled=true
+sheriff.oauth.issuers.my-keycloak.keycloak.mappers.default-groups.enabled=true
 ----
 
 This automatically maps:

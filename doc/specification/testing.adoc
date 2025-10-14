@@ -8,14 +8,14 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12[CUI-JWT-12: Testing and Quality Assurance]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12[OAUTH-SHERIFF-12: Testing and Quality Assurance]_
 
 This document provides detailed specifications for testing the JWT Token Validation library.
 
 === Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages
@@ -75,7 +75,7 @@ The CUI Quality Standards and Testing Framework defines:
 == Testing Strategy
 
 === Unit Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.2[CUI-JWT-12.2: Unit Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.2[OAUTH-SHERIFF-12.2: Unit Testing]_
 
 ==== Status: IMPLEMENTED
 
@@ -83,14 +83,14 @@ Unit tests have been implemented for the core functionality, providing comprehen
 
 The following test classes implement these unit tests:
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Tests for the TokenValidator
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/AccessTokenContentTest.java[AccessTokenContentTest.java] - Tests for access token content
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/IdTokenContentTest.java[IdTokenContentTest.java] - Tests for ID token content
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContentTest.java[RefreshTokenContentTest.java] - Tests for refresh token content
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/CustomClaimMapperTest.java[CustomClaimMapperTest.java] - Tests for custom claim mapping
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/ParserConfigTest.java[ParserConfigTest.java] - Tests for ParserConfig configuration validation
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/DecodedJwtTest.java[DecodedJwtTest.java] - Tests for DecodedJwt
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactoryTest.java[JwksLoaderFactoryTest.java] - Tests for JwksLoaderFactory
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Tests for the TokenValidator
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/domain/token/AccessTokenContentTest.java[AccessTokenContentTest.java] - Tests for access token content
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/domain/token/IdTokenContentTest.java[IdTokenContentTest.java] - Tests for ID token content
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/domain/token/RefreshTokenContentTest.java[RefreshTokenContentTest.java] - Tests for refresh token content
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/CustomClaimMapperTest.java[CustomClaimMapperTest.java] - Tests for custom claim mapping
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/ParserConfigTest.java[ParserConfigTest.java] - Tests for ParserConfig configuration validation
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/DecodedJwtTest.java[DecodedJwtTest.java] - Tests for DecodedJwt
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/JwksLoaderFactoryTest.java[JwksLoaderFactoryTest.java] - Tests for JwksLoaderFactory
 
 These tests cover:
 
@@ -131,29 +131,29 @@ The following test cases will be implemented:
 
 The following test classes demonstrate token parsing and validation:
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Contains tests for token creation and validation:
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Contains tests for token creation and validation:
 ** `shouldCreateAccessToken()` - Tests creating and parsing an access token
 ** `shouldCreateIdToken()` - Tests creating and parsing an ID token
 ** `shouldCreateRefreshToken()` - Tests creating and parsing a refresh token
 ** `shouldHandleInvalidTokenFormat()` - Tests handling invalid token formats
 ** `shouldHandleUnknownIssuer()` - Tests handling unknown issuers
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/RFC7519JWTComplianceTest.java[RFC7519JWTComplianceTest.java] - Contains tests for RFC 7519 compliance:
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/RFC7519JWTComplianceTest.java[RFC7519JWTComplianceTest.java] - Contains tests for RFC 7519 compliance:
 ** `shouldValidateTokenSignature()` - Tests validating token signatures
 ** `shouldRejectInvalidSignature()` - Tests rejecting tokens with invalid signatures
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/OAuth2JWTBestPracticesComplianceTest.java[OAuth2JWTBestPracticesComplianceTest.java] - Contains tests for OAuth 2.0 JWT Best Practices compliance:
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/OAuth2JWTBestPracticesComplianceTest.java[OAuth2JWTBestPracticesComplianceTest.java] - Contains tests for OAuth 2.0 JWT Best Practices compliance:
 ** `shouldRejectAccessTokenWithInvalidSignature()` - Tests rejecting access tokens with invalid signatures
 ** `shouldRejectIDTokenWithInvalidSignature()` - Tests rejecting ID tokens with invalid signatures
 
 === Integration Testing with TestContainers
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.3[CUI-JWT-12.3: Integration Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.3[OAUTH-SHERIFF-12.3: Integration Testing]_
 
 ==== Status: IMPLEMENTED
 
 Integration tests have been implemented to verify compatibility with Keycloak as an identity provider (IDP) using TestContainers.
 
-Integration tests are implemented in the Quarkus module at `cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/` which provides comprehensive end-to-end testing with Keycloak integration.
+Integration tests are implemented in the Quarkus module at `oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/` which provides comprehensive end-to-end testing with Keycloak integration.
 
 These tests cover:
 
@@ -173,7 +173,7 @@ The `KeycloakITBase` class from the `cui-test-keycloak-integration` library prov
 Refer to the implementation and associated JavaDoc for detailed behavior.
 
 === Security Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8[CUI-JWT-8: Security]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8[OAUTH-SHERIFF-8: Security]_
 
 ==== Status: IMPLEMENTED
 
@@ -182,7 +182,7 @@ Comprehensive security testing has been implemented to verify the security aspec
 For detailed information about security testing, including test classes, test coverage, and specific security tests like Key Disclosure Vulnerability Tests and Token Cracking Resistance Tests, please refer to the xref:../security/security-specifications.adoc[Security] document, specifically the "Security Testing Specifications" section.
 
 === Performance Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-9[CUI-JWT-9: Performance]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-9[OAUTH-SHERIFF-9: Performance]_
 
 ==== Status: IMPLEMENTED
 
@@ -190,7 +190,7 @@ Performance testing has been implemented to verify that the JWT Token Validation
 
 The following test classes implement performance testing:
 
-* JMH benchmark classes in the `de.cuioss.jwt.validation.benchmark` package:
+* JMH benchmark classes in the `de.cuioss.sheriff.oauth.core.benchmark` package:
   * `TokenValidatorBenchmark.java` - Tests for token parsing and validation performance
   * `ConcurrentTokenValidationBenchmark.java` - Tests for concurrent token validation performance
   * `FailureScenarioBenchmark.java` - Tests for failure scenario performance
@@ -216,7 +216,7 @@ The implementation uses concurrent testing to simulate real-world load scenarios
 5. Cache efficiency for JWKS loading
 
 === Logging Tests
-_See Requirement xref:../Requirements.adoc#CUI-JWT-7[CUI-JWT-7: Logging]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-7[OAUTH-SHERIFF-7: Logging]_
 
 ==== Status: IMPLEMENTED
 
@@ -224,9 +224,9 @@ Comprehensive logging tests have been implemented to verify that the JWT Token V
 
 The following test classes implement these logging tests:
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Contains a nested class `TokenLoggingTests` with tests for token-related logging
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest.java] - Contains tests that verify logging for claim validation
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest.java] - Contains tests that verify logging for signature validation
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest.java] - Contains a nested class `TokenLoggingTests` with tests for token-related logging
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest.java] - Contains tests that verify logging for claim validation
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest.java] - Contains tests that verify logging for signature validation
 
 These tests cover:
 
@@ -267,7 +267,7 @@ The following test methods demonstrate the logging test approach:
 These tests ensure that the library logs appropriate information at the correct log levels for both successful operations and error scenarios.
 
 === JWT Semantic Correctness Testing
-_See TestTokenHolder Constants in xref:../../cui-jwt-validation/UnitTesting.adoc[Unit Testing Guide]_
+_See TestTokenHolder Constants in xref:../../oauth-sheriff-core/UnitTesting.adoc[Unit Testing Guide]_
 
 ==== Status: IMPLEMENTED
 
@@ -290,7 +290,7 @@ TestTokenHolder.TEST_ISSUER = "Token-Test-testIssuer" // Authorization server id
 This ensures compliance with RFC 7519, RFC 9068, and OpenID Connect Core specifications, providing more realistic test scenarios that better reflect production environments.
 
 === Vulnerability Scanning
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.4[CUI-JWT-12.4: Vulnerability Scanning]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.4[OAUTH-SHERIFF-12.4: Vulnerability Scanning]_
 
 ==== Status: IMPLEMENTED
 
@@ -304,10 +304,10 @@ Fuzz testing has been implemented using Generators from https://github.com/cuios
 
 The following generator classes implement fuzz testing:
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/generator/AccessTokenGenerator.java[AccessTokenGenerator] - Generates random but valid access tokens with varying claims
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/generator/IDTokenGenerator.java[IDTokenGenerator] - Generates random but valid ID tokens with varying claims
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/generator/ScopeGenerator.java[ScopeGenerator] - Generates random scopes for access tokens
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/generator/RoleGenerator.java[RoleGenerator] - Generates random roles for access tokens
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/generator/AccessTokenGenerator.java[AccessTokenGenerator] - Generates random but valid access tokens with varying claims
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/generator/IDTokenGenerator.java[IDTokenGenerator] - Generates random but valid ID tokens with varying claims
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/generator/ScopeGenerator.java[ScopeGenerator] - Generates random scopes for access tokens
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/generator/RoleGenerator.java[RoleGenerator] - Generates random roles for access tokens
 
 These generators are used in parameterized tests with the `@TypeGeneratorSource` annotation to perform fuzz testing. For example:
 
@@ -330,7 +330,7 @@ void shouldRejectAccessTokenWithInvalidSignature(String token) {
 This approach ensures that the library is tested against a wide range of inputs, helping to identify potential vulnerabilities that might not be discovered with traditional testing methods.
 
 === Compliance Testing
-_See Requirement xref:../Requirements.adoc#CUI-JWT-12.5[CUI-JWT-12.5: Compliance Testing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.5[OAUTH-SHERIFF-12.5: Compliance Testing]_
 
 ==== Status: IMPLEMENTED
 
@@ -338,10 +338,10 @@ Compliance tests have been implemented to verify that the JWT Token Validation l
 
 The following test classes implement these compliance tests:
 
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/RFC7519JWTComplianceTest.java[RFC7519JWTComplianceTest.java] - Tests compliance with the JWT specification defined in RFC 7519
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/OpenIDConnectComplianceTest.java[OpenIDConnectComplianceTest.java] - Tests compliance with OpenID Connect Certification requirements
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/OAuth2JWTBestPracticesComplianceTest.java[OAuth2JWTBestPracticesComplianceTest.java] - Tests compliance with OAuth 2.0 JWT Best Current Practices
-* xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/JwtTokenTamperingUtil.java[JwtTokenTamperingUtil.java] - Utility class for tampering with JWT tokens for testing purposes
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/RFC7519JWTComplianceTest.java[RFC7519JWTComplianceTest.java] - Tests compliance with the JWT specification defined in RFC 7519
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/OpenIDConnectComplianceTest.java[OpenIDConnectComplianceTest.java] - Tests compliance with OpenID Connect Certification requirements
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/OAuth2JWTBestPracticesComplianceTest.java[OAuth2JWTBestPracticesComplianceTest.java] - Tests compliance with OAuth 2.0 JWT Best Current Practices
+* xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/JwtTokenTamperingUtil.java[JwtTokenTamperingUtil.java] - Utility class for tampering with JWT tokens for testing purposes
 
 These tests cover:
 
@@ -365,7 +365,7 @@ These tests cover:
 
 ==== JWT Token Tampering Testing
 
-The xref:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/test/JwtTokenTamperingUtil.java[JwtTokenTamperingUtil] class provides a comprehensive approach to testing JWT token signature tampering. This utility implements best practices for testing JWT signature tampering as documented in Test-Failure.adoc.
+The xref:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/test/JwtTokenTamperingUtil.java[JwtTokenTamperingUtil] class provides a comprehensive approach to testing JWT token signature tampering. This utility implements best practices for testing JWT signature tampering as documented in Test-Failure.adoc.
 
 The class provides the following tampering strategies:
 

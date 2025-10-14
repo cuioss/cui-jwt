@@ -33,14 +33,14 @@ The library has implemented protections against client confusion attacks. For im
 
 **Implementation Details:**
 
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:233-249] - Audience claim validation prevents token misuse across clients
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:387-413] - Authorized Party (azp) validation verifies token was issued for the specific client
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] - Configuration enforces expectedClientId and expectedAudience validation
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:233-249] - Audience claim validation prevents token misuse across clients
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java:387-413] - Authorized Party (azp) validation verifies token was issued for the specific client
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig.java] - Configuration enforces expectedClientId and expectedAudience validation
 * Mandatory azp validation when expectedClientId is configured prevents cross-client token usage
 
 ==== Test Coverage
 
-* link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java[ClientConfusionAttackTest] - Tests specifically for client confusion attacks:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java[ClientConfusionAttackTest] - Tests specifically for client confusion attacks:
 ** `verify_azp_validation()` - Verifies that tokens with valid `azp` claims are accepted
 ** `verify_azp_validation_failure()` - Verifies that tokens with invalid `azp` claims are rejected
 ** `verify_different_client_token_rejected()` - Verifies that tokens from different clients are rejected
@@ -63,7 +63,7 @@ The library provides tools for scope validation but requires proper implementati
 
 **Implementation Details:**
 
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent.java] - Provides access to scope claims from validated tokens
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/domain/token/AccessTokenContent.java[AccessTokenContent.java] - Provides access to scope claims from validated tokens
 * Scope validation must be implemented at the application level using the parsed token content
 * The library validates token integrity but does not enforce scope restrictions (authorization server responsibility)
 * Applications should validate scopes against expected permissions before granting resource access
@@ -127,14 +127,14 @@ The library enforces validation of the `sub` claim to mitigate mutable claims at
 
 **Implementation Details:**
 
-* link:../../cui-jwt-validation/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java] - Validates presence and format of subject (sub) claim
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator.java] - Validates presence and format of subject (sub) claim
 * All token types (AccessTokenContent, IdTokenContent, RefreshTokenContent) expose the immutable `sub` claim
 * Applications are guided to use `getSubject()` method for user identification rather than mutable claims like email
 * Library ensures `sub` claim is always present and validated in all token types
 
 ==== Test Coverage
 
-* link:../../cui-jwt-validation/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest] - Tests specifically for mutable claims validation:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest] - Tests specifically for mutable claims validation:
 ** `shouldValidateTokenWithValidSubjectClaim()` - Verifies that tokens with valid subject claims are accepted
 ** `shouldFailValidationForTokenWithMissingSubjectClaim()` - Verifies that tokens with missing subject claims are rejected
 ** `shouldValidateTokenWithEmptySubjectClaim()` - Documents current behavior with empty subject claims

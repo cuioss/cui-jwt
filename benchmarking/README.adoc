@@ -19,11 +19,11 @@ The benchmarking infrastructure provides:
 |===
 |Module |Purpose |Execution Time
 
-|link:cui-benchmarking-common/[cui-benchmarking-common]
+|link:benchmarking-common/[benchmarking-common]
 |Shared infrastructure and utilities
 |N/A (library)
 
-|link:benchmark-library/[benchmark-library]
+|link:benchmark-core/[benchmark-core]
 |JMH micro-benchmarks for JWT library
 |< 10 minutes
 
@@ -39,7 +39,7 @@ The benchmarking infrastructure provides:
 [source,bash]
 ----
 # Library micro-benchmarks
-./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark
+./mvnw verify -pl benchmarking/benchmark-core -Pbenchmark
 
 # WRK load testing benchmarks (requires Docker)
 ./mvnw verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
@@ -50,7 +50,7 @@ The benchmarking infrastructure provides:
 [source,bash]
 ----
 # Library benchmarks with JFR profiling
-./mvnw verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+./mvnw verify -pl benchmarking/benchmark-core -Pbenchmark-jfr
 ----
 
 === View Results Locally
@@ -68,16 +68,16 @@ See link:doc/local-testing.adoc[Local Testing Guide] for detailed instructions.
 
 == Benchmark Types
 
-=== Micro Benchmarks (benchmark-library)
+=== Micro Benchmarks (benchmark-core)
 
-Located in `benchmarking/benchmark-library`:
+Located in `benchmarking/benchmark-core`:
 
 * `SimpleCoreValidationBenchmark` - Core JWT validation performance
 * `SimpleErrorLoadBenchmark` - Error handling and resilience testing
 * Automatic generation of performance badges and reports
 * Quality gates for throughput and latency
 
-See link:benchmark-library/README.adoc[benchmark-library README] for details.
+See link:benchmark-core/README.adoc[benchmark-core README] for details.
 
 === Load Testing Benchmarks (benchmark-integration-wrk)
 
@@ -91,11 +91,11 @@ Located in `benchmarking/benchmark-integration-wrk`:
 
 See link:benchmark-integration-wrk/README.adoc[benchmark-integration-wrk README] for details.
 
-=== Common Infrastructure (cui-benchmarking-common)
+=== Common Infrastructure (benchmarking-common)
 
 Shared infrastructure providing benchmark framework, metrics collection, and artifact generation.
 
-See link:cui-benchmarking-common/README.adoc[cui-benchmarking-common README] for details.
+See link:benchmarking-common/README.adoc[benchmarking-common README] for details.
 
 == Results and Artifacts
 
@@ -139,7 +139,7 @@ The GitHub Actions workflow automatically:
 1. Runs both micro and integration benchmarks
 2. Collects generated artifacts from each module
 3. Combines results into a unified GitHub Pages structure
-4. Deploys to `cuioss.github.io/cui-jwt/benchmarks`
+4. Deploys to `cuioss.github.io/OAuth-Sheriff/benchmarks`
 
 See link:doc/workflow.adoc[Benchmark Workflow] for the complete process.
 
@@ -153,12 +153,12 @@ See link:doc/workflow.adoc[Benchmark Workflow] for the complete process.
 * link:doc/performance-scoring.adoc[Performance Scoring] - Weighted metrics methodology
 * link:doc/benchmark-metrics.adoc[Benchmark Metrics System] - CPU, memory, and application metrics collection
 * link:doc/JFR-Instrumentation.adoc[JFR Instrumentation] - Variance analysis guide
-* xref:../doc/Requirements.adoc#CUI-JWT-9[Performance Requirements] - Specific performance targets and verification criteria
+* xref:../doc/Requirements.adoc#OAUTH-SHERIFF-9[Performance Requirements] - Specific performance targets and verification criteria
 
 === Performance Analysis
 
 * link:doc/Analysis-10.2025.adoc[Resource Monitoring Enhancement Analysis (October 2025)] - CPU and RAM utilization monitoring implementation and comparative analysis
-* link:benchmark-library/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Performance metrics and optimization insights
+* link:benchmark-core/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Performance metrics and optimization insights
 
 == Development
 
@@ -179,4 +179,4 @@ When adding new benchmarks or utilities:
 
 Live benchmark results are available at:
 
-* https://cuioss.github.io/cui-jwt/benchmarks/
+* https://cuioss.github.io/OAuth-Sheriff/benchmarks/

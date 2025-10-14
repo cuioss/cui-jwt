@@ -8,14 +8,14 @@
 xref:../Specification.adoc[Back to Main Specification]
 
 == Overview
-_See Requirement xref:../Requirements.adoc#CUI-JWT-8.1[CUI-JWT-8.1: Token Size Limits] and xref:../Requirements.adoc#CUI-JWT-8.2[CUI-JWT-8.2: Safe Parsing]_
+_See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: Token Size Limits] and xref:../Requirements.adoc#OAUTH-SHERIFF-8.2[OAUTH-SHERIFF-8.2: Safe Parsing]_
 
 This document provides recommendations for sensible upper bounds for JWKS (JSON Web Key Set) content size in the JWT Token Validation library. These recommendations are based on analysis of typical JWKS content sizes, industry standards, and security best practices.
 
 === Document Navigation
 
 * xref:../../README.adoc[README] - Project overview and introduction
-* xref:../../cui-jwt-validation/README.adoc[Usage Guide] - How to use the library with code examples
+* xref:../../oauth-sheriff-core/README.adoc[Usage Guide] - How to use the library with code examples
 * xref:../Requirements.adoc[Requirements] - Functional and non-functional requirements
 * xref:../Specification.adoc[Specification] - Technical specifications
 * xref:../LogMessages.adoc[Log Messages] - Reference for all log messages

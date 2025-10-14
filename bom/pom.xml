@@ -4,16 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>de.cuioss.jwt</groupId>
-        <artifactId>cui-jwt-parent</artifactId>
+        <groupId>de.cuioss.sheriff.oauth</groupId>
+        <artifactId>oauth-sheriff-parent</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>bom</artifactId>
+    <artifactId>oauth-sheriff-bom</artifactId>
     <packaging>pom</packaging>
-    <name>JWT Token Validation BOM</name>
-    <description>Bill of Materials (BOM) for JWT Token Validation modules</description>
+    <name>OAuth Sheriff BOM</name>
+    <description>Bill of Materials (BOM) for OAuth Sheriff modules</description>
     <properties>
         <version.jjwt>0.13.0</version.jjwt>
     </properties>
@@ -56,18 +56,18 @@
 
             <!-- Internal modules -->
             <dependency>
-                <groupId>de.cuioss.jwt</groupId>
-                <artifactId>cui-jwt-validation</artifactId>
+                <groupId>de.cuioss.sheriff.oauth</groupId>
+                <artifactId>oauth-sheriff-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>de.cuioss.jwt</groupId>
-                <artifactId>cui-jwt-benchmarking</artifactId>
+                <groupId>de.cuioss.sheriff.oauth</groupId>
+                <artifactId>benchmarking-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>de.cuioss.jwt</groupId>
-                <artifactId>cui-jwt-quarkus</artifactId>
+                <groupId>de.cuioss.sheriff.oauth</groupId>
+                <artifactId>oauth-sheriff-quarkus</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

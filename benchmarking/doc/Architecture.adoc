@@ -16,10 +16,10 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
 [cols="1,3", options="header"]
 |===
 |Module |Purpose
-|cui-benchmarking-common
+|benchmarking-common
 |Shared infrastructure, utilities, and framework for all benchmark types
 
-|benchmark-library
+|benchmark-core
 |JMH-based micro-benchmarks for direct JWT validation library performance testing
 
 |benchmark-integration-wrk
@@ -36,7 +36,7 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────┐
-│              cui-benchmarking-common                    │
+│              benchmarking-common                    │
 │  • Benchmark runners and configuration                  │
 │  • Metrics collection and transformation                │
 │  • Report and badge generation                          │
@@ -55,14 +55,14 @@ The CUI JWT benchmarking infrastructure consists of three specialized modules:
       │                      │
       ▼                      ▼
 ┌──────────────┐  ┌─────────────────────────┐
-│cui-jwt-      │  │Docker Containers:       │
+│oauth-sheriff-      │  │Docker Containers:       │
 │validation    │  │ • Quarkus App           │
 │              │  │ • Keycloak              │
 │              │  │ • Prometheus            │
 └──────────────┘  └─────────────────────────┘
 ----
 
-== cui-benchmarking-common
+== benchmarking-common
 
 === Responsibility
 Foundation framework providing shared utilities, configuration, metrics processing, and report generation for all benchmark types.
@@ -125,7 +125,7 @@ de.cuioss.benchmarking.common/
 └── util/          # General utilities
 ----
 
-== benchmark-library
+== benchmark-core
 
 === Responsibility
 Executes JMH-based micro-benchmarks directly against the JWT validation library without network or container overhead.
@@ -176,7 +176,7 @@ Performs HTTP-based load testing using WRK tool via shell scripts. Minimal Java 
 **Shell Script Orchestration:**
 
 Maven pom.xml references scripts from two locations:
-* `../../cui-jwt-quarkus-parent/cui-jwt-quarkus-integration-tests/scripts/` - Container lifecycle and monitoring
+* `../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/scripts/` - Container lifecycle and monitoring
 * `src/main/resources/wrk-scripts/` - WRK benchmark execution
 
 Key scripts:
@@ -219,27 +219,27 @@ Configured via pom.xml properties:
 [source]
 ----
 Does the code generate reports/badges/artifacts?
-├─YES─> cui-benchmarking-common/report/
+├─YES─> benchmarking-common/report/
 │
 ├─NO──> Does it collect or transform metrics?
-│       ├─YES─> cui-benchmarking-common/metrics/
+│       ├─YES─> benchmarking-common/metrics/
 │       │
 │       └─NO──> Does it manage configuration?
-│               ├─YES─> cui-benchmarking-common/config/
+│               ├─YES─> benchmarking-common/config/
 │               │
 │               └─NO──> Is it a JMH benchmark?
-│                       ├─YES─> benchmark-library/
+│                       ├─YES─> benchmark-core/
 │                       │
 │                       └─NO──> Is it WRK-related?
 │                               ├─YES─> benchmark-integration-wrk/
 │                               │       (or use shell scripts)
 │                               │
-│                               └─NO──> cui-benchmarking-common/util/
+│                               └─NO──> benchmarking-common/util/
 ----
 
 == Placement Guidelines
 
-=== Place in cui-benchmarking-common when:
+=== Place in benchmarking-common when:
 * Used by both library and integration benchmarks
 * General framework component (runner, processor)
 * Metrics collection or transformation
@@ -248,7 +248,7 @@ Does the code generate reports/badges/artifacts?
 * Token management
 * HTTP client utilities
 
-=== Place in benchmark-library when:
+=== Place in benchmark-core when:
 * JMH benchmark methods (`@Benchmark` annotation)
 * JFR instrumentation for library testing
 * Library-specific test utilities

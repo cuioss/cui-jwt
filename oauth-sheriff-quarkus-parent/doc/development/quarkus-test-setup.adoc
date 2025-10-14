@@ -1,0 +1,175 @@
+= Quarkus Test Framework Setup
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: highlight.js
+
+== Overview
+
+Test framework configuration for the CUI JWT Quarkus extension, covering dependencies, logging, and test execution setup.
+
+== Test Dependencies
+
+[source,xml]
+----
+<!-- Quarkus Testing -->
+<dependency>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-junit5-internal</artifactId>
+    <scope>test</scope>
+</dependency>
+
+<!-- JUnit 5 -->
+<dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter</artifactId>
+    <scope>test</scope>
+</dependency>
+
+<!-- Logging -->
+<dependency>
+    <groupId>de.cuioss.test</groupId>
+    <artifactId>cui-test-juli-logger</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.jboss.logmanager</groupId>
+    <artifactId>jboss-logmanager</artifactId>
+    <scope>test</scope>
+</dependency>
+
+<!-- CDI Testing -->
+<dependency>
+    <groupId>org.jboss.weld</groupId>
+    <artifactId>weld-junit5</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+== Logging Configuration
+
+The logging configuration is defined in `src/test/resources/logging.properties` in both the runtime and deployment modules:
+
+[source,properties]
+----
+handlers=java.util.logging.ConsoleHandler
+.level=INFO
+java.util.logging.ConsoleHandler.level=FINE
+java.util.logging.ConsoleHandler.formatter=java.util.logging.SimpleFormatter
+java.util.logging.SimpleFormatter.format=%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %2$s: %5$s%6$s%n
+
+# Quarkus logging
+io.quarkus.level=INFO
+io.quarkus.test.level=INFO
+quarkus.level=INFO
+
+# Turn down reflection logging
+org.jboss.resteasy.resteasy_jaxrs.i18n.level=WARN
+com.sun.xml.internal.bind.level=SEVERE
+sun.rmi.level=SEVERE
+sun.rmi.transport.tcp.level=SEVERE
+
+# Project specific logging
+de.cuioss.sheriff.oauth.level=INFO
+de.cuioss.sheriff.oauth.quarkus.level=INFO
+de.cuioss.sheriff.oauth.quarkus.deployment.level=INFO
+
+# Core logging
+java.sql.level=INFO
+org.hibernate.level=INFO
+----
+
+This configuration:
+
+1. Uses the Java Util Logging (JUL) API with JBoss LogManager implementation
+2. Configures console output with a readable format
+3. Sets appropriate log levels to reduce noise during test execution
+
+== Maven Surefire Configuration
+
+The Maven Surefire plugin must be configured to use JBoss LogManager:
+
+[source,xml]
+----
+<plugin>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <configuration>
+        <systemPropertyVariables>
+            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+        </systemPropertyVariables>
+    </configuration>
+</plugin>
+----
+
+== Test Framework Usage
+
+=== QuarkusUnitTest
+
+Used for testing Quarkus extension functionality. The basic setup looks like:
+
+[source,java]
+----
+@EnableTestLogger
+class MyQuarkusTest {
+    @RegisterExtension
+    static final QuarkusUnitTest unitTest = new QuarkusUnitTest()
+            .withEmptyApplication()
+            .setLogRecordPredicate(log -> true);
+
+    @Test
+    void shouldRegisterExtension() {
+        // Test code here
+    }
+}
+----
+
+=== WeldJunit5
+
+Used for CDI tests without the full Quarkus context:
+
+[source,java]
+----
+import org.jboss.weld.junit5.auto.EnableAutoWeld;
+
+@EnableTestLogger
+@EnableAutoWeld
+class MyCdiTest {
+    @Inject
+    MyService service;
+
+    @Test
+    void shouldInjectService() {
+        // Test service functionality
+    }
+}
+----
+
+The `@EnableAutoWeld` annotation automatically discovers and registers beans for testing. Unlike the previous approach with `WeldInitiator`, you don't need to explicitly specify which classes to include - it will automatically scan and register beans based on CDI discovery rules. This makes the test setup simpler and more closely resembles how beans are discovered in a real application.
+
+== Handling Configuration
+
+=== With QuarkusUnitTest
+
+With QuarkusUnitTest, configuration is loaded from:
+
+* `application.properties` or `application.yaml` in the test resources
+* System properties set via the `QuarkusUnitTest` builder
+* Test-specific configuration overrides
+
+=== With WeldJunit5
+
+With WeldJunit5, configuration must be:
+
+* Programmatically created and injected
+* Mocked through test alternatives
+* Set up in the test setup phase
+
+
+== Framework Selection
+
+* **QuarkusUnitTest**: Extension registration, Quarkus subsystems, ConfigMapping
+* **WeldJunit5**: CDI beans in isolation, dependency injection testing
+* **Plain JUnit5**: Pure Java code, utilities, fastest execution
+
+See xref:../configuration/testing-configuration.adoc[Testing Configuration] for JWT-specific testing patterns.

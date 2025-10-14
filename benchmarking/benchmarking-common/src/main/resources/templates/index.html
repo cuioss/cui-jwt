@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CUI JWT Benchmarking Results</title>
+    <link rel="stylesheet" href="report-styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.js"
+            integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi"
+            crossorigin="anonymous"></script>
+    <script src="data-loader.js"></script>
+</head>
+<body data-page-type="index">
+    <header class="header">
+        <h1>CUI JWT <span id="benchmark-type-title">Benchmarking</span> Dashboard</h1>
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link active">Overview</a>
+            <a href="trends.html" class="nav-link">Trends</a>
+            <a href="detailed.html" class="nav-link">Detailed</a>
+            <span class="nav-separator">|</span>
+            <a href="../micro/index.html" class="nav-link">Micro</a>
+            <a href="../integration/index.html" class="nav-link">Integration</a>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="overview">
+            <h2>Performance Overview</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Performance Score</h3>
+                    <p class="stat-value" id="performance-score">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Performance Grade</h3>
+                    <p class="stat-value grade" id="performance-grade">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Throughput <span class="benchmark-name" id="throughput-name"></span></h3>
+                    <p class="stat-value" id="throughput">Loading...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Latency <span class="benchmark-name" id="latency-name"></span></h3>
+                    <p class="stat-value" id="latency">Loading...</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="chart-section">
+            <h2>Performance Chart</h2>
+            <div class="chart-container">
+                <canvas id="overview-chart"></canvas>
+            </div>
+        </section>
+
+        <section class="percentiles-chart">
+            <h2>Latency Percentiles Distribution</h2>
+            <p>Response time distribution across percentiles for each benchmark</p>
+            <div class="chart-container">
+                <canvas id="percentiles-chart"></canvas>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <p>Generated on <span id="report-timestamp">-</span></p>
+        <p>© 2025 CUI OpenSource Software</p>
+    </footer>
+</body>
+</html>

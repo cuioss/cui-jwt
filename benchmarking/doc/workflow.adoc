@@ -18,7 +18,7 @@ The benchmark processing is automatically triggered in GitHub Actions:
 1. **Environment Setup**
    - Checkout code with full history
    - Set up JDK 21 with Maven cache
-   - Build cui-jwt-validation module
+   - Build oauth-sheriff-core module
 
 2. **Micro Benchmarks**
    - Run JMH benchmarks using `benchmark` profile
@@ -38,7 +38,7 @@ The benchmark processing is automatically triggered in GitHub Actions:
 
 5. **Deployment**
    - Deploy combined results to cuioss.github.io
-   - Results available at `cui-jwt/benchmarks`
+   - Results available at `oauth-sheriff/benchmarks`
 
 == Local Development
 
@@ -47,14 +47,14 @@ The benchmark processing is automatically triggered in GitHub Actions:
 [source,bash]
 ----
 # Full micro benchmark suite
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark
+./mvnw clean verify -pl benchmarking/benchmark-core -Pbenchmark
 
 # Quick test (1 iteration)
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark \
+./mvnw clean verify -pl benchmarking/benchmark-core -Pbenchmark \
   -Djmh.iterations=1 -Djmh.warmupIterations=1
 
 # With profiling
-./mvnw clean verify -pl benchmarking/benchmark-library -Pbenchmark-jfr
+./mvnw clean verify -pl benchmarking/benchmark-core -Pbenchmark-jfr
 
 # WRK load testing benchmarks
 ./mvnw clean verify -pl benchmarking/benchmark-integration-wrk -Pbenchmark
@@ -67,7 +67,7 @@ After running benchmarks, artifacts are automatically generated:
 [source,bash]
 ----
 # View micro benchmark artifacts
-ls -la benchmarking/benchmark-library/target/benchmark-results/
+ls -la benchmarking/benchmark-core/target/benchmark-results/
 
 # View WRK benchmark artifacts
 ls -la benchmarking/benchmark-integration-wrk/target/benchmark-results/
@@ -134,7 +134,7 @@ The generated artifacts include JSON API endpoints:
 
 == Performance Requirements
 
-See xref:../../doc/Requirements.adoc#CUI-JWT-9[Performance Requirements] for specific targets and thresholds.
+See xref:../../doc/Requirements.adoc#OAUTH-SHERIFF-9[Performance Requirements] for specific targets and thresholds.
 
 == Troubleshooting
 

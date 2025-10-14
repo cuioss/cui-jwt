@@ -1,0 +1,132 @@
+# HELP process_cpu_usage Process CPU usage
+# TYPE process_cpu_usage gauge
+process_cpu_usage 0.5
+# HELP system_cpu_usage System CPU usage
+# TYPE system_cpu_usage gauge
+system_cpu_usage 0.517065
+# HELP jvm_memory_used_bytes JVM memory used
+# TYPE jvm_memory_used_bytes gauge
+jvm_memory_used_bytes{area="heap",id="eden space"} 11010048.0
+jvm_memory_used_bytes{area="heap",id="survivor space"} 2097152.0
+jvm_memory_used_bytes{area="heap",id="old gen"} 8388608.0
+jvm_memory_used_bytes{area="nonheap",id="runtime code cache (code and data)"} 0.0
+jvm_memory_used_bytes{area="nonheap",id="metaspace"} 4194304.0
+jvm_memory_used_bytes{area="nonheap",id="compressed class space"} 1048576.0
+# HELP jvm_memory_committed_bytes JVM memory committed
+# TYPE jvm_memory_committed_bytes gauge
+jvm_memory_committed_bytes{area="heap",id="eden space"} 16777216.0
+jvm_memory_committed_bytes{area="heap",id="survivor space"} 4194304.0
+jvm_memory_committed_bytes{area="heap",id="old gen"} 16777216.0
+jvm_memory_committed_bytes{area="nonheap",id="runtime code cache (code and data)"} 8388608.0
+jvm_memory_committed_bytes{area="nonheap",id="metaspace"} 8388608.0
+jvm_memory_committed_bytes{area="nonheap",id="compressed class space"} 2097152.0
+# HELP jvm_memory_max_bytes JVM memory max
+# TYPE jvm_memory_max_bytes gauge
+jvm_memory_max_bytes{area="heap",id="eden space"} 536870912.0
+jvm_memory_max_bytes{area="heap",id="survivor space"} 67108864.0
+jvm_memory_max_bytes{area="heap",id="old gen"} 1073741824.0
+jvm_memory_max_bytes{area="nonheap",id="runtime code cache (code and data)"} 268435456.0
+jvm_memory_max_bytes{area="nonheap",id="metaspace"} 134217728.0
+jvm_memory_max_bytes{area="nonheap",id="compressed class space"} 33554432.0
+# HELP jvm_threads_live_threads JVM live threads
+# TYPE jvm_threads_live_threads gauge
+jvm_threads_live_threads 45.0
+# HELP jvm_threads_daemon_threads JVM daemon threads
+# TYPE jvm_threads_daemon_threads gauge
+jvm_threads_daemon_threads 33.0
+# HELP jvm_threads_peak_threads JVM peak threads
+# TYPE jvm_threads_peak_threads gauge
+jvm_threads_peak_threads 86.0
+# HELP jdk_threads_peak_threads JDK peak threads
+# TYPE jdk_threads_peak_threads gauge
+jdk_threads_peak_threads 86.0
+# HELP sheriff_oauth_validation_success_operations_total JWT validation success
+# TYPE sheriff_oauth_validation_success_operations_total counter
+sheriff_oauth_validation_success_operations_total{event_type="ACCESS_TOKEN_CREATED",result="success"} 10960018.0
+sheriff_oauth_validation_success_operations_total{event_type="ID_TOKEN_CREATED",result="success"} 5480009.0
+sheriff_oauth_validation_success_operations_total{event_type="REFRESH_TOKEN_CREATED",result="success"} 2740004.0
+sheriff_oauth_validation_success_operations_total{event_type="ACCESS_TOKEN_VALIDATED",result="success"} 10960018.0
+sheriff_oauth_validation_success_operations_total{event_type="ID_TOKEN_VALIDATED",result="success"} 5480009.0
+sheriff_oauth_validation_success_operations_total{event_type="TOKEN_CACHED",result="success"} 1000000.0
+sheriff_oauth_validation_success_operations_total{event_type="TOKEN_REFRESHED",result="success"} 500000.0
+sheriff_oauth_validation_success_operations_total{event_type="TOKEN_INTROSPECTED",result="success"} 250000.0
+# HELP sheriff_oauth_validation_errors_total JWT validation errors
+# TYPE sheriff_oauth_validation_errors_total counter
+sheriff_oauth_validation_errors_total{category="INVALID_STRUCTURE",event_type="FAILED_TO_DECODE_HEADER",result="failure"} 0.0
+sheriff_oauth_validation_errors_total{category="INVALID_SIGNATURE",event_type="KEY_NOT_FOUND",result="failure"} 10.0
+sheriff_oauth_validation_errors_total{category="INVALID_SIGNATURE",event_type="SIGNATURE_MISMATCH",result="failure"} 5.0
+sheriff_oauth_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_EXPIRED",result="failure"} 100.0
+sheriff_oauth_validation_errors_total{category="SEMANTIC_ISSUES",event_type="TOKEN_NOT_YET_VALID",result="failure"} 2.0
+sheriff_oauth_validation_errors_total{category="SEMANTIC_ISSUES",event_type="INVALID_ISSUER",result="failure"} 3.0
+sheriff_oauth_validation_errors_total{category="SEMANTIC_ISSUES",event_type="INVALID_AUDIENCE",result="failure"} 1.0
+sheriff_oauth_validation_errors_total{category="INVALID_STRUCTURE",event_type="MALFORMED_JWT",result="failure"} 20.0
+sheriff_oauth_validation_errors_total{category="INVALID_STRUCTURE",event_type="MISSING_CLAIMS",result="failure"} 15.0
+# HELP sheriff_oauth_bearer_token_validation_seconds_count JWT bearer token validation count
+# TYPE sheriff_oauth_bearer_token_validation_seconds_count counter
+sheriff_oauth_bearer_token_validation_seconds_count{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 10960018.0
+sheriff_oauth_bearer_token_validation_seconds_count{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="ExpiredJwtException",method="getBearerTokenResult"} 100.0
+sheriff_oauth_bearer_token_validation_seconds_count{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="SignatureException",method="getBearerTokenResult"} 15.0
+sheriff_oauth_bearer_token_validation_seconds_count{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="MalformedJwtException",method="getBearerTokenResult"} 20.0
+# HELP sheriff_oauth_bearer_token_validation_seconds_sum JWT bearer token validation sum
+# TYPE sheriff_oauth_bearer_token_validation_seconds_sum counter
+sheriff_oauth_bearer_token_validation_seconds_sum{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 50.5
+sheriff_oauth_bearer_token_validation_seconds_sum{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="ExpiredJwtException",method="getBearerTokenResult"} 0.5
+sheriff_oauth_bearer_token_validation_seconds_sum{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="SignatureException",method="getBearerTokenResult"} 0.08
+sheriff_oauth_bearer_token_validation_seconds_sum{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="MalformedJwtException",method="getBearerTokenResult"} 0.1
+# HELP sheriff_oauth_bearer_token_validation_seconds_max JWT bearer token validation max
+# TYPE sheriff_oauth_bearer_token_validation_seconds_max gauge
+sheriff_oauth_bearer_token_validation_seconds_max{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="none",method="getBearerTokenResult"} 0.05
+sheriff_oauth_bearer_token_validation_seconds_max{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="ExpiredJwtException",method="getBearerTokenResult"} 0.01
+sheriff_oauth_bearer_token_validation_seconds_max{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="SignatureException",method="getBearerTokenResult"} 0.008
+sheriff_oauth_bearer_token_validation_seconds_max{class="de.cuioss.jwt.quarkus.producer.BearerTokenProducer",exception="MalformedJwtException",method="getBearerTokenResult"} 0.01
+# HELP system_cpu_count System CPU count
+# TYPE system_cpu_count gauge
+system_cpu_count 4.0
+# HELP system_load_average_1m System load average 1 minute
+# TYPE system_load_average_1m gauge
+system_load_average_1m 2.41015625
+# HELP jvm_gc_collection_seconds_count GC collection count
+# TYPE jvm_gc_collection_seconds_count counter
+jvm_gc_collection_seconds_count{gc="G1 Young Generation"} 50.0
+jvm_gc_collection_seconds_count{gc="G1 Old Generation"} 2.0
+# HELP jvm_gc_collection_seconds_sum GC collection sum
+# TYPE jvm_gc_collection_seconds_sum counter
+jvm_gc_collection_seconds_sum{gc="G1 Young Generation"} 0.5
+jvm_gc_collection_seconds_sum{gc="G1 Old Generation"} 0.1
+# HELP jvm_gc_overhead GC overhead
+# TYPE jvm_gc_overhead gauge
+jvm_gc_overhead 0.01
+# HELP jvm_classes_loaded_classes Loaded classes
+# TYPE jvm_classes_loaded_classes gauge
+jvm_classes_loaded_classes 12345.0
+# HELP jvm_classes_unloaded_classes Unloaded classes
+# TYPE jvm_classes_unloaded_classes counter
+jvm_classes_unloaded_classes 10.0
+# HELP jvm_buffer_memory_used_bytes Buffer memory
+# TYPE jvm_buffer_memory_used_bytes gauge
+jvm_buffer_memory_used_bytes{id="direct"} 524288.0
+jvm_buffer_memory_used_bytes{id="mapped"} 0.0
+# HELP jvm_buffer_count_buffers Buffer count
+# TYPE jvm_buffer_count_buffers gauge
+jvm_buffer_count_buffers{id="direct"} 10.0
+jvm_buffer_count_buffers{id="mapped"} 0.0
+# HELP jvm_buffer_total_capacity_bytes Buffer capacity
+# TYPE jvm_buffer_total_capacity_bytes gauge
+jvm_buffer_total_capacity_bytes{id="direct"} 1048576.0
+jvm_buffer_total_capacity_bytes{id="mapped"} 0.0
+# HELP process_uptime_seconds Process uptime
+# TYPE process_uptime_seconds gauge
+process_uptime_seconds 3600.0
+# HELP process_start_time_seconds Process start time
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1758906000.0
+# HELP jvm_info JVM info
+# TYPE jvm_info info
+jvm_info{runtime="OpenJDK Runtime Environment",vendor="Oracle Corporation",version="21.0.1+12-LTS"} 1
+# HELP application_ready_time_seconds Application ready time
+# TYPE application_ready_time_seconds gauge
+application_ready_time_seconds 2.5
+# HELP application_started_time_seconds Application start time
+# TYPE application_started_time_seconds gauge
+application_started_time_seconds 3.0
+# EOF

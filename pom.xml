@@ -6,38 +6,38 @@
     <parent>
         <groupId>de.cuioss</groupId>
         <artifactId>cui-java-parent</artifactId>
-        <version>1.3.1</version>
+        <version>1.3.2</version>
         <relativePath/>
     </parent>
-    <groupId>de.cuioss.jwt</groupId>
-    <artifactId>cui-jwt-parent</artifactId>
+    <groupId>de.cuioss.sheriff.oauth</groupId>
+    <artifactId>oauth-sheriff-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
-    <name>JWT Token Validation Parent</name>
-    <description>A comprehensive framework for validating JWT tokens in multi-issuer environments.
+    <name>OAuth Sheriff Parent</name>
+    <description>A comprehensive framework for validating OAuth/JWT tokens in multi-issuer environments.
         The module provides robust token parsing, validation, and management capabilities
         with a focus on security and ease of use, leveraging standard JDK cryptographic providers.
     </description>
 
-    <url>https://github.com/cuioss/cui-jwt/</url>
+    <url>https://github.com/cuioss/OAuth-Sheriff/</url>
     <modules>
         <module>bom</module>
-        <module>cui-jwt-validation</module>
-        <module>cui-jwt-quarkus-parent</module>
+        <module>oauth-sheriff-core</module>
+        <module>oauth-sheriff-quarkus-parent</module>
         <module>benchmarking</module>
     </modules>
     <scm>
-        <url>https://github.com/cuioss/cui-jwt/</url>
+        <url>https://github.com/cuioss/OAuth-Sheriff/</url>
         <connection>
-            scm:git:https://github.com/cuioss/cui-jwt.git
+            scm:git:https://github.com/cuioss/OAuth-Sheriff.git
         </connection>
         <developerConnection>
-            scm:git:https://github.com/cuioss/cui-jwt/
+            scm:git:https://github.com/cuioss/OAuth-Sheriff/
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
     <issueManagement>
-        <url>https://github.com/cuioss/cui-jwt/issues</url>
+        <url>https://github.com/cuioss/OAuth-Sheriff/issues</url>
         <system>GitHub Issues</system>
     </issueManagement>
 
@@ -46,7 +46,6 @@
         <version.quarkus>3.25.4</version.quarkus>
         <frontend.node.version>v20.19.2</frontend.node.version>
         <frontend.npm.version>10.5.0</frontend.npm.version>
-        <version.cui.http>0.2.0</version.cui.http>
     </properties>
 
 </project>
