@@ -62,7 +62,7 @@
             </dependency>
             <dependency>
                 <groupId>de.cuioss.sheriff.oauth</groupId>
-                <artifactId>oauth-sheriff-benchmarking-common</artifactId>
+                <artifactId>benchmarking-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

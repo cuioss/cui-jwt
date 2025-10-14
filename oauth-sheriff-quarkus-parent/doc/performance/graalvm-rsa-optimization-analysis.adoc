@@ -1,4 +1,4 @@
-= GraalVM RSA Optimization Investigation
+Ok. = GraalVM RSA Optimization Investigation
 :toc: left
 :toclevels: 3
 :toc-title: Table of Contents

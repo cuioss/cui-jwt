@@ -253,7 +253,7 @@ class PrometheusClientTest {
             "result": [
               {
                 "metric": {
-                  "__name__": "cui_jwt_validation_success_operations_total",
+                  "__name__": "sheriff_oauth_validation_success_operations_total",
                   "instance": "oauth-sheriff-integration-tests:8443",
                   "job": "quarkus-benchmark",
                   "event_type": "ACCESS_TOKEN_CREATED",
@@ -270,14 +270,14 @@ class PrometheusClientTest {
         }
         """;
         moduleDispatcher.setCustomResponse(complexResponse);
-        List<String> metricNames = List.of("cui_jwt_validation_success_operations_total");
+        List<String> metricNames = List.of("sheriff_oauth_validation_success_operations_total");
 
         // When
         Map<String, PrometheusClient.TimeSeries> result = prometheusClient.queryRange(
                 metricNames, START_TIME, END_TIME, STEP);
 
         // Then
-        PrometheusClient.TimeSeries timeSeries = result.get("cui_jwt_validation_success_operations_total");
+        PrometheusClient.TimeSeries timeSeries = result.get("sheriff_oauth_validation_success_operations_total");
         Map<String, String> labels = timeSeries.labels();
 
         assertEquals("ACCESS_TOKEN_CREATED", labels.get("event_type"));

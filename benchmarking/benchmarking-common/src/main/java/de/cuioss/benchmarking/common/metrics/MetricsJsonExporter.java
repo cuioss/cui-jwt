@@ -280,7 +280,7 @@ public class MetricsJsonExporter {
             String metricName = entry.getKey();
             Double value = entry.getValue();
 
-            if (metricName.startsWith("cui_jwt_validation_errors_total")) {
+            if (metricName.startsWith("sheriff_oauth_validation_errors_total")) {
                 String category = extractTag(metricName, "category");
                 String eventType = extractTag(metricName, "event_type");
 
@@ -289,7 +289,7 @@ public class MetricsJsonExporter {
                     categoryData.put(eventType, formatNumber(value.longValue()));
                     totalErrors += value.longValue();
                 }
-            } else if (metricName.startsWith("cui_jwt_validation_success")) {
+            } else if (metricName.startsWith("sheriff_oauth_validation_success")) {
                 String eventType = extractTag(metricName, "event_type");
                 String result = extractTag(metricName, "result");
 
