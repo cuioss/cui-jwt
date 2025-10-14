@@ -120,7 +120,6 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
-            <version>${version.easymock}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
