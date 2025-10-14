@@ -51,3 +51,13 @@
 - `WARNING [de.cui.she.oau.cor.IssuerConfig] JWTValidation-134: IssuerConfig for issuer ... has claimSubOptional=true` (Intentional test configuration for non-standard token validation)
 - `WARN [org.keycloak.storage.datastore.DefaultExportImportManager] Referenced client scope ... doesn't exist` (Keycloak realm import warnings - expected during initial setup)
 - `WARN [org.keycloak.models.utils.RepresentationToModel] Referenced client scope ... doesn't exist. Ignoring` (Keycloak realm import follow-up warnings)
+
+## handle-pull-request
+
+### CI/Sonar Duration
+- **Duration**: 300000ms (5 minutes)
+- **Last Updated**: 2025-10-14
+
+### Notes
+- This duration represents the time to wait for CI and SonarCloud checks to complete
+- Includes buffer time for queue delays
