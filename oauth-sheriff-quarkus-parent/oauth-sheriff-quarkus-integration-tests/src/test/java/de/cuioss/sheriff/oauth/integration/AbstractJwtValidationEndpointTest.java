@@ -21,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -352,6 +353,68 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
                     .get("/jwt/interceptor/string-return")
                     .then()
                     .statusCode(401); // No token given
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with @BearerToken parameter injection - validates token structure")
+        void interceptorValidationWithBearerTokenParameterInjection() {
+            // This test validates the README.adoc example pattern:
+            // @BearerAuth(requiredScopes = {"read"})
+            // public Response getData(@BearerToken BearerTokenResult tokenResult) { ... }
+
+            TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
+
+            var response = given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + tokenResponse.accessToken())
+                    .when()
+                    .get("/jwt/interceptor/with-token-access")
+                    .then()
+                    .statusCode(200)
+                    .body(VALID, equalTo(true))
+                    .body(MESSAGE, equalTo("Token access successful"))
+                    .extract()
+                    .response();
+
+            // Validate response contains expected token data
+            var data = response.jsonPath().getMap("data");
+            assertNotNull(data, "Response data should not be null");
+
+            // Validate userId is present and not empty
+            String userId = (String) data.get("userId");
+            assertNotNull(userId, "userId should be present in response");
+            assertFalse(userId.isBlank(), "userId should not be blank");
+
+            // Validate scopes contains 'read'
+            @SuppressWarnings("unchecked") var scopes = (Collection<String>) data.get("scopes");
+            assertNotNull(scopes, "scopes should be present in response");
+            assertTrue(scopes.contains("read"), "scopes should contain 'read'");
+
+            // Validate roles and groups are present (may be empty but should be present)
+            assertNotNull(data.get("roles"), "roles should be present in response");
+            assertNotNull(data.get("groups"), "groups should be present in response");
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with @BearerToken parameter injection - missing token returns 401")
+        void interceptorValidationWithBearerTokenParameterInjectionMissingToken() {
+            // Verify that missing token is properly handled by the interceptor
+            given()
+                    .when()
+                    .get("/jwt/interceptor/with-token-access")
+                    .then()
+                    .statusCode(401); // Interceptor should reject before reaching method body
+        }
+
+        @Test
+        @DisplayName("Interceptor validation with @BearerToken parameter injection - invalid token returns 401")
+        void interceptorValidationWithBearerTokenParameterInjectionInvalidToken() {
+            // Verify that invalid token is properly handled by the interceptor
+            given()
+                    .header(AUTHORIZATION, BEARER_PREFIX + "invalid.jwt.token")
+                    .when()
+                    .get("/jwt/interceptor/with-token-access")
+                    .then()
+                    .statusCode(401); // Interceptor should reject invalid tokens
         }
     }
 

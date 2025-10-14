@@ -281,6 +281,7 @@ public class JwtValidationEndpoint {
     /**
      * Tests interceptor-based validation with parameter injection to access token details.
      * Demonstrates how to access validated token content using @BearerToken parameter injection.
+     * This endpoint validates expected token structure and throws exceptions if requirements are not met.
      */
     @GET
     @Path("/interceptor/with-token-access")
@@ -288,12 +289,31 @@ public class JwtValidationEndpoint {
     public Response testInterceptorWithTokenAccess(@BearerToken BearerTokenResult tokenResult) {
         LOGGER.debug("testInterceptorWithTokenAccess - accessing token details via parameter injection");
 
+        // Validate that token result is successfully authorized
+        if (tokenResult.isNotSuccessfullyAuthorized()) {
+            throw new IllegalStateException("Expected successful authorization but got status: " + tokenResult.getStatus());
+        }
+
+        // Validate that token content is present
         AccessTokenContent token = tokenResult.getAccessTokenContent()
                 .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
 
-        String userId = token.getSubject().orElse("unknown");
+        // Validate subject is present
+        String userId = token.getSubject()
+                .orElseThrow(() -> new IllegalStateException("Token subject must be present"));
+
+        if (userId.isBlank()) {
+            throw new IllegalStateException("Token subject must not be blank");
+        }
+
         LOGGER.debug("Token subject: %s", userId);
 
+        // Validate required scope is present
+        if (!token.getScopes().contains("read")) {
+            throw new IllegalStateException("Token must contain 'read' scope but has: " + token.getScopes());
+        }
+
+        // Build response with token details
         var data = new HashMap<String, Object>();
         data.put("userId", userId);
         data.put("scopes", token.getScopes());
