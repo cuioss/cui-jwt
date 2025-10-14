@@ -273,4 +273,4 @@ Comprehensive end-to-end verification that executes all verification commands in
 
 **Usage:** `/verify-all` or `/verify-all push`
 
-**Note:** Slash command files are in the gitignored `.claude/commands/` directory. If you need to recreate them, refer to the global `/verify-project` command structure in `/Users/oliver/.claude/commands/`.
+**Note:** Slash command files are in the gitignored `.claude/commands/` directory. If you need to recreate them, you can use the existing command files in your global `.claude/commands/` directory as a reference, or create new commands based on the patterns shown in this documentation.
