@@ -152,8 +152,32 @@ Testing inside Docker network (container-to-container) vs host-to-container reve
 
 1. **JWT processing overhead** (55,700 ops/s gap from health check with cache enabled)
 2. **Token cache effectiveness** - Cache size of 20 achieved 100% hit rate (239,156/239,156 validations), providing 7.4% throughput improvement
-3. **Average validation time** - 0.33ms per cached token (vs ~6ms for full validation)
+3. **Average validation time** - 0.33ms per cached token (measured application metric)
 4. **JWKS refresh every 10 seconds** - Constant Keycloak communication overhead
+
+=== JWT Validation Performance Breakdown
+
+**Measured validation time:** 0.21ms average (application metric, from Prometheus)
+- Total validations: 280,303 (latest benchmark run)
+- Cache hit rate: 100%
+- **Validation accounts for 12% of total latency** (0.21ms out of 1.72ms P50)
+
+**Latency breakdown (50 connections baseline):**
+```
+JWT P50 Total:                           1.72ms (100%)
+├─ Base HTTP overhead (health baseline): 0.345ms (20%)
+├─ JWT validation (library):             0.210ms (12%)
+└─ Framework overhead (unexplained):     1.165ms (68%)
+```
+
+**The 68% unexplained latency likely comes from:**
+- Response serialization (5-10x larger payload than health endpoint)
+- CDI request-scoped producer overhead
+- Token claims extraction and response building
+- HTTP payload processing
+- Library integration overhead vs micro-benchmarks
+
+For detailed performance gap analysis, see: link:Performance-Gap-Analysis.md[Performance Gap Analysis]
 
 === Performance Ceiling
 
@@ -161,6 +185,15 @@ Testing inside Docker network (container-to-container) vs host-to-container reve
 * **JWT validation capacity**: 21.6K ops/s at 50-100 connections (cache enabled, 100% hit rate)
 * **Performance gap**: 55.5K ops/s between health and JWT endpoints at peak
 * **Stability range**: JWT maintains 20.1-21.6K ops/s across 50-300 connections (excellent stability)
+
+**Throughput gap explanation:**
+
+The 3.5x throughput difference (77K health vs 22K JWT) is primarily due to:
+- **5x latency difference** (1.72ms JWT vs 0.345ms health)
+- **1.86x more threads** (67 JWT vs 36 health) with worse per-thread efficiency
+- **13% more CPU usage** (78% JWT vs 69% health)
+
+The gap is **NOT caused by cryptographic validation** (only 0.21ms, 12% of latency), but by REST framework overhead (response building, serialization, HTTP processing).
 
 == Conclusion
 
@@ -171,4 +204,5 @@ Comprehensive WRK stress testing across 50-300 connections reveals:
 * **Optimal configuration**: 100 connections provides best balance (77.1K health, 21.6K JWT)
 * **Latency characteristics**: Health 0.573-3.77ms P50, JWT 2.05-12.93ms P50 (scales linearly with connections)
 * **Cache effectiveness**: Lock-free cache achieves 100% hit rate (size 20), zero performance collapse
-* **Primary bottleneck**: JWT cryptographic validation overhead (55.5K ops/s gap from health endpoint)
+* **Library performance**: JWT validation takes 0.21ms (12% of latency) - library is fast, framework overhead dominates
+* **Performance gap**: 55.5K ops/s difference due to framework overhead (68% unexplained latency), not cryptographic validation
