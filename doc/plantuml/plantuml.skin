@@ -69,13 +69,30 @@ skinparam Linetype ortho
 lifeLine {
   LineThickness 3
   LineColor #8E8E93
+  LineStyle dashed
+}
+
+group {
+  BackGroundColor #F5F5F7
+  LineColor #5AC8FA
+  LineThickness 2
+  FontColor #1C1C1E
+  FontStyle bold
+  header {
+    BackGroundColor #E5E5EA
+    FontColor #1C1C1E
+    FontStyle bold
+  }
 }
 </style>
 
-skinparam SequenceGroupBackgroundColor #FAFAFA
+skinparam SequenceGroupBackgroundColor #F5F5F7
 skinparam SequenceGroupBorderColor #5AC8FA
 skinparam SequenceGroupBorderThickness 2
 skinparam SequenceGroupFontColor #1C1C1E
+skinparam SequenceGroupHeaderFontColor #1C1C1E
+skinparam SequenceGroupHeaderFontStyle bold
+skinparam SequenceGroupHeaderFontSize 12
 
 skinparam SequenceDividerBackgroundColor #F5F5F7
 skinparam SequenceDividerBorderColor #007AFF
