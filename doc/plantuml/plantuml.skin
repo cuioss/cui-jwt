@@ -67,8 +67,8 @@ skinparam Linetype ortho
 
 <style>
 lifeLine {
-  LineThickness 5
-  LineColor #1C1C1E
+  LineThickness 3
+  LineColor #8E8E93
 }
 </style>
 
