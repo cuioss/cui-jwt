@@ -1,0 +1,169 @@
+'' PlantUML Apple-Style Theme
+'' Inspired by Apple BigSur design language
+'' Uses SF Pro / Helvetica font family and Apple blue palette
+
+'' Font: SF Pro Display (fallback to Helvetica, then SansSerif)
+skinparam defaultFontName SF Pro Display,Helvetica,SansSerif
+skinparam defaultFontSize 13
+
+'' General settings
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam Padding 8
+skinparam Margin 10
+
+'' Apple Blue Color Palette
+'' Primary: #007AFF (System Blue)
+'' Secondary: #5AC8FA (Light Blue)
+'' Tertiary: #0071E3 (Professional Blue)
+'' Gray scale: #F5F5F7 (Very Light Gray), #E5E5EA (Light Gray), #D1D1D6 (Gray), #8E8E93 (Medium Gray), #636366 (Dark Gray)
+
+'' Arrows - using blue palette
+skinparam ArrowColor #007AFF
+skinparam ArrowThickness 1.5
+skinparam ArrowFontColor #1C1C1E
+skinparam ArrowFontSize 12
+
+'' Component Diagram
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #007AFF
+  BorderThickness 1.5
+  FontColor #1C1C1E
+  FontSize 13
+}
+
+skinparam package {
+  BackgroundColor #F9F9F9
+  BorderColor #007AFF
+  BorderThickness 1.5
+  FontColor #1C1C1E
+  FontSize 14
+  FontStyle bold
+}
+
+skinparam node {
+  BackgroundColor #F5F5F7
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' Sequence Diagram
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #007AFF
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+skinparam participant {
+  BackgroundColor #FFFFFF
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+skinparam sequenceBox {
+  BackgroundColor #F5F5F7
+  BorderColor #007AFF
+  BorderThickness 1.5
+}
+
+skinparam sequenceArrowColor #007AFF
+skinparam sequenceLifeLineColor #D1D1D6
+skinparam sequenceLifeLineBorderColor #D1D1D6
+
+skinparam sequenceGroup {
+  BackgroundColor #FAFAFA
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+skinparam sequenceDivider {
+  BackgroundColor #F5F5F7
+  BorderColor #007AFF
+  BorderThickness 2
+  FontColor #1C1C1E
+  FontStyle bold
+}
+
+skinparam note {
+  BackgroundColor #FFF9E6
+  BorderColor #E5E5EA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' Class Diagram
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #007AFF
+  BorderThickness 1.5
+  FontColor #1C1C1E
+  AttributeFontColor #1C1C1E
+  FontSize 13
+}
+
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+skinparam abstract {
+  BackgroundColor #F9F9F9
+  BorderColor #0071E3
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+skinparam enum {
+  BackgroundColor #F5F5F7
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' Database
+skinparam database {
+  BackgroundColor #F5F5F7
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' Cloud
+skinparam cloud {
+  BackgroundColor #F5F5F7
+  BorderColor #5AC8FA
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' File/Storage
+skinparam file {
+  BackgroundColor #FFFFFF
+  BorderColor #8E8E93
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' Rectangle
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #D1D1D6
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
+
+'' Card
+skinparam card {
+  BackgroundColor #F9F9F9
+  BorderColor #007AFF
+  BorderThickness 1.5
+  FontColor #1C1C1E
+}
