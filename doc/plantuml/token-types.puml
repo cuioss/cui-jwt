@@ -72,19 +72,4 @@ MinimalTokenContent <|.. RefreshTokenContent
 BaseTokenContent <|-- AccessTokenContent
 BaseTokenContent <|-- IdTokenContent
 
-note bottom of AccessTokenContent
-  OAuth2 Access Token
-  Used for authorization
-end note
-
-note bottom of IdTokenContent
-  OpenID Connect ID Token
-  Used for authentication
-end note
-
-note bottom of RefreshTokenContent
-  OAuth2 Refresh Token
-  Used to obtain new access tokens
-end note
-
 @enduml
