@@ -33,10 +33,6 @@ The JWT Token Validation library operates within the following context:
 * Supports multiple issuers
 * Implements key management and rotation
 
-== Data Flow Diagram
-
-image::../plantuml/threat-model-dataflow.png[Threat Model Data Flow]
-
 == STRIDE Threat Analysis
 
 === Spoofing
