@@ -1,119 +1,55 @@
 @startuml
 
+title Multi-Issuer Token Validation Flow
+
 actor "Application" as App
+participant "TokenValidator" as Validator
+participant "NonValidatingJwtParser" as Parser
+participant "IssuerConfigResolver" as Resolver
+participant "IssuerConfig" as Config
+participant "JwksLoader" as Loader
 
-package "TokenValidator" {
-  component "IssuerConfigResolver" as Resolver
-  component "AccessTokenValidationPipeline" as Pipeline
-  component "NonValidatingJwtParser" as Parser
-  component "TokenSignatureValidator Map" as SigValidators
-}
+== Token Validation with Issuer Resolution ==
 
-package "Issuer Configurations" {
-  together {
-    component "IssuerConfig\n(Issuer: auth.example.com)" as IssuerConfig1
-    component "IssuerConfig\n(Issuer: auth.partner.com)" as IssuerConfig2
-    component "IssuerConfig\n(Issuer: auth.internal.com)" as IssuerConfig3
-  }
-}
+App -> Validator: validateAccessToken(tokenString)
+activate Validator
 
-package "JWKS Loaders" {
-  together {
-    component "HttpJwksLoader\nauth.example.com" as JwksLoader1
-    component "HttpJwksLoader\nauth.partner.com" as JwksLoader2
-    component "JWKSKeyLoader\nauth.internal.com" as JwksLoader3
-  }
-}
+Validator -> Parser: decode(tokenString)
+activate Parser
+Parser --> Validator: DecodedJwt
+deactivate Parser
 
-' Cloud endpoints
-together {
-  cloud "JWKS Endpoint\nhttps://auth.example.com/.well-known/jwks.json" as JwksEndpoint1
-  cloud "JWKS Endpoint\nhttps://auth.partner.com/.well-known/jwks.json" as JwksEndpoint2
-  file "Local JWKS File\n/config/internal-jwks.json" as JwksFile3
-}
+Validator -> Parser: getIssuer()
+activate Parser
+Parser --> Validator: "auth.partner.com"
+deactivate Parser
 
-' Initialization phase (happens once at startup)
-IssuerConfig1 --> JwksLoader1 : owns
-IssuerConfig2 --> JwksLoader2 : owns
-IssuerConfig3 --> JwksLoader3 : owns
-
-JwksLoader1 -up-> JwksEndpoint1 : async init\n+ background refresh
-JwksLoader2 -up-> JwksEndpoint2 : async init\n+ background refresh
-JwksLoader3 -up-> JwksFile3 : load at build time
-
-Resolver --> IssuerConfig1 : manages
-Resolver --> IssuerConfig2 : manages
-Resolver --> IssuerConfig3 : manages
-
-' Runtime token validation flow
-App -> Pipeline : 1. createAccessToken(tokenString)
-
-Pipeline -> Parser : 2. decode(tokenString)
-Parser --> Pipeline : DecodedJwt
-
-Pipeline -> Parser : 3. getIssuer()
-Parser --> Pipeline : "auth.partner.com"
-
-Pipeline -> Resolver : 4. resolveConfig("auth.partner.com")
-Resolver -> Resolver : 5a. Check immutable cache\n(lock-free, O(1))
-note right
-  Three possible outcomes:
-  - Config cached with OK status → immediate return
-  - Config loading in progress → wait for CompletableFuture (5s timeout)
-  - Config not found or failed → TokenValidationException
-end note
-Resolver --> Pipeline : IssuerConfig or exception
-
-Pipeline -> SigValidators : 6. get("auth.partner.com")
-SigValidators --> Pipeline : TokenSignatureValidator
-
-Pipeline -> SigValidators : 7. validateSignature(decodedJwt)
-SigValidators -> IssuerConfig2 : getJwksLoader()
-IssuerConfig2 --> SigValidators : JwksLoader
-SigValidators -> JwksLoader2 : getKeyInfo(kid)
-JwksLoader2 --> SigValidators : Optional<KeyInfo>
-SigValidators -> SigValidators : verify signature\nwith key
-SigValidators --> Pipeline : validated or exception
-
-Pipeline --> App : AccessTokenContent
+Validator -> Resolver: resolveConfig("auth.partner.com")
+activate Resolver
 
 note right of Resolver
-  **IssuerConfigResolver**
-  - Manages multiple issuer configs
-  - Async initialization with CompletableFuture
-  - Dual-cache approach:
-    * Mutable ConcurrentHashMap (during init)
-    * Immutable Map (after init, lock-free)
-  - Only returns configs with LoaderStatus.OK
-  - Waits for ongoing loads (5s timeout)
-  - Thread-safe resolution
+  Resolver maintains multiple issuer configs:
+  - auth.example.com
+  - auth.partner.com  ← matches!
+  - auth.internal.com
 end note
 
-note bottom of IssuerConfig2
-  **IssuerConfig contains:**
-  - Issuer identifier
-  - Expected audience
-  - JwksLoader instance
-  - Claim mappers
-  - Algorithm preferences
-  - Security event counter
-end note
+Resolver --> Validator: IssuerConfig for auth.partner.com
+deactivate Resolver
 
-note right of JwksLoader1
-  **HttpJwksLoader:**
-  - Async init via CompletableFuture
-  - Background refresh (optional)
-  - Key rotation grace period
-  - Retired keys tracking
-  - ResilientHttpHandler for retry
-end note
+Validator -> Config: getJwksLoader()
+activate Config
+Config --> Validator: JwksLoader instance
+deactivate Config
 
-note right of JwksLoader3
-  **JWKSKeyLoader:**
-  - File-based or in-memory JWKS
-  - No background refresh
-  - Content loaded at build time
-  - Synchronous initialization
-end note
+Validator -> Loader: getKeyInfo(kid)
+activate Loader
+Loader --> Validator: KeyInfo
+deactivate Loader
+
+Validator -> Validator: Validate signature,\nclaims, etc.
+
+Validator --> App: AccessTokenContent
+deactivate Validator
 
 @enduml
