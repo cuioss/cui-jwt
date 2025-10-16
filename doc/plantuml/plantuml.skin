@@ -65,6 +65,13 @@ skinparam SequenceLifeLineBorderColor #1C1C1E
 skinparam SequenceLifeLineBorderThickness 5
 skinparam Linetype ortho
 
+<style>
+lifeLine {
+  LineThickness 5
+  LineColor #1C1C1E
+}
+</style>
+
 skinparam SequenceGroupBackgroundColor #FAFAFA
 skinparam SequenceGroupBorderColor #5AC8FA
 skinparam SequenceGroupBorderThickness 2
