@@ -13,11 +13,11 @@ interface "TokenContent" as TokenContent {
   +getClaims(): Map<String, ClaimValue>
   +getClaimOption(name: ClaimName): Optional<ClaimValue>
   +getIssuer(): String
-  +getSubject(): String
+  +getSubject(): Optional<String>
   +getExpirationTime(): OffsetDateTime
   +getIssuedAtTime(): OffsetDateTime
   +getNotBefore(): Optional<OffsetDateTime>
-  +isExpired(): boolean
+  +isExpired(context: ValidationContext): boolean
 }
 
 abstract class "BaseTokenContent" as BaseTokenContent {

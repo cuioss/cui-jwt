@@ -6,8 +6,8 @@ participant "JwksLoaderFactory" as JwksLoaderFactory
 participant "HttpJwksLoader" as HttpLoader
 participant "JWKSKeyLoader" as KeyLoader
 participant "ResilientHttpHandler" as HttpHandler
-database "Current Keys" as CurrentKeys
-database "Retired Keys\n(Grace Period)" as RetiredKeys
+database "Current Keys\n<<in-memory>>" as CurrentKeys
+database "Retired Keys\n(Grace Period)\n<<in-memory>>" as RetiredKeys
 participant "JWKS Endpoint" as Endpoint
 participant "SecurityEventCounter" as SecurityEventCounter
 
@@ -110,8 +110,9 @@ note right of JwksLoaderFactory
 end note
 
 note right of CurrentKeys
-  Internal storage:
-  - Map<String, KeyInfo> by Key ID (kid)
+  In-memory storage:
+  - ConcurrentHashMap<String, KeyInfo> by Key ID (kid)
+  - Thread-safe concurrent access
   - Public keys converted to Java objects
   - Algorithm validation & preferences
 end note
