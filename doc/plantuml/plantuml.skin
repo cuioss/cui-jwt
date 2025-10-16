@@ -17,7 +17,7 @@ skinparam Margin 10
 '' Primary: #007AFF (System Blue)
 '' Secondary: #5AC8FA (Light Blue)
 '' Tertiary: #0071E3 (Professional Blue)
-'' Gray scale: #F5F5F7 (Very Light Gray), #E5E5EA (Light Gray), #D1D1D6 (Gray), #8E8E93 (Medium Gray), #636366 (Dark Gray)
+'' Gray: #8E8E93 (Medium Gray - for lifelines and stereotypes)
 
 '' Arrows - using blue palette
 skinparam ArrowColor #007AFF
@@ -26,144 +26,82 @@ skinparam ArrowFontColor #1C1C1E
 skinparam ArrowFontSize 12
 
 '' Component Diagram
-skinparam component {
-  BackgroundColor #FFFFFF
-  BorderColor #007AFF
-  BorderThickness 1.5
-  FontColor #1C1C1E
-  FontSize 13
-}
+skinparam ComponentBackgroundColor #FFFFFF
+skinparam ComponentBorderColor #007AFF
+skinparam ComponentFontColor #1C1C1E
+skinparam ComponentFontSize 13
 
-skinparam package {
-  BackgroundColor #F9F9F9
-  BorderColor #007AFF
-  BorderThickness 1.5
-  FontColor #1C1C1E
-  FontSize 14
-  FontStyle bold
-}
+skinparam PackageBackgroundColor #F9F9F9
+skinparam PackageBorderColor #007AFF
+skinparam PackageFontColor #1C1C1E
+skinparam PackageFontSize 14
+skinparam PackageFontStyle bold
 
-skinparam node {
-  BackgroundColor #F5F5F7
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam NodeBackgroundColor #F5F5F7
+skinparam NodeBorderColor #5AC8FA
+skinparam NodeFontColor #1C1C1E
 
 '' Sequence Diagram
-skinparam actor {
-  BackgroundColor #FFFFFF
-  BorderColor #007AFF
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam ActorBackgroundColor #FFFFFF
+skinparam ActorBorderColor #007AFF
+skinparam ActorFontColor #1C1C1E
 
-skinparam participant {
-  BackgroundColor #FFFFFF
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam ParticipantBackgroundColor #FFFFFF
+skinparam ParticipantBorderColor #5AC8FA
+skinparam ParticipantFontColor #1C1C1E
 
-skinparam sequenceBox {
-  BackgroundColor #F5F5F7
-  BorderColor #007AFF
-  BorderThickness 1.5
-}
+skinparam SequenceBoxBackgroundColor #F5F5F7
+skinparam SequenceBoxBorderColor #007AFF
 
-skinparam sequenceArrowColor #007AFF
-skinparam sequenceLifeLineColor #D1D1D6
-skinparam sequenceLifeLineBorderColor #D1D1D6
+skinparam SequenceArrowColor #007AFF
+skinparam SequenceLifeLineColor #8E8E93
+skinparam SequenceLifeLineBorderColor #8E8E93
 
-skinparam sequenceGroup {
-  BackgroundColor #FAFAFA
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam SequenceGroupBackgroundColor #FAFAFA
+skinparam SequenceGroupBorderColor #5AC8FA
+skinparam SequenceGroupFontColor #1C1C1E
 
-skinparam sequenceDivider {
-  BackgroundColor #F5F5F7
-  BorderColor #007AFF
-  BorderThickness 2
-  FontColor #1C1C1E
-  FontStyle bold
-}
+skinparam SequenceDividerBackgroundColor #F5F5F7
+skinparam SequenceDividerBorderColor #007AFF
+skinparam SequenceDividerFontColor #1C1C1E
+skinparam SequenceDividerFontStyle bold
 
-skinparam note {
-  BackgroundColor #FFF9E6
-  BorderColor #E5E5EA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam NoteBackgroundColor #FFF9E6
+skinparam NoteBorderColor #E5E5EA
+skinparam NoteFontColor #1C1C1E
 
 '' Class Diagram
-skinparam class {
-  BackgroundColor #FFFFFF
-  BorderColor #007AFF
-  BorderThickness 1.5
-  FontColor #1C1C1E
-  AttributeFontColor #1C1C1E
-  FontSize 13
-}
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #007AFF
+skinparam ClassFontColor #1C1C1E
+skinparam ClassAttributeFontColor #1C1C1E
+skinparam ClassFontSize 13
+skinparam ClassStereotypeFontColor #8E8E93
 
-skinparam interface {
-  BackgroundColor #FFFFFF
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam InterfaceBackgroundColor #FFFFFF
+skinparam InterfaceBorderColor #5AC8FA
+skinparam InterfaceFontColor #1C1C1E
 
-skinparam abstract {
-  BackgroundColor #F9F9F9
-  BorderColor #0071E3
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
-
-skinparam enum {
-  BackgroundColor #F5F5F7
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam AbstractBackgroundColor #F9F9F9
+skinparam AbstractBorderColor #0071E3
+skinparam AbstractFontColor #1C1C1E
 
 '' Database
-skinparam database {
-  BackgroundColor #F5F5F7
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam DatabaseBackgroundColor #F5F5F7
+skinparam DatabaseBorderColor #5AC8FA
+skinparam DatabaseFontColor #1C1C1E
 
 '' Cloud
-skinparam cloud {
-  BackgroundColor #F5F5F7
-  BorderColor #5AC8FA
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
-
-'' File/Storage
-skinparam file {
-  BackgroundColor #FFFFFF
-  BorderColor #8E8E93
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam CloudBackgroundColor #F5F5F7
+skinparam CloudBorderColor #5AC8FA
+skinparam CloudFontColor #1C1C1E
 
 '' Rectangle
-skinparam rectangle {
-  BackgroundColor #FFFFFF
-  BorderColor #D1D1D6
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam RectangleBackgroundColor #FFFFFF
+skinparam RectangleBorderColor #D1D1D6
+skinparam RectangleFontColor #1C1C1E
 
 '' Card
-skinparam card {
-  BackgroundColor #F9F9F9
-  BorderColor #007AFF
-  BorderThickness 1.5
-  FontColor #1C1C1E
-}
+skinparam CardBackgroundColor #F9F9F9
+skinparam CardBorderColor #007AFF
+skinparam CardFontColor #1C1C1E
