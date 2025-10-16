@@ -214,3 +214,57 @@
    - Green circles for classes, purple circles for interfaces
 
 **Conclusion:** PlantUML default styling is actually quite good! Clean, professional, readable. All diagrams work perfectly without custom skin.
+
+---
+
+### 2025-10-16 - Task 2: Create Minimal Elegant Skin - SKIPPED
+
+**Decision:** Default PlantUML styling is sufficient. No custom skin needed.
+
+**Rationale:**
+- Default styling is clean and professional
+- All diagrams render correctly
+- No visual issues to fix
+- Keeping it simple = less maintenance
+
+---
+
+### 2025-10-16 - Task 3: Simplify key-management.puml - COMPLETED
+
+**Status:** ✅ All sub-tasks completed
+
+**Changes Made:**
+- Reduced from 120 lines → 52 lines (57% reduction)
+- Reduced participants from 11 → 5 core components
+- Kept essential flows: Initialization, Key Retrieval, Rotation
+- Preserved grace period concept (Issue #110)
+
+**What Was Removed:**
+1. **Factory details** (JwksLoaderFactory) - implementation detail
+2. **Internal components** (JWKSKeyLoader, ResilientHttpHandler, SecurityEventCounter) - too technical
+3. **File/In-Memory loaders section** (lines 73-84) - separate concern
+4. **Detailed HTTP caching/retry steps** - abstracted to "fetch JWKS"
+5. **Four detailed notes** - moved to `doc/key-management-details.md`
+6. **Internal processing details** - "parse and process keys" abstracted away
+
+**What Was Kept:**
+- Main initialization flow
+- Key retrieval with fallback to retired keys
+- Automatic key rotation concept
+- Grace period note (the key insight)
+- In-memory storage stereotypes
+
+**New Documentation:**
+- Created `doc/key-management-details.md` with comprehensive technical details
+- Covers all removed information in structured format
+- Includes detailed flows, configuration, security considerations
+
+**Visual Verification:**
+✅ Simplified diagram renders correctly
+- Clear 3-section structure (Init, Retrieval, Rotation)
+- 5 participants visible and well-spaced
+- Database icons for key storage
+- Alt blocks for conditional logic
+- Single note explaining grace period
+
+**Result:** Much clearer diagram that focuses on the essential key rotation concept while detailed implementation lives in markdown documentation.
