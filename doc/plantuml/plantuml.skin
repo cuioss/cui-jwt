@@ -60,9 +60,10 @@ skinparam SequenceBoxBorderColor #007AFF
 skinparam SequenceBoxBorderThickness 2
 
 skinparam SequenceArrowColor #007AFF
-skinparam SequenceLifeLineColor #636366
-skinparam SequenceLifeLineBorderColor #636366
-skinparam SequenceLifeLineBorderThickness 3
+skinparam SequenceLifeLineColor #1C1C1E
+skinparam SequenceLifeLineBorderColor #1C1C1E
+skinparam SequenceLifeLineBorderThickness 5
+skinparam Linetype ortho
 
 skinparam SequenceGroupBackgroundColor #FAFAFA
 skinparam SequenceGroupBorderColor #5AC8FA
