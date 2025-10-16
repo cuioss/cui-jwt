@@ -2,20 +2,112 @@
 !include plantuml.skin
 
 package "JWT Token Handling" {
+
+  package "Main Entry Point" {
+    [TokenValidator]
+  }
+
+  package "Pre-Pipeline Validation" {
+    [TokenStringValidator]
+  }
+
+  package "Validation Pipelines" {
+    [AccessTokenValidationPipeline]
+    [IdTokenValidationPipeline]
+    [RefreshTokenValidationPipeline]
+  }
+
+  package "Pipeline Components" {
+    [NonValidatingJwtParser]
+    [IssuerConfigResolver]
+    [TokenHeaderValidator]
+    [TokenSignatureValidator]
+    [TokenBuilder]
+    [TokenClaimValidator]
+  }
+
+  package "Configuration" {
+    [ParserConfig]
+    [IssuerConfig]
+  }
+
+  package "Key Management" {
+    [JwksLoader]
+    [JwksLoaderFactory]
+  }
+
+  package "Monitoring & Security" {
+    [SecurityEventCounter]
+    [TokenValidatorMonitor]
+    [AccessTokenCache]
+  }
+
+  package "Token Content" {
+    [AccessTokenContent]
+    [IdTokenContent]
+    [RefreshTokenContent]
+    [BaseTokenContent]
+    [TokenContent]
+    [MinimalTokenContent]
+  }
+
+  ' Main dependencies
   [TokenValidator] ..> [ParserConfig]
   [TokenValidator] ..> [IssuerConfig]
-  [TokenValidator] ..> [NonValidatingJwtParser]
-  [TokenValidator] ..> [TokenHeaderValidator]
-  [TokenValidator] ..> [TokenSignatureValidator]
-  [TokenValidator] ..> [TokenBuilder]
-  [TokenValidator] ..> [TokenClaimValidator]
-  [TokenValidator] ..> [TokenContent]
+  [TokenValidator] ..> [TokenStringValidator]
+  [TokenValidator] ..> [AccessTokenValidationPipeline]
+  [TokenValidator] ..> [IdTokenValidationPipeline]
+  [TokenValidator] ..> [RefreshTokenValidationPipeline]
+  [TokenValidator] ..> [SecurityEventCounter]
+  [TokenValidator] ..> [TokenValidatorMonitor]
+
+  ' Pipeline dependencies
+  [AccessTokenValidationPipeline] ..> [NonValidatingJwtParser]
+  [AccessTokenValidationPipeline] ..> [IssuerConfigResolver]
+  [AccessTokenValidationPipeline] ..> [TokenHeaderValidator]
+  [AccessTokenValidationPipeline] ..> [TokenSignatureValidator]
+  [AccessTokenValidationPipeline] ..> [TokenBuilder]
+  [AccessTokenValidationPipeline] ..> [TokenClaimValidator]
+  [AccessTokenValidationPipeline] ..> [AccessTokenCache]
+  [AccessTokenValidationPipeline] ..> [SecurityEventCounter]
+  [AccessTokenValidationPipeline] ..> [TokenValidatorMonitor]
+
+  [IdTokenValidationPipeline] ..> [NonValidatingJwtParser]
+  [IdTokenValidationPipeline] ..> [IssuerConfigResolver]
+  [IdTokenValidationPipeline] ..> [TokenHeaderValidator]
+  [IdTokenValidationPipeline] ..> [TokenSignatureValidator]
+  [IdTokenValidationPipeline] ..> [TokenBuilder]
+  [IdTokenValidationPipeline] ..> [TokenClaimValidator]
+  [IdTokenValidationPipeline] ..> [SecurityEventCounter]
+
+  [RefreshTokenValidationPipeline] ..> [NonValidatingJwtParser]
+
+  ' Component dependencies
+  [IssuerConfigResolver] ..> [IssuerConfig]
+  [IssuerConfigResolver] ..> [SecurityEventCounter]
+  [NonValidatingJwtParser] ..> [ParserConfig]
+  [NonValidatingJwtParser] ..> [SecurityEventCounter]
   [TokenSignatureValidator] ..> [JwksLoader]
+  [TokenSignatureValidator] ..> [SecurityEventCounter]
+  [TokenHeaderValidator] ..> [IssuerConfig]
+  [TokenHeaderValidator] ..> [SecurityEventCounter]
+  [TokenClaimValidator] ..> [IssuerConfig]
+  [TokenClaimValidator] ..> [SecurityEventCounter]
+  [TokenBuilder] ..> [IssuerConfig]
+  [TokenStringValidator] ..> [ParserConfig]
+  [TokenStringValidator] ..> [SecurityEventCounter]
+
+  ' Key management
   [IssuerConfig] ..> [JwksLoader]
   [JwksLoader] <.. [JwksLoaderFactory]
+
+  ' Cache dependencies
+  [AccessTokenCache] ..> [SecurityEventCounter]
+  [AccessTokenCache] ..> [TokenValidatorMonitor]
+
+  ' Token content hierarchy
   [TokenBuilder] ..> [AccessTokenContent]
   [TokenBuilder] ..> [IdTokenContent]
-  [TokenBuilder] ..> [RefreshTokenContent]
   [AccessTokenContent] --|> [BaseTokenContent]
   [IdTokenContent] --|> [BaseTokenContent]
   [BaseTokenContent] ..|> [TokenContent]

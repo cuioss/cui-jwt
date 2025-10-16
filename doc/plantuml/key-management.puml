@@ -1,82 +1,119 @@
 @startuml
 !include plantuml.skin
 
-participant "TokenValidator" as TokenValidator
+participant "IssuerConfig" as IssuerConfig
 participant "JwksLoaderFactory" as JwksLoaderFactory
 participant "HttpJwksLoader" as HttpLoader
-participant "FileJwksLoader" as FileLoader
-participant "InMemoryJwksLoader" as MemLoader
-database "JWKS Cache" as Cache
+participant "JWKSKeyLoader" as KeyLoader
+participant "ResilientHttpHandler" as HttpHandler
+database "Current Keys" as CurrentKeys
+database "Retired Keys\n(Grace Period)" as RetiredKeys
 participant "JWKS Endpoint" as Endpoint
+participant "SecurityEventCounter" as SecurityEventCounter
 
 == Initialization ==
 
-TokenValidator -> JwksLoaderFactory : "createHttpJwksLoader(config)"
+IssuerConfig -> JwksLoaderFactory : "createHttpLoader(config)"
 JwksLoaderFactory -> HttpLoader : "new HttpJwksLoader(config)"
-HttpLoader -> HttpLoader : "scheduleRefresh()"
+IssuerConfig -> HttpLoader : "initJWKSLoader(securityEventCounter)"
+activate HttpLoader
 
-TokenValidator -> JwksLoaderFactory : "createFileJwksLoader(path)"
-JwksLoaderFactory -> FileLoader : "new FileJwksLoader(path)"
+HttpLoader -> HttpHandler : "create ResilientHttpHandler"
+HttpLoader -> HttpHandler : "load() - initial fetch"
+HttpHandler -> Endpoint : "HTTP GET with retry"
+Endpoint --> HttpHandler : "JWKS data"
+HttpHandler --> HttpLoader : "HttpResult<Jwks>"
 
-TokenValidator -> JwksLoaderFactory : "createInMemoryJwksLoader(content)"
-JwksLoaderFactory -> MemLoader : "new InMemoryJwksLoader(content)"
+HttpLoader -> HttpLoader : "updateKeys(jwks)"
+HttpLoader -> KeyLoader : "new JWKSKeyLoader(jwks)"
+HttpLoader -> KeyLoader : "initJWKSLoader(securityEventCounter)"
+KeyLoader -> KeyLoader : "parse and process keys"
+KeyLoader --> HttpLoader : "CompletableFuture<LoaderStatus>"
+HttpLoader -> CurrentKeys : "store JWKSKeyLoader"
 
-== Key Retrieval ==
-
-TokenValidator -> HttpLoader : "getKey(keyId)"
-HttpLoader -> Cache : "get(keyId)"
-Cache --> HttpLoader : "key (if exists)"
-
-alt Key not in cache
-    HttpLoader -> Endpoint : "fetch JWKS"
-    Endpoint --> HttpLoader : "JWKS data"
-    HttpLoader -> HttpLoader : "parse JWKS"
-    HttpLoader -> Cache : "store keys"
-    Cache --> HttpLoader : "confirmation"
-    HttpLoader -> HttpLoader : "find key by ID"
+alt background refresh enabled
+    HttpLoader -> HttpLoader : "startBackgroundRefresh()"
+    note right: Schedules periodic refresh\nat configured interval
 end
 
-HttpLoader --> TokenValidator : "return key"
+deactivate HttpLoader
 
-== Automatic Key Rotation ==
+== Key Retrieval (Fast Path) ==
+
+IssuerConfig -> HttpLoader : "getKeyInfo(kid)"
+HttpLoader -> CurrentKeys : "getKeyInfo(kid)"
+alt Key found in current keys
+    CurrentKeys --> HttpLoader : "Optional<KeyInfo>"
+else Key not in current, check retired
+    HttpLoader -> RetiredKeys : "search within grace period"
+    RetiredKeys --> HttpLoader : "Optional<KeyInfo>"
+end
+HttpLoader --> IssuerConfig : "Optional<KeyInfo>"
+
+== Automatic Key Rotation (Background) ==
 
 HttpLoader -> HttpLoader : "refreshInterval elapsed"
 activate HttpLoader
-HttpLoader -> Endpoint : "fetch JWKS"
-Endpoint --> HttpLoader : "JWKS data"
-HttpLoader -> HttpLoader : "parse JWKS"
-HttpLoader -> Cache : "update keys"
-Cache --> HttpLoader : "confirmation"
+HttpLoader -> HttpHandler : "load() with cache"
+HttpHandler -> Endpoint : "HTTP GET (if-modified-since)"
+Endpoint --> HttpHandler : "304 Not Modified OR 200 + new data"
+
+alt Content changed (200)
+    HttpLoader -> HttpLoader : "updateKeys(newJwks)"
+    HttpLoader -> KeyLoader : "new JWKSKeyLoader(newJwks)"
+    KeyLoader -> KeyLoader : "parse and process keys"
+    HttpLoader -> RetiredKeys : "retire old keys with timestamp"
+    HttpLoader -> CurrentKeys : "update to new keys"
+    HttpLoader -> RetiredKeys : "cleanup expired (> grace period)"
+    HttpLoader -> SecurityEventCounter : "track key rotation event"
+else Content unchanged (304)
+    note right: No action needed
+end
 deactivate HttpLoader
 
-== Key Selection ==
+== File/In-Memory Loaders ==
 
-TokenValidator -> HttpLoader : "getKey(keyId)"
-HttpLoader -> Cache : "get(keyId)"
-Cache --> HttpLoader : "key"
-HttpLoader --> TokenValidator : "return key"
+IssuerConfig -> JwksLoaderFactory : "createFileLoader(path)"
+JwksLoaderFactory -> KeyLoader : "new JWKSKeyLoader(filePath)"
+note right: File content loaded\nat build time
 
-TokenValidator -> TokenValidator : "validate token\nwith key"
+IssuerConfig -> JwksLoaderFactory : "createInMemoryLoader(content)"
+JwksLoaderFactory -> KeyLoader : "new JWKSKeyLoader(content)"
+
+IssuerConfig -> KeyLoader : "initJWKSLoader(securityEventCounter)"
+KeyLoader -> KeyLoader : "parse and process keys"
+KeyLoader --> IssuerConfig : "CompletableFuture<LoaderStatus>"
 
 note right of HttpLoader
-  Key rotation happens:
-  1. On a configurable schedule
-  2. When a key is not found
-  3. When validation fails with current key
+  HttpJwksLoader features:
+  - Async initialization with CompletableFuture
+  - ResilientHttpHandler for HTTP caching & retry
+  - Background refresh (optional)
+  - Key rotation grace period (Issue #110)
+  - Retired keys tracking (max N sets)
+  - Security event tracking
 end note
 
-note right of Cache
-  The cache stores:
-  - JWK by Key ID (kid)
-  - Public keys by algorithm
-  - Mapping of key IDs to algorithms
+note right of RetiredKeys
+  Grace period (Issue #110):
+  - Keeps retired keys for configurable duration
+  - Allows validation of tokens signed with old keys
+  - Automatic cleanup of expired keys
+  - Configurable max retired key sets
 end note
 
 note right of JwksLoaderFactory
-  Factory creates appropriate loader:
-  - HttpJwksLoader: Remote JWKS endpoint
-  - FileJwksLoader: Local JWKS file
-  - InMemoryJwksLoader: Embedded JWKS
+  Factory creates loaders:
+  - HttpJwksLoader: Remote JWKS with refresh
+  - JWKSKeyLoader (file): Local JWKS file
+  - JWKSKeyLoader (memory): Embedded JWKS
+end note
+
+note right of CurrentKeys
+  Internal storage:
+  - Map<String, KeyInfo> by Key ID (kid)
+  - Public keys converted to Java objects
+  - Algorithm validation & preferences
 end note
 
 @enduml

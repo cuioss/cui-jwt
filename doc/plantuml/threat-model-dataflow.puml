@@ -65,10 +65,10 @@ Attacker --> Resources : "A6. Privilege escalation"
 
 ' Internal connections with explicit directions
 AuthModule --> ResourceModule
-TokenValidation --> ValidationPipeline
+TokenValidator --> ValidationPipeline
 ValidationPipeline --> JwksLoader
 JwksLoader --> KeyCache
 ValidationPipeline --> TokenContent
-TokenValidation --> SecurityCounter
+TokenValidator --> SecurityCounter
 
 @enduml
