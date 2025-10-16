@@ -1,5 +1,4 @@
 @startuml
-!include plantuml.skin
 
 actor "Application" as App
 

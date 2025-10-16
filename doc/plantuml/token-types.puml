@@ -1,5 +1,4 @@
 @startuml
-!include plantuml.skin
 
 interface "Serializable" as Serializable {
 }

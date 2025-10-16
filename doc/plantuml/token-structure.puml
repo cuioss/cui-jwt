@@ -1,5 +1,4 @@
 @startuml
-!include plantuml.skin
 
 rectangle "JWT Token Structure" as JWT {
   card "Header" as Header {

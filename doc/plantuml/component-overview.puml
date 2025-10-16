@@ -1,5 +1,4 @@
 @startuml
-!include plantuml.skin
 
 package "JWT Token Handling" {
 

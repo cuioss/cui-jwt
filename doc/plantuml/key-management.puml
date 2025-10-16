@@ -1,5 +1,4 @@
 @startuml
-!include plantuml.skin
 
 participant "IssuerConfig" as IssuerConfig
 participant "JwksLoaderFactory" as JwksLoaderFactory
