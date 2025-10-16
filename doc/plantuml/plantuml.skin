@@ -57,6 +57,20 @@ skinparam {
   SequenceBoxFontColor #000000
   SequenceArrowColor #2C3E50
   SequenceLifeLineColor #2C3E50
+  SequenceLifeLineBorderColor #2C3E50
+  ParticipantBackgroundColor #ECF0F1
+  ParticipantBorderColor #2C3E50
+  ParticipantFontColor #000000
+  SequenceGroupBackgroundColor #FFFFFF
+  SequenceGroupBorderColor #2C3E50
+  SequenceGroupFontColor #000000
+  SequenceGroupHeaderFontColor #000000
+  SequenceReferenceBackgroundColor #ECF0F1
+  SequenceReferenceBorderColor #2C3E50
+  SequenceReferenceFontColor #000000
+  SequenceDividerBackgroundColor #ECF0F1
+  SequenceDividerBorderColor #2C3E50
+  SequenceDividerFontColor #000000
 
   ' Cloud settings
   CloudBackgroundColor #ECF0F1
