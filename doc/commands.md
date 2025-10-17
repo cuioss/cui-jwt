@@ -74,8 +74,7 @@ Files excluded from AsciiDoc validation processing:
 
 Known warnings that are acceptable and should not trigger fixes:
 
-- `doc/specification/well-known.adoc:109` - Validator incorrectly flags consecutive numbered list items (lines 107-109) as needing blank lines between them. AsciiDoc ordered lists use `.` syntax and should NOT have blank lines between consecutive items. The required blank line already exists at line 106 between the introductory text and the list start.
-- `oauth-sheriff-core/doc/developing.adoc:109` - Same validator bug as above. Consecutive numbered list items (lines 107-110) with proper blank line at line 106 before the list starts.
+(No acceptable warnings - validator bug for consecutive numbered lists has been fixed in cui-llm-rules v2025-10-17)
 
 ### Last Updated
 2025-10-17
