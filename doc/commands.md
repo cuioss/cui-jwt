@@ -78,3 +78,27 @@ Known warnings that are acceptable and should not trigger fixes:
 
 ### Last Updated
 2025-10-17
+
+## docs-verify-links
+
+### Skipped Files
+
+Files excluded from link verification:
+
+- `target/**/*.adoc` (Build artifacts - auto-generated)
+- `node_modules/**/*.adoc` (Dependency documentation)
+- `.git/**/*.adoc` (Git metadata)
+
+### Acceptable Warnings
+
+Links approved by user as acceptable (even if broken/non-standard):
+
+(No acceptable warnings documented yet)
+
+### Last Verification
+
+- **Date**: 2025-10-17
+- **Files verified**: 62
+- **Total links**: 713
+- **Broken links**: 0
+- **Format violations**: 28 (external links without labels - intentional for readability)

@@ -123,7 +123,7 @@ For a detailed analysis of threats, current mitigations, and recommendations, pl
 
 The following aspects are covered in detail in the specification documents:
 
-* *Security Controls*: For detailed information about security controls, including input validation, cryptographic practices, authentication and authorization, secure communication, error handling and logging, and data protection, please refer to the xref:../specification/security-specifications.adoc[Security Specification] document.
+* *Security Controls*: For detailed information about security controls, including input validation, cryptographic practices, authentication and authorization, secure communication, error handling and logging, and data protection, please refer to the xref:security-specifications.adoc[Security Specification] document.
 
 * *Security Testing*: For detailed information about security testing, including required security tests and vulnerability scanning, please refer to the xref:../specification/testing.adoc[Testing Specification] document.
 

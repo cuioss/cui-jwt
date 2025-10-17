@@ -34,7 +34,7 @@ Note: Only log level INFO and above are documented in this file.
 
 The log messages can be used for troubleshooting issues with the JWT Token Validation library. Each log message is associated with a specific component and provides information about what is happening in the system.
 
-For more details about security events related to these log messages, see the SecurityEventCounter implementation in xref:specification/technical-components.adoc#_securityeventcounter[Technical Components].
+For more details about security events related to these log messages, see the SecurityEventCounter implementation in xref:specification/technical-components.adoc#securityeventcounter[Technical Components].
 
 == INFO Level (001-008)
 

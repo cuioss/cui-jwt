@@ -97,13 +97,11 @@ This guide helps navigate the comprehensive documentation across all CUI JWT mod
 
 == Standards and Specifications
 
-* xref:ai-rules.adoc[AI Development Guidelines]
-* xref:../oauth-sheriff-core/doc/specification/technical-components.adoc[Technical Specification]
-* xref:../oauth-sheriff-core/doc/specification/references.adoc[References]
-* xref:../oauth-sheriff-core/doc/LogMessages.adoc[Log Messages - Validation]
-* xref:../oauth-sheriff-quarkus-parent/doc/LogMessages.adoc[Log Messages - Quarkus]
+* link:ai-rules.md[AI Development Guidelines]
+* xref:specification/technical-components.adoc[Technical Specification]
+* xref:LogMessages.adoc[Log Messages]
 
 == Analysis and Reports
 
-* xref:../benchmarking/benchmark-core/doc/Analysis-08.2025.adoc[Benchmark Analysis - Library]
+* xref:../benchmarking/doc/Analysis-10.2025-Micro.adoc[Micro-Benchmark Analysis (October 2025)]
 * xref:../oauth-sheriff-quarkus-parent/doc/performance/graalvm-rsa-optimization-analysis.adoc[GraalVM RSA Analysis]

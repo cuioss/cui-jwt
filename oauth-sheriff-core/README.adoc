@@ -74,6 +74,7 @@ unlike reflection-based parsers that often ignore configured limits.
 
 == Test Support
 
+[[test-artifact]]
 The module provides test utilities via a classifier artifact:
 
 [source,xml]

@@ -27,9 +27,9 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: 
 
 This specification has been implemented in the following classes:
 
-* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
-* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
-* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/ParserConfig.java[ParserConfig]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/TokenValidator.java[TokenValidator]
+* xref:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/ParserConfig.java[ParserConfig]
 
 This document provides detailed specifications for enhancing the token size validation capabilities in the JWT Token Validation library. Specifically, it outlines how to implement token size validation in the token processing pipeline.
 

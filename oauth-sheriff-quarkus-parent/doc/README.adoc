@@ -205,7 +205,7 @@ The `@BearerToken` annotation automatically:
 
 === Log Messages
 
-* **xref:LogMessages.adoc[Log Messages Reference]** - Complete logging reference for the extension
+* **xref:../../doc/LogMessages.adoc[Log Messages Reference]** - Complete logging reference for the extension
 
 === Support
 

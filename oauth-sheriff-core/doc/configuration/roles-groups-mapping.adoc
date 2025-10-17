@@ -104,6 +104,7 @@ Set<String> missingGroups = accessToken.determineMissingGroups(requiredGroups);
 
 If your identity provider uses a different format for roles or groups, you can configure a custom mapper:
 
+[[Using StringSplitterMapper for Delimited Strings]]
 === Using StringSplitterMapper for Delimited Strings
 
 The library provides a `StringSplitterMapper` that can split string claims by a specified character. This is useful when roles or groups are provided as a single string with values separated by a specific character:
