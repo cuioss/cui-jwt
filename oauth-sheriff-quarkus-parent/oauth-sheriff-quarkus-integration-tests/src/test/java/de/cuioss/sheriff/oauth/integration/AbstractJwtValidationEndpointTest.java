@@ -356,11 +356,10 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         }
 
         @Test
-        @DisplayName("Interceptor validation with @BearerToken parameter injection - validates token structure")
-        void interceptorValidationWithBearerTokenParameterInjection() {
-            // This test validates the README.adoc example pattern:
-            // @BearerAuth(requiredScopes = {"read"})
-            // public Response getData(@BearerToken BearerTokenResult tokenResult) { ... }
+        @DisplayName("CDI injection validation with @BearerToken - validates token structure")
+        void cdiInjectionWithBearerTokenValidation() {
+            // This test validates the CDI-based validation pattern where the endpoint
+            // manually checks authorization status using Instance<BearerTokenResult>
 
             TestRealm.TokenResponse tokenResponse = getTestRealm().obtainValidToken();
 
@@ -395,26 +394,26 @@ public abstract class AbstractJwtValidationEndpointTest extends BaseIntegrationT
         }
 
         @Test
-        @DisplayName("Interceptor validation with @BearerToken parameter injection - missing token returns 401")
-        void interceptorValidationWithBearerTokenParameterInjectionMissingToken() {
-            // Verify that missing token is properly handled by the interceptor
+        @DisplayName("CDI injection validation with @BearerToken - missing token returns 401")
+        void cdiInjectionWithBearerTokenMissingToken() {
+            // Verify that missing token is properly handled by CDI validation
             given()
                     .when()
                     .get("/jwt/interceptor/with-token-access")
                     .then()
-                    .statusCode(401); // Interceptor should reject before reaching method body
+                    .statusCode(401); // CDI validation should reject before processing
         }
 
         @Test
-        @DisplayName("Interceptor validation with @BearerToken parameter injection - invalid token returns 401")
-        void interceptorValidationWithBearerTokenParameterInjectionInvalidToken() {
-            // Verify that invalid token is properly handled by the interceptor
+        @DisplayName("CDI injection validation with @BearerToken - invalid token returns 401")
+        void cdiInjectionWithBearerTokenInvalidToken() {
+            // Verify that invalid token is properly handled by CDI validation
             given()
                     .header(AUTHORIZATION, BEARER_PREFIX + "invalid.jwt.token")
                     .when()
                     .get("/jwt/interceptor/with-token-access")
                     .then()
-                    .statusCode(401); // Interceptor should reject invalid tokens
+                    .statusCode(401); // CDI validation should reject invalid tokens
         }
     }
 

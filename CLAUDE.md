@@ -180,7 +180,7 @@ Execute comprehensive quality verification and commit workflow for a specific mo
 
 ## Slash Commands
 
-The project includes custom slash commands located in `.claude/commands/` (gitignored, user-local):
+The project includes custom slash commands located in `.claude/commands/` (tracked in git, shared across the team):
 
 ### /verify-project [push]
 
@@ -273,4 +273,4 @@ Comprehensive end-to-end verification that executes all verification commands in
 
 **Usage:** `/verify-all` or `/verify-all push`
 
-**Note:** Slash command files are in the gitignored `.claude/commands/` directory. If you need to recreate them, you can use the existing command files in your global `.claude/commands/` directory as a reference, or create new commands based on the patterns shown in this documentation.
+**Note:** Slash command files are tracked in git under `.claude/commands/` and shared across the team. User-local settings are in `.claude/settings.local.json` (gitignored).
