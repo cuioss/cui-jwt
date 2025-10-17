@@ -29,7 +29,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class OutputDirectoryStructureTest {
 
-    @Test void constructorShouldSetAllPaths(@TempDir Path tempDir) throws IOException {
+    @Test
+    void constructorShouldSetAllPaths(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -44,11 +45,13 @@ class OutputDirectoryStructureTest {
         assertEquals(benchmarkResultsDir.resolve("wrk"), structure.getWrkDir());
     }
 
-    @Test void constructorShouldRejectNullParameter() {
+    @Test
+    void constructorShouldRejectNullParameter() {
         assertThrows(NullPointerException.class, () -> new OutputDirectoryStructure(null));
     }
 
-    @Test void ensureDirectoriesShouldCreateDeploymentDirectories(@TempDir Path tempDir) throws IOException {
+    @Test
+    void ensureDirectoriesShouldCreateDeploymentDirectories(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -72,7 +75,8 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.isDirectory(structure.getApiDir()));
     }
 
-    @Test void ensureDirectoriesShouldNotCreateNonDeploymentDirectories(@TempDir Path tempDir) throws IOException {
+    @Test
+    void ensureDirectoriesShouldNotCreateNonDeploymentDirectories(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -106,7 +110,8 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.exists(wrkPath));
     }
 
-    @Test void ensureDirectoriesShouldBeIdempotent(@TempDir Path tempDir) throws IOException {
+    @Test
+    void ensureDirectoriesShouldBeIdempotent(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -129,7 +134,8 @@ class OutputDirectoryStructureTest {
         assertEquals("test content 2", Files.readString(testFile2));
     }
 
-    @Test void isDeploymentDirectoryExistsShouldReturnCorrectStatus(@TempDir Path tempDir) throws IOException {
+    @Test
+    void isDeploymentDirectoryExistsShouldReturnCorrectStatus(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -141,7 +147,8 @@ class OutputDirectoryStructureTest {
         assertTrue(structure.isDeploymentDirectoryExists());
     }
 
-    @Test void cleanDeploymentDirectoryShouldRemoveAndRecreate(@TempDir Path tempDir) throws IOException {
+    @Test
+    void cleanDeploymentDirectoryShouldRemoveAndRecreate(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -172,7 +179,8 @@ class OutputDirectoryStructureTest {
         assertFalse(Files.exists(testFile3));
     }
 
-    @Test void cleanDeploymentDirectoryShouldWorkWhenDirectoryDoesNotExist(@TempDir Path tempDir) {
+    @Test
+    void cleanDeploymentDirectoryShouldWorkWhenDirectoryDoesNotExist(@TempDir Path tempDir) {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -189,7 +197,8 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.exists(structure.getApiDir()));
     }
 
-    @Test void cleanDeploymentDirectoryShouldNotAffectNonDeploymentDirectories(@TempDir Path tempDir) throws IOException {
+    @Test
+    void cleanDeploymentDirectoryShouldNotAffectNonDeploymentDirectories(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -216,7 +225,8 @@ class OutputDirectoryStructureTest {
         assertEquals("wrk content", Files.readString(wrkFile));
     }
 
-    @Test void toStringShouldContainAllPaths(@TempDir Path tempDir) {
+    @Test
+    void toStringShouldContainAllPaths(@TempDir Path tempDir) {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 
@@ -232,7 +242,8 @@ class OutputDirectoryStructureTest {
         assertTrue(toString.contains("wrkDir=" + benchmarkResultsDir.resolve("wrk")));
     }
 
-    @Test void ensureDirectoriesShouldHandleDeepPathHierarchy(@TempDir Path tempDir) throws IOException {
+    @Test
+    void ensureDirectoriesShouldHandleDeepPathHierarchy(@TempDir Path tempDir) throws IOException {
         Path deepPath = tempDir.resolve("level1/level2/level3/benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(deepPath);
 
@@ -249,7 +260,8 @@ class OutputDirectoryStructureTest {
         assertTrue(Files.exists(structure.getWrkDir()));
     }
 
-    @Test void pathResolutionShouldBeConsistent(@TempDir Path tempDir) throws IOException {
+    @Test
+    void pathResolutionShouldBeConsistent(@TempDir Path tempDir) throws IOException {
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
 

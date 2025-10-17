@@ -32,7 +32,8 @@ class JsonSerializationHelperTest {
     @TempDir
     Path tempDir;
 
-    @Test void formatDouble() {
+    @Test
+    void formatDouble() {
         // Test whole numbers
         assertEquals("42", JsonSerializationHelper.formatDouble(42.0));
         assertEquals("100", JsonSerializationHelper.formatDouble(100.0));
@@ -53,7 +54,8 @@ class JsonSerializationHelperTest {
         assertTrue("0.10".equals(formatted01) || "0,10".equals(formatted01));
     }
 
-    @Test void writeAndReadJsonFile() throws IOException {
+    @Test
+    void writeAndReadJsonFile() throws IOException {
         // Create test data
         Map<String, Object> testData = new HashMap<>();
         testData.put("name", "test");
@@ -76,7 +78,8 @@ class JsonSerializationHelperTest {
         assertEquals(true, readData.get("flag"));
     }
 
-    @Test void writeJsonFileCreatesDirectories() throws IOException {
+    @Test
+    void writeJsonFileCreatesDirectories() throws IOException {
         // Create nested path
         Path nestedFile = tempDir.resolve("nested/dir/structure/data.json");
 
@@ -93,7 +96,8 @@ class JsonSerializationHelperTest {
         assertEquals(testData, readData);
     }
 
-    @Test void gsonConfiguration() {
+    @Test
+    void gsonConfiguration() {
         // Test that GSON is properly configured
         assertNotNull(JsonSerializationHelper.GSON);
 
@@ -118,7 +122,8 @@ class JsonSerializationHelperTest {
         assertEquals("\"2025-01-15T10:30:00Z\"", instantJson);
     }
 
-    @Test void complexObjectSerialization() throws IOException {
+    @Test
+    void complexObjectSerialization() throws IOException {
         // Create complex object without Instant (causes issues with Gson)
         TestObject obj = new TestObject();
         obj.id = 1;
@@ -143,7 +148,8 @@ class JsonSerializationHelperTest {
         assertEquals(obj.active, readObj.active);
     }
 
-    @Test void nullHandling() {
+    @Test
+    void nullHandling() {
         // Test null Double serialization
         Double nullDouble = null;
         String nullJson = JsonSerializationHelper.GSON.toJson(nullDouble);
@@ -155,7 +161,8 @@ class JsonSerializationHelperTest {
         assertEquals("null", nullInstantJson);
     }
 
-    @Test void readNonExistentFile() {
+    @Test
+    void readNonExistentFile() {
         Path nonExistent = tempDir.resolve("does-not-exist.json");
 
         assertThrows(IOException.class, () ->
@@ -163,7 +170,8 @@ class JsonSerializationHelperTest {
         );
     }
 
-    @Test void specialDoubleValues() {
+    @Test
+    void specialDoubleValues() {
         // Test special double values
         assertEquals("0", JsonSerializationHelper.formatDouble(0.0));
         // Note: -0.0 becomes 0 when converted to long, which is acceptable behavior

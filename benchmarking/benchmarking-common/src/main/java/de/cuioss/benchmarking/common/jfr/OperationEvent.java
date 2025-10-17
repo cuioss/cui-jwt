@@ -22,7 +22,12 @@ import jdk.jfr.*;
  * This event captures timing and metadata for each operation,
  * enabling analysis of operation variance under concurrent load.
  */
-@Name("de.cuioss.benchmark.Operation") @Label("Benchmark Operation") @Description("Tracks individual benchmark operation performance") @Category({"Benchmark", "Performance"}) @StackTrace(false) public class OperationEvent extends Event {
+@Name("de.cuioss.benchmark.Operation")
+@Label("Benchmark Operation")
+@Description("Tracks individual benchmark operation performance")
+@Category({"Benchmark", "Performance"})
+@StackTrace(false)
+public class OperationEvent extends Event {
 
     @Label("Operation Type")
     @Description("Type of operation being benchmarked")

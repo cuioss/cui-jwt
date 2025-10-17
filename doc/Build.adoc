@@ -57,12 +57,14 @@ To verify that builds are reproducible, you can perform the following steps:
 ./mvnw clean verify
 cp target/*.jar /tmp/first-build.jar
 ----
+
 . Clean the project and perform the second build:
 +
 [source,bash]
 ----
 ./mvnw clean verify
 ----
+
 . Compare the two build artifacts:
 +
 [source,bash]
@@ -168,6 +170,7 @@ To add a new diagram:
 3. Generate the PNG image using one of the following methods:
    a. Run the PlantUML command directly: `plantuml -tpng doc/plantuml/your-diagram.puml`
    b. Run the Maven build with the `build-plantuml` profile
+
 4. Reference the generated PNG in your documentation
 
 === Automated Reproducibility Verification

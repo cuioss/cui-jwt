@@ -24,7 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class HttpClientFactoryTest {
 
-    @Test void getInsecureClient() {
+    @Test
+    void getInsecureClient() {
         HttpClient client1 = HttpClientFactory.getInsecureClient();
         HttpClient client2 = HttpClientFactory.getInsecureClient();
 
@@ -41,7 +42,8 @@ class HttpClientFactoryTest {
         assertEquals(Duration.ofSeconds(5), client1.connectTimeout().get());
     }
 
-    @Test void concurrentAccess() throws InterruptedException {
+    @Test
+    void concurrentAccess() throws InterruptedException {
         // Test thread safety of factory
         Thread[] threads = new Thread[10];
         HttpClient[] clients = new HttpClient[10];
@@ -63,7 +65,8 @@ class HttpClientFactoryTest {
         }
     }
 
-    @Test void clientConfiguration() {
+    @Test
+    void clientConfiguration() {
         HttpClient client = HttpClientFactory.getInsecureClient();
 
         assertNotNull(client);

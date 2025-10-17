@@ -21,13 +21,16 @@ import lombok.experimental.UtilityClass;
  * Consolidated constants for benchmark modules.
  * Organized using the DSL-Style Nested Constants Pattern with static imports.
  */
-@SuppressWarnings("java:S1075") // False positive, no URL Parameter
-@UtilityClass public final class BenchmarkConstants {
+@SuppressWarnings("java:S1075")
+// False positive, no URL Parameter
+@UtilityClass
+public final class BenchmarkConstants {
 
     /**
      * Metrics-related constants for measurement and reporting.
      */
-    @UtilityClass public static final class Metrics {
+    @UtilityClass
+    public static final class Metrics {
 
         /**
          * The common prefix for all JWT metrics.
@@ -37,7 +40,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Metrics related to bearer token operations.
          */
-        @UtilityClass public static final class BearerToken {
+        @UtilityClass
+        public static final class BearerToken {
             /**
              * Base path for bearer token metrics.
              */
@@ -52,7 +56,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Benchmark modes.
          */
-        @UtilityClass public static final class Modes {
+        @UtilityClass
+        public static final class Modes {
             public static final String THROUGHPUT = "thrpt";
             public static final String AVERAGE_TIME = "avgt";
             public static final String SAMPLE = "sample";
@@ -61,7 +66,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Unit strings for benchmark measurements.
          */
-        @UtilityClass public static final class Units {
+        @UtilityClass
+        public static final class Units {
             // Operations per time unit
             public static final String OPS_PER_SEC = "ops/s";
             public static final String OPS_PER_SEC_ALT = "ops/sec";
@@ -88,7 +94,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Conversion factors between different units.
          */
-        @UtilityClass public static final class Conversions {
+        @UtilityClass
+        public static final class Conversions {
             public static final double MILLIS_TO_SECONDS = 1000.0;
             public static final double MICROS_TO_SECONDS = 1_000_000.0;
             public static final double NANOS_TO_SECONDS = 1_000_000_000.0;
@@ -99,7 +106,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Percentile-related constants.
          */
-        @UtilityClass public static final class Percentiles {
+        @UtilityClass
+        public static final class Percentiles {
             // Percentile keys
             public static final String P_0 = "0.0";
             public static final String P_50 = "50.0";
@@ -127,12 +135,14 @@ import lombok.experimental.UtilityClass;
     /**
      * Report-related constants for benchmark report generation.
      */
-    @UtilityClass public static final class Report {
+    @UtilityClass
+    public static final class Report {
 
         /**
          * JSON field names used in benchmark data structures.
          */
-        @UtilityClass public static final class JsonFields {
+        @UtilityClass
+        public static final class JsonFields {
             // Primary fields
             public static final String PRIMARY_METRIC = "primaryMetric";
             public static final String SECONDARY_METRICS = "secondaryMetrics";
@@ -199,7 +209,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Badge-related constants for shields.io integration.
          */
-        @UtilityClass public static final class Badge {
+        @UtilityClass
+        public static final class Badge {
             public static final String SCHEMA_VERSION = "schemaVersion";
             public static final String LABEL = "label";
             public static final String MESSAGE = "message";
@@ -208,7 +219,8 @@ import lombok.experimental.UtilityClass;
             /**
              * Badge colors following shields.io color scheme.
              */
-            @UtilityClass public static final class Colors {
+            @UtilityClass
+            public static final class Colors {
                 public static final String BRIGHT_GREEN = "brightgreen";
                 public static final String GREEN = "green";
                 public static final String YELLOW_GREEN = "yellowgreen";
@@ -222,7 +234,8 @@ import lombok.experimental.UtilityClass;
             /**
              * Badge labels.
              */
-            @UtilityClass public static final class Labels {
+            @UtilityClass
+            public static final class Labels {
                 public static final String PERFORMANCE = "Performance";
                 public static final String PERFORMANCE_TREND = "Performance Trend";
                 public static final String TREND = "Trend";
@@ -232,7 +245,8 @@ import lombok.experimental.UtilityClass;
             /**
              * Trend indicators.
              */
-            @UtilityClass public static final class Trends {
+            @UtilityClass
+            public static final class Trends {
                 public static final String STABLE = "→ stable";
                 public static final String IMPROVING_FORMAT = "↑ +%.1f%%";
                 public static final String DEGRADING_FORMAT = "↓ %.1f%%";
@@ -241,14 +255,16 @@ import lombok.experimental.UtilityClass;
             /**
              * Badge messages.
              */
-            @UtilityClass public static final class Messages {
+            @UtilityClass
+            public static final class Messages {
                 public static final String NO_HISTORY = "No history";
             }
 
             /**
              * Badge file names.
              */
-            @UtilityClass public static final class FileNames {
+            @UtilityClass
+            public static final class FileNames {
                 public static final String PERFORMANCE_BADGE_JSON = "performance-badge.json";
                 public static final String TREND_BADGE_JSON = "trend-badge.json";
                 public static final String LAST_RUN_BADGE_JSON = "last-run-badge.json";
@@ -257,7 +273,8 @@ import lombok.experimental.UtilityClass;
             /**
              * Trend direction constants.
              */
-            @UtilityClass public static final class TrendDirection {
+            @UtilityClass
+            public static final class TrendDirection {
                 public static final String UP = "up";
                 public static final String DOWN = "down";
                 public static final String STABLE = "stable";
@@ -266,7 +283,8 @@ import lombok.experimental.UtilityClass;
             /**
              * Arrow symbols for trends.
              */
-            @UtilityClass public static final class Arrows {
+            @UtilityClass
+            public static final class Arrows {
                 public static final String UP = "↑";
                 public static final String DOWN = "↓";
                 public static final String RIGHT = "→";
@@ -277,7 +295,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Performance grade constants.
          */
-        @UtilityClass public static final class Grades {
+        @UtilityClass
+        public static final class Grades {
             public static final String A_PLUS = "A+";
             public static final String A = "A";
             public static final String B = "B";
@@ -288,7 +307,8 @@ import lombok.experimental.UtilityClass;
             /**
              * CSS class names for grades.
              */
-            @UtilityClass public static final class CssClasses {
+            @UtilityClass
+            public static final class CssClasses {
                 public static final String GRADE_A_PLUS = "grade-a-plus";
                 public static final String GRADE_A = "grade-a";
                 public static final String GRADE_B = "grade-b";
@@ -302,7 +322,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Default values for missing data.
          */
-        @UtilityClass public static final class Defaults {
+        @UtilityClass
+        public static final class Defaults {
             public static final String N_A = "N/A";
             public static final String NOT_AVAILABLE = "n/a";
         }
@@ -310,7 +331,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Template paths and resources.
          */
-        @UtilityClass public static final class Templates {
+        @UtilityClass
+        public static final class Templates {
             public static final String PATH_PREFIX = "/templates/";
             public static final String NOT_FOUND_FORMAT = "Template not found: %s";
         }
@@ -318,7 +340,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Error messages.
          */
-        @UtilityClass public static final class Errors {
+        @UtilityClass
+        public static final class Errors {
             public static final String THROUGHPUT_NAME_REQUIRED = "Throughput benchmark name must be specified";
             public static final String LATENCY_NAME_REQUIRED = "Latency benchmark name must be specified";
             public static final String NO_RESULTS_PROVIDED = "No benchmark results provided";
@@ -332,7 +355,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Messages for UI display.
          */
-        @UtilityClass public static final class Messages {
+        @UtilityClass
+        public static final class Messages {
             public static final String HISTORICAL_DATA_NOT_AVAILABLE = "Historical data not yet available";
             public static final String PERFORMANCE_STABLE_FORMAT = "Performance is stable (%.1f%% change)";
             public static final String PERFORMANCE_IMPROVED_FORMAT = "Performance improved by %.1f%%";
@@ -342,21 +366,24 @@ import lombok.experimental.UtilityClass;
         /**
          * Date/time format patterns.
          */
-        @UtilityClass public static final class DateFormats {
+        @UtilityClass
+        public static final class DateFormats {
             public static final String DISPLAY_TIMESTAMP_PATTERN = "yyyy-MM-dd HH:mm:ss 'UTC'";
         }
 
         /**
          * Version information.
          */
-        @UtilityClass public static final class Versions {
+        @UtilityClass
+        public static final class Versions {
             public static final String REPORT_VERSION = "1.0";
         }
 
         /**
          * API endpoint paths.
          */
-        @UtilityClass public static final class Api {
+        @UtilityClass
+        public static final class Api {
             public static final String LATEST_JSON = "latest.json";
             public static final String BENCHMARKS_JSON = "benchmarks.json";
             public static final String STATUS_JSON = "status.json";
@@ -376,12 +403,14 @@ import lombok.experimental.UtilityClass;
     /**
      * Integration-related constants for configuration and setup.
      */
-    @UtilityClass public static final class Integration {
+    @UtilityClass
+    public static final class Integration {
 
         /**
          * System properties for integration configuration.
          */
-        @UtilityClass public static final class Properties {
+        @UtilityClass
+        public static final class Properties {
             public static final String INTEGRATION_SERVICE_URL = "integration.service.url";
             public static final String KEYCLOAK_URL = "keycloak.url";
             public static final String METRICS_URL = "quarkus.metrics.url";
@@ -390,7 +419,8 @@ import lombok.experimental.UtilityClass;
         /**
          * JMH configuration properties.
          */
-        @UtilityClass public static final class Jmh {
+        @UtilityClass
+        public static final class Jmh {
             public static final String INCLUDE = "jmh.include";
             public static final String FORKS = "jmh.forks";
             public static final String WARMUP_ITERATIONS = "jmh.warmupIterations";
@@ -405,12 +435,14 @@ import lombok.experimental.UtilityClass;
     /**
      * File and directory constants for benchmark I/O operations.
      */
-    @UtilityClass public static final class Files {
+    @UtilityClass
+    public static final class Files {
 
         /**
          * Directory paths.
          */
-        @UtilityClass public static final class Directories {
+        @UtilityClass
+        public static final class Directories {
             public static final String RESULTS_DIR = "target/benchmark-results";
             public static final String REPORTS_DIR = "reports";
             public static final String BADGES_DIR = "badges";
@@ -421,7 +453,8 @@ import lombok.experimental.UtilityClass;
         /**
          * HTML files.
          */
-        @UtilityClass public static final class Html {
+        @UtilityClass
+        public static final class Html {
             public static final String INDEX = "index.html";
             public static final String TRENDS = "trends.html";
             public static final String DETAILED = "detailed.html";
@@ -431,7 +464,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Support files.
          */
-        @UtilityClass public static final class Support {
+        @UtilityClass
+        public static final class Support {
             public static final String REPORT_STYLES_CSS = "report-styles.css";
             public static final String DATA_LOADER_JS = "data-loader.js";
             public static final String ROBOTS_TXT = "robots.txt";
@@ -441,7 +475,8 @@ import lombok.experimental.UtilityClass;
         /**
          * Data files.
          */
-        @UtilityClass public static final class Data {
+        @UtilityClass
+        public static final class Data {
             public static final String BENCHMARK_DATA_JSON = "benchmark-data.json";
             public static final String BENCHMARK_SUMMARY_JSON = "data/benchmark-summary.json";
             public static final String LAST_RUN_BADGE_JSON = "last-run-badge.json";
@@ -453,7 +488,8 @@ import lombok.experimental.UtilityClass;
         /**
          * File extensions.
          */
-        @UtilityClass public static final class Extensions {
+        @UtilityClass
+        public static final class Extensions {
             public static final String HTML = ".html";
             public static final String JSON = ".json";
         }

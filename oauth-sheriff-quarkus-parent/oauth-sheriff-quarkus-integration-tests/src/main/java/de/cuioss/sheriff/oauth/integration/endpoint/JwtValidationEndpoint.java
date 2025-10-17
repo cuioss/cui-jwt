@@ -40,7 +40,6 @@ import java.util.Map;
  */
 @Path("/jwt")
 @Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @ApplicationScoped
 @RegisterForReflection
 @RunOnVirtualThread
@@ -79,6 +78,7 @@ public class JwtValidationEndpoint {
      */
     @POST
     @Path("/validate")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response validateToken() {
         LOGGER.debug("validateToken called - checking basicToken authorization");
         BearerTokenResult tokenResult = basicToken.get();
@@ -110,6 +110,7 @@ public class JwtValidationEndpoint {
      */
     @POST
     @Path("/validate-explicit")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response validateExplicitToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -135,6 +136,7 @@ public class JwtValidationEndpoint {
      */
     @POST
     @Path("/validate/id-token")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response validateIdToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -158,6 +160,7 @@ public class JwtValidationEndpoint {
      */
     @POST
     @Path("/validate/refresh-token")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response validateRefreshToken(TokenRequest tokenRequest) {
         if (tokenRequest == null || tokenRequest.isEmpty()) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -279,21 +282,34 @@ public class JwtValidationEndpoint {
     }
 
     /**
-     * Tests interceptor-based validation with parameter injection to access token details.
-     * Demonstrates how to access validated token content using @BearerToken parameter injection.
+     * Tests CDI-based token validation with token content access.
+     * Demonstrates how to access validated token content using @BearerToken CDI injection.
+     * This endpoint validates expected token structure and returns error responses if requirements are not met.
+     * Unlike interceptor-based endpoints, this manually checks authorization status.
      */
     @GET
     @Path("/interceptor/with-token-access")
-    @BearerAuth(requiredScopes = {"read"})
-    public Response testInterceptorWithTokenAccess(@BearerToken BearerTokenResult tokenResult) {
-        LOGGER.debug("testInterceptorWithTokenAccess - accessing token details via parameter injection");
+    public Response testInterceptorWithTokenAccess() {
+        LOGGER.debug("testInterceptorWithTokenAccess - accessing token details via CDI injection");
 
+        // Get BearerTokenResult from CDI-injected Instance
+        BearerTokenResult tokenResult = tokenWithScopes.get();
+
+        // Check authorization status and return error response if not authorized
+        if (tokenResult.isNotSuccessfullyAuthorized()) {
+            LOGGER.debug("Token authorization failed with status: %s", tokenResult.getStatus());
+            return tokenResult.createErrorResponse();
+        }
+
+        // Get token content - at this point authorization was successful
         AccessTokenContent token = tokenResult.getAccessTokenContent()
                 .orElseThrow(() -> new IllegalStateException("Token content missing after successful authorization"));
 
-        String userId = token.getSubject().orElse("unknown");
-        LOGGER.debug("Token subject: %s", userId);
+        // Extract token data
+        String userId = token.getSubject().orElse("not-present");
+        LOGGER.debug("Token subject: %s, scopes: %s", userId, token.getScopes());
 
+        // Build response with token details
         var data = new HashMap<String, Object>();
         data.put("userId", userId);
         data.put("scopes", token.getScopes());
@@ -346,6 +362,7 @@ public class JwtValidationEndpoint {
      */
     @POST
     @Path("/echo")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response echo(EchoRequest echoRequest) {
         // Touch the TokenValidator to simulate dependency usage
         var securityEventCounter = tokenValidator.getSecurityEventCounter();

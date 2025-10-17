@@ -21,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BenchmarkTypeTest {
 
-    @Test void microBenchmarkType() {
+    @Test
+    void microBenchmarkType() {
         BenchmarkType micro = BenchmarkType.MICRO;
 
         assertEquals("micro", micro.getIdentifier());
@@ -31,7 +32,8 @@ class BenchmarkTypeTest {
         assertEquals("trend-badge.json", micro.getTrendBadgeFileName());
     }
 
-    @Test void integrationBenchmarkType() {
+    @Test
+    void integrationBenchmarkType() {
         BenchmarkType integration = BenchmarkType.INTEGRATION;
 
         assertEquals("integration", integration.getIdentifier());
@@ -41,21 +43,24 @@ class BenchmarkTypeTest {
         assertEquals("integration-trend-badge.json", integration.getTrendBadgeFileName());
     }
 
-    @Test void enumValues() {
+    @Test
+    void enumValues() {
         BenchmarkType[] values = BenchmarkType.values();
         assertEquals(2, values.length);
         assertEquals(BenchmarkType.MICRO, values[0]);
         assertEquals(BenchmarkType.INTEGRATION, values[1]);
     }
 
-    @Test void enumValueOf() {
+    @Test
+    void enumValueOf() {
         assertEquals(BenchmarkType.MICRO, BenchmarkType.valueOf("MICRO"));
         assertEquals(BenchmarkType.INTEGRATION, BenchmarkType.valueOf("INTEGRATION"));
 
         assertThrows(IllegalArgumentException.class, () -> BenchmarkType.valueOf("INVALID"));
     }
 
-    @Test void enumComparison() {
+    @Test
+    void enumComparison() {
         BenchmarkType micro1 = BenchmarkType.MICRO;
         BenchmarkType micro2 = BenchmarkType.MICRO;
         BenchmarkType integration = BenchmarkType.INTEGRATION;

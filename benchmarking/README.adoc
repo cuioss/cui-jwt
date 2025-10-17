@@ -1,6 +1,10 @@
 = CUI JWT Benchmarking
 :toc:
 :toclevels: 2
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
 
 Comprehensive performance testing infrastructure for JWT validation.
 
@@ -157,8 +161,8 @@ See link:doc/workflow.adoc[Benchmark Workflow] for the complete process.
 
 === Performance Analysis
 
-* link:doc/Analysis-10.2025.adoc[Resource Monitoring Enhancement Analysis (October 2025)] - CPU and RAM utilization monitoring implementation and comparative analysis
-* link:benchmark-core/doc/Analysis-08.2025.adoc[Benchmark Analysis (August 2025)] - Performance metrics and optimization insights
+* link:doc/Analysis-10.2025-Integration.adoc[Integration Benchmark Analysis (October 2025)] - WRK-based HTTP load testing with resource monitoring
+* link:doc/Analysis-10.2025-Micro.adoc[Micro-Benchmark Analysis (October 2025)] - JMH library performance and validation pipeline breakdown
 
 == Development
 

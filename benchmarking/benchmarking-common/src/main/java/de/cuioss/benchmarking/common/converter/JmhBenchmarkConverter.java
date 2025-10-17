@@ -44,7 +44,8 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
         this.benchmarkType = benchmarkType;
     }
 
-    @Override public BenchmarkData convert(Path sourcePath) throws IOException {
+    @Override
+    public BenchmarkData convert(Path sourcePath) throws IOException {
         String json = Files.readString(sourcePath);
         JsonArray jmhResults = GSON.fromJson(json, JsonArray.class);
 
@@ -62,7 +63,8 @@ public class JmhBenchmarkConverter implements BenchmarkConverter {
                 .build();
     }
 
-    @Override public boolean canConvert(Path sourcePath) {
+    @Override
+    public boolean canConvert(Path sourcePath) {
         return sourcePath.getFileName().toString().endsWith(".json") &&
                 (sourcePath.getFileName().toString().contains("jmh") ||
                         sourcePath.getFileName().toString().contains("result"));

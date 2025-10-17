@@ -47,13 +47,15 @@ class PrometheusClientTest {
     private static final Instant END_TIME = Instant.ofEpochSecond(1758792760);
     private static final Duration STEP = Duration.ofSeconds(60);
 
-    @BeforeEach void setUp(URIBuilder uriBuilder) {
+    @BeforeEach
+    void setUp(URIBuilder uriBuilder) {
         String baseUrl = uriBuilder.buildAsString();
         prometheusClient = new PrometheusClient(baseUrl, DEFAULT_TIMEOUT);
         moduleDispatcher.setCallCounter(0);
     }
 
-    @Test void shouldQuerySingleMetricSuccessfully() throws PrometheusClient.PrometheusException {
+    @Test
+    void shouldQuerySingleMetricSuccessfully() throws PrometheusClient.PrometheusException {
         // Given
         List<String> metricNames = List.of("process_cpu_usage");
 
@@ -85,7 +87,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldQueryMultipleMetricsSuccessfully() throws PrometheusClient.PrometheusException {
+    @Test
+    void shouldQueryMultipleMetricsSuccessfully() throws PrometheusClient.PrometheusException {
         // Given
         List<String> metricNames = List.of("process_cpu_usage", "system_cpu_usage", "jvm_memory_used_bytes");
 
@@ -109,7 +112,8 @@ class PrometheusClientTest {
         assertEquals(3, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldHandleEmptyResultGracefully() throws PrometheusClient.PrometheusException {
+    @Test
+    void shouldHandleEmptyResultGracefully() throws PrometheusClient.PrometheusException {
         // Given
         moduleDispatcher.setCustomResponse(moduleDispatcher.getEmptyResultResponse());
         List<String> metricNames = List.of("non_existent_metric");
@@ -128,7 +132,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldHandlePrometheusErrorResponse() {
+    @Test
+    void shouldHandlePrometheusErrorResponse() {
         // Given
         moduleDispatcher.setCustomResponse(moduleDispatcher.getErrorResponse());
         List<String> metricNames = List.of("invalid_query");
@@ -142,7 +147,9 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @ParameterizedTest @ValueSource(ints = {500, 503}) void shouldHandleHttpErrorCodes(int statusCode) {
+    @ParameterizedTest
+    @ValueSource(ints = {500, 503})
+    void shouldHandleHttpErrorCodes(int statusCode) {
         // Given
         switch (statusCode) {
             case 500 -> moduleDispatcher.setServerError();
@@ -161,7 +168,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldHandle404ErrorWithCustomResponse() {
+    @Test
+    void shouldHandle404ErrorWithCustomResponse() {
         // Given - Custom response returns 200 OK, not 404, so we test successful parsing instead
         moduleDispatcher.setCustomResponse("Not Found");
         List<String> metricNames = List.of("test_metric");
@@ -175,7 +183,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldHandleInvalidJsonResponse() {
+    @Test
+    void shouldHandleInvalidJsonResponse() {
         // Given
         moduleDispatcher.setInvalidJson();
         List<String> metricNames = List.of("test_metric");
@@ -189,7 +198,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldHandleNetworkTimeout() {
+    @Test
+    void shouldHandleNetworkTimeout() {
         // Given
         moduleDispatcher.setTimeout();
         List<String> metricNames = List.of("test_metric");
@@ -204,7 +214,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldConstructUrlCorrectly(URIBuilder uriBuilder) throws PrometheusClient.PrometheusException {
+    @Test
+    void shouldConstructUrlCorrectly(URIBuilder uriBuilder) throws PrometheusClient.PrometheusException {
         // Given
         String baseUrl = uriBuilder.buildAsString();
         PrometheusClient client = new PrometheusClient(baseUrl + "/");  // Test trailing slash removal
@@ -218,7 +229,8 @@ class PrometheusClientTest {
         assertEquals(1, moduleDispatcher.getCallCounter());
     }
 
-    @Test void shouldUseCustomTimeout(URIBuilder uriBuilder) {
+    @Test
+    void shouldUseCustomTimeout(URIBuilder uriBuilder) {
         // Given
         Duration customTimeout = Duration.ofSeconds(1);
         String baseUrl = uriBuilder.buildAsString();
@@ -233,7 +245,8 @@ class PrometheusClientTest {
                 clientWithTimeout.queryRange(metricNames, START_TIME, END_TIME, STEP));
     }
 
-    @Test void shouldUseDefaultTimeout(URIBuilder uriBuilder) {
+    @Test
+    void shouldUseDefaultTimeout(URIBuilder uriBuilder) {
         // Given
         String baseUrl = uriBuilder.buildAsString();
         PrometheusClient clientWithDefaultTimeout = new PrometheusClient(baseUrl);  // Default constructor
@@ -243,7 +256,8 @@ class PrometheusClientTest {
                 List.of("process_cpu_usage"), START_TIME, END_TIME, STEP));
     }
 
-    @Test void shouldHandleComplexMetricWithLabels() throws PrometheusClient.PrometheusException {
+    @Test
+    void shouldHandleComplexMetricWithLabels() throws PrometheusClient.PrometheusException {
         // Given - Using real JWT validation metrics from actual test data
         String complexResponse = """
         {
@@ -291,7 +305,8 @@ class PrometheusClientTest {
         assertEquals(10960018.0, values.get(2).value());
     }
 
-    @Test void shouldCalculateStepCorrectly() {
+    @Test
+    void shouldCalculateStepCorrectly() {
         // Given
         Duration fiveMinuteStep = Duration.ofMinutes(5);
         Duration oneHourStep = Duration.ofHours(1);
@@ -304,7 +319,8 @@ class PrometheusClientTest {
                 List.of("process_cpu_usage"), START_TIME, END_TIME, oneHourStep));
     }
 
-    @Test void shouldHandleFailureInOneOfMultipleMetrics() {
+    @Test
+    void shouldHandleFailureInOneOfMultipleMetrics() {
         // Given
         List<String> metricNames = List.of("process_cpu_usage", "failing_metric");
         // Set up to fail on second request

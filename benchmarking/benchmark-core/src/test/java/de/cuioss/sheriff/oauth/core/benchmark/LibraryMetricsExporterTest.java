@@ -36,7 +36,8 @@ class LibraryMetricsExporterTest {
 
     private final Gson gson = new GsonBuilder().create();
 
-    @Test void shouldExportMetricsToJsonFile() throws IOException {
+    @Test
+    void shouldExportMetricsToJsonFile() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
                 .measurementType(MeasurementType.TOKEN_PARSING)
@@ -107,7 +108,8 @@ class LibraryMetricsExporterTest {
         assertNotNull(parseMetrics.get("p99_us"));
     }
 
-    @Test void shouldFormatNumbersCorrectly() throws IOException {
+    @Test
+    void shouldFormatNumbersCorrectly() throws IOException {
         // Given
         TokenValidatorMonitor monitor = TokenValidatorMonitorConfig.builder()
                 .measurementType(MeasurementType.TOKEN_PARSING)

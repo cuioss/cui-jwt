@@ -2,6 +2,9 @@
 :toc: left
 :toclevels: 3
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 This document describes the metrics exposed by the oauth-sheriff-quarkus extension for monitoring JWT token validation and security events.
 
@@ -16,7 +19,7 @@ All metrics follow Quarkus and Micrometer naming conventions and are compatible 
 The metrics integration is implemented through the `JwtMetricsCollector` class which:
 
 * Registers Micrometer counters for each security event type from the underlying JWT validation library
-Did * Registers Micrometer timers for each validation pipeline step from the `TokenValidatorMonitor`
+* Registers Micrometer timers for each validation pipeline step from the `TokenValidatorMonitor`
 * Uses scheduled polling (every 10 seconds) to update metrics from both the `SecurityEventCounter` and `TokenValidatorMonitor`
 * Provides detailed error categorization and tagging for filtering and alerting
 * Provides performance measurement data for validation pipeline optimization

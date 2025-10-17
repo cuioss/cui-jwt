@@ -1,8 +1,10 @@
 = Benchmark Module Architecture
 :toc: left
-:toclevels: 2
+:toclevels: 3
+:toc-title: Table of Contents
 :sectnums:
-:icons: font
+:source-highlighter: highlight.js
+
 
 [NOTE]
 ====
@@ -153,12 +155,15 @@ Executes JMH-based micro-benchmarks directly against the JWT validation library 
 |===
 
 === Maven Profiles
+
 * `benchmark` - Standard JMH benchmarks (< 10 minutes)
 * `benchmark-jfr` - Benchmarks with Java Flight Recorder profiling
 * `quick` - Reduced iterations for fast testing
 
 === Configuration
+
 Configured via pom.xml properties:
+
 * `jmh.iterations=5`, `jmh.warmupIterations=3`
 * `jmh.threads=100`, `jmh.time=4s`
 * `jmh.include` - Benchmark class pattern filter
@@ -171,15 +176,18 @@ Performs HTTP-based load testing using WRK tool via shell scripts. Minimal Java 
 === Architecture
 
 **Java Components:** Only 1 class
+
 * `WrkResultPostProcessor` - Converts WRK output to BenchmarkData format, fetches Prometheus metrics, generates reports
 
 **Shell Script Orchestration:**
 
 Maven pom.xml references scripts from two locations:
+
 * `../../oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests/scripts/` - Container lifecycle and monitoring
 * `src/main/resources/wrk-scripts/` - WRK benchmark execution
 
 Key scripts:
+
 * Container lifecycle: `start-integration-container.sh`, `stop-integration-container.sh`
 * Health checks: `pre-benchmark-health-check.sh`
 * Benchmarks: `health_live_benchmark.sh`, `jwt_benchmark.sh`
@@ -202,6 +210,7 @@ Prometheus:  http://localhost:9090
 ----
 
 === Maven Profiles
+
 * `benchmark` - Full lifecycle: build containers, run tests, collect metrics, stop containers
 * `quick` - Reduced duration (30s), skips container lifecycle
 * `autoscale` - 8 threads, 200 connections
@@ -209,7 +218,9 @@ Prometheus:  http://localhost:9090
 * `max` - 10 threads, 300 connections (tests limits)
 
 === Configuration
+
 Configured via pom.xml properties:
+
 * `wrk.duration=60s`, `wrk.threads=5`, `wrk.connections=50`
 * `wrk.jwt.token_count=100`
 * `skip.container.lifecycle=false`
@@ -240,6 +251,7 @@ Does the code generate reports/badges/artifacts?
 == Placement Guidelines
 
 === Place in benchmarking-common when:
+
 * Used by both library and integration benchmarks
 * General framework component (runner, processor)
 * Metrics collection or transformation
@@ -249,11 +261,13 @@ Does the code generate reports/badges/artifacts?
 * HTTP client utilities
 
 === Place in benchmark-core when:
+
 * JMH benchmark methods (`@Benchmark` annotation)
 * JFR instrumentation for library testing
 * Library-specific test utilities
 
 === Place in benchmark-integration-wrk when:
+
 * Processing WRK output format
 * Rarely needed - most logic is in shell scripts
 
@@ -291,10 +305,13 @@ ReportConfiguration.builder()
 Note: `BenchmarkConfiguration` itself is a record, not a builder. Builder pattern used for `ReportConfiguration`.
 
 === Factory Pattern
+
 * `HttpClientFactory` - Creates configured HTTP clients
 
 === Converter Pattern
+
 Unified data model via converters:
+
 * `JmhBenchmarkConverter` - JMH results → BenchmarkData
 * `WrkBenchmarkConverter` - WRK output → BenchmarkData
 
@@ -327,11 +344,13 @@ target/benchmark-results/
 All benchmark results converted to `BenchmarkData` for consistent processing.
 
 === 2. Separation of Concerns
+
 * **Common**: Framework and utilities
 * **Library**: Pure library testing (no network)
 * **WRK**: HTTP load testing (minimal Java, mostly scripts)
 
 === 3. Extensibility
+
 * Add new benchmark types by extending `AbstractBenchmarkRunner`
 * Add new metrics by implementing transformation logic
 * Add new reports by extending generator classes

@@ -1,7 +1,10 @@
 = Benchmark Metrics System
-:toc:
+:toc: left
 :toclevels: 3
-:icons: font
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
 
 == Overview
 

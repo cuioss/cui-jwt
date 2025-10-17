@@ -51,7 +51,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Oliver Wolff
  * @since 1.0
  */
-@Getter public class MockTokenRepository implements TokenProvider {
+@Getter
+public class MockTokenRepository implements TokenProvider {
 
     /**
      * Default number of different issuers to simulate issuer config resolution overhead
@@ -79,7 +80,9 @@ import java.util.concurrent.atomic.AtomicInteger;
     /**
      * Metadata for a generated token
      */
-    @Value @Builder public static class TokenMetadata {
+    @Value
+    @Builder
+    public static class TokenMetadata {
         String issuerIdentifier;
         int tokenSize;
         String keyId;
@@ -88,7 +91,9 @@ import java.util.concurrent.atomic.AtomicInteger;
     /**
      * Configuration for MockTokenRepository
      */
-    @Value @Builder public static class Config {
+    @Value
+    @Builder
+    public static class Config {
         @Builder.Default
         int issuerCount = DEFAULT_ISSUER_COUNT;
 
@@ -263,7 +268,8 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Returns tokens from the pre-generated pool using round-robin rotation.
      * </p>
      */
-    @Override public String getNextToken() {
+    @Override
+    public String getNextToken() {
         if (tokenPool.length == 0) {
             throw new IllegalStateException("Token pool is empty");
         }
@@ -277,7 +283,8 @@ import java.util.concurrent.atomic.AtomicInteger;
      * Returns the size of the pre-generated token pool.
      * </p>
      */
-    @Override public int getTokenPoolSize() {
+    @Override
+    public int getTokenPoolSize() {
         return tokenPool.length;
     }
 
@@ -288,7 +295,8 @@ import java.util.concurrent.atomic.AtomicInteger;
      * This is useful for long-running benchmarks where tokens may expire.
      * </p>
      */
-    @Override public void refreshTokens() {
+    @Override
+    public void refreshTokens() {
         List<String> newTokens = new ArrayList<>();
         tokenMetadata.clear();
 

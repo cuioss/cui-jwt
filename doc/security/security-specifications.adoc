@@ -25,7 +25,7 @@ This document provides detailed specifications for the security aspects of the J
 * xref:../specification/token-size-validation.adoc[Token Size Validation] - Token size validation details
 * xref:../specification/jwks-size-recommendations.adoc[JWKS Size Recommendations] - JWKS size limits and recommendations
 * xref:../specification/token-decryption.adoc[Token Decryption] - Future JWE support
-* xref:../jwt-security-best-practices.adoc[JWT Security Best Practices Guide] - Comprehensive guide on JWT security best practices
+* xref:jwt-security-best-practices.adoc[JWT Security Best Practices Guide] - Comprehensive guide on JWT security best practices
 
 == Security Measures
 
@@ -35,7 +35,7 @@ This section outlines the security measures implemented in the JWT Token Validat
 
 * For a comprehensive analysis of common JWT vulnerabilities and attacks, see the xref:jwt-attacks-analysis.adoc[JWT Vulnerabilities and Attacks Analysis] document.
 * For a comprehensive analysis of OAuth-related security vulnerabilities, see the xref:oauth-security-analysis.adoc[OAuth Security Considerations Analysis] document.
-* For application-level security guidance and best practices, see the xref:../jwt-security-best-practices.adoc[JWT Security Best Practices Guide].
+* For application-level security guidance and best practices, see the xref:jwt-security-best-practices.adoc[JWT Security Best Practices Guide].
 
 The sections below focus on the technical implementation details of security measures in the library.
 
@@ -46,14 +46,14 @@ This section details how the library mitigates common JWT attack vectors as docu
 [cols="1,2,2,2", options="header"]
 |===
 |Attack Vector |Description |Mitigation Approach |Test Coverage
-|1. Signature Not Verified |Application fails to verify token signature, allowing forged claims |The library enforces signature verification through the `TokenValidator` pipeline; direct token decoding without verification is not exposed in the public API |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest]
-|2. None Algorithm Attack |Attacker modifies token to use `alg: none` to bypass signature verification |Explicit rejection of the "none" algorithm in `TokenSignatureValidator` and `SignatureAlgorithmPreferences` |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorAlgorithmTest.java[TokenSignatureValidatorAlgorithmTest]
-|3. Trivial Secret (Weak HMAC Keys) |Use of weak, guessable, or hardcoded HMAC shared secrets |Preference for asymmetric algorithms (RSA, ECDSA); explicit rejection of HMAC algorithms in default configuration; support for key rotation |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferencesTest.java[SignatureAlgorithmPreferencesTest], link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/KeyDisclosureVulnerabilityTest.java[KeyDisclosureVulnerabilityTest]
-|4. Algorithm Confusion (RSA to HMAC) |Exploiting mismatched algorithm validation to trick servers into using wrong algorithm |Algorithm enforcement at configuration level; explicit key type validation; no auto-selection of algorithms based on token header |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest]
-|5. `kid` Injection (Key ID Manipulation) |Manipulation of the `kid` header parameter to inject malicious commands or paths |Validation and sanitization of `kid` values; pre-loading and caching of keys; abstracted key management through `JwksLoader` |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest]
-|6. Embedded JWK (CVE-2018-0114) |Including attacker-controlled public keys in the token header |Rejection of keys from the token itself; ignoring the `jwk` header during validation; loading keys only from trusted sources |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/EmbeddedJwkAttackTest.java[EmbeddedJwkAttackTest]
-|7. JKU / X5U Header Abuse |Using attacker-controlled URLs in `jku` or `x5u` headers to perform SSRF |Ignoring `jku` and `x5u` headers; configuring JWKS URLs at initialization time; allowlist approach for JWKS sources |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/JkuX5uAttackTest.java[JkuX5uAttackTest]
-|8. CVE-2022-21449 (Psychic Signature) |Bypassing ECDSA signature verification using zero values |Using standard JDK cryptographic providers with proper ECDSA parameter validation; signature format validation |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/PsychicSignatureAttackTest.java[PsychicSignatureAttackTest]
+|1. Signature Not Verified |Application fails to verify token signature, allowing forged claims |The library enforces signature verification through the `TokenValidator` pipeline; direct token decoding without verification is not exposed in the public API |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest]
+|2. None Algorithm Attack |Attacker modifies token to use `alg: none` to bypass signature verification |Explicit rejection of the "none" algorithm in `TokenSignatureValidator` and `SignatureAlgorithmPreferences` |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/TokenSignatureValidatorAlgorithmTest.java[TokenSignatureValidatorAlgorithmTest]
+|3. Trivial Secret (Weak HMAC Keys) |Use of weak, guessable, or hardcoded HMAC shared secrets |Preference for asymmetric algorithms (RSA, ECDSA); explicit rejection of HMAC algorithms in default configuration; support for key rotation |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/SignatureAlgorithmPreferencesTest.java[SignatureAlgorithmPreferencesTest], link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/KeyDisclosureVulnerabilityTest.java[KeyDisclosureVulnerabilityTest]
+|4. Algorithm Confusion (RSA to HMAC) |Exploiting mismatched algorithm validation to trick servers into using wrong algorithm |Algorithm enforcement at configuration level; explicit key type validation; no auto-selection of algorithms based on token header |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest]
+|5. `kid` Injection (Key ID Manipulation) |Manipulation of the `kid` header parameter to inject malicious commands or paths |Validation and sanitization of `kid` values; pre-loading and caching of keys; abstracted key management through `JwksLoader` |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest]
+|6. Embedded JWK (CVE-2018-0114) |Including attacker-controlled public keys in the token header |Rejection of keys from the token itself; ignoring the `jwk` header during validation; loading keys only from trusted sources |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/EmbeddedJwkAttackTest.java[EmbeddedJwkAttackTest]
+|7. JKU / X5U Header Abuse |Using attacker-controlled URLs in `jku` or `x5u` headers to perform SSRF |Ignoring `jku` and `x5u` headers; configuring JWKS URLs at initialization time; allowlist approach for JWKS sources |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/JkuX5uAttackTest.java[JkuX5uAttackTest]
+|8. CVE-2022-21449 (Psychic Signature) |Bypassing ECDSA signature verification using zero values |Using standard JDK cryptographic providers with proper ECDSA parameter validation; signature format validation |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/PsychicSignatureAttackTest.java[PsychicSignatureAttackTest]
 |===
 
 [[signature-not-verified]]
@@ -159,16 +159,16 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-1.3[OAUTH-SHERIFF-1.3: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidator.java[TokenSignatureValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/TokenValidator.java[TokenValidator]
 
 The following tests verify the implementation:
 
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Comprehensive tests for signature validation, including:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Comprehensive tests for signature validation, including:
 ** Validation of tokens with supported algorithms (RS256)
 ** Rejection of tokens with unsupported algorithms (HS256, HS384, HS512, none)
 ** Protection against algorithm confusion attacks
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorTest.java[TokenValidatorTest] - Tests for the TokenValidator class
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/TokenValidatorTest.java[TokenValidatorTest] - Tests for the TokenValidator class
 
 The library supports the following signature algorithms as specified in the requirements:
 
@@ -202,7 +202,7 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: 
 
 To prevent denial of service attacks, the library enforces a maximum token size of 8KB.
 
-For detailed information about token size validation, including implementation details, usage examples, and testing strategy, please refer to the xref:token-size-validation.adoc[Token Size Validation] document.
+For detailed information about token size validation, including implementation details, usage examples, and testing strategy, please refer to the xref:../specification/token-size-validation.adoc[Token Size Validation] document.
 
 === Safe Parsing
 _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.2[OAUTH-SHERIFF-8.2: Safe Parsing]_
@@ -211,15 +211,15 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.2[OAUTH-SHERIFF-8.2: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
 
 The `NonValidatingJwtParser` class provides comprehensive safe parsing features to protect against common attacks such as memory exhaustion, stack overflow, and malformed input attacks.
 
-For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser] class.
+For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser] class.
 
 The following tests verify the implementation:
 
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParserTest.java[NonValidatingJwtParserTest] - Comprehensive tests for the NonValidatingJwtParser class, including:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/NonValidatingJwtParserTest.java[NonValidatingJwtParserTest] - Comprehensive tests for the NonValidatingJwtParser class, including:
 ** Token size validation tests
 ** JSON depth limit tests
 ** Large JSON array handling tests
@@ -235,14 +235,14 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.1[OAUTH-SHERIFF-8.1: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/ParserConfig.java[ParserConfig]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/ParserConfig.java[ParserConfig]
 
 To prevent denial of service attacks and memory exhaustion, the library enforces size limits on JWKS content. Based on research of typical JWKS sizes from major identity providers and industry standards, a default upper bound of 64 KB is recommended.
 
 The `JWKSKeyLoader` class checks the size of JWKS content against the maximum payload size configured in `ParserConfig` before parsing. If the content exceeds the limit, it logs a warning and returns an empty result.
 
-For detailed information about JWKS size recommendations, including analysis of typical JWKS content sizes, industry standards, and implementation recommendations, please refer to the xref:jwks-size-recommendations.adoc[JWKS Size Recommendations] document.
+For detailed information about JWKS size recommendations, including analysis of typical JWKS content sizes, industry standards, and implementation recommendations, please refer to the xref:../specification/jwks-size-recommendations.adoc[JWKS Size Recommendations] document.
 
 === Claims Validation
 _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: Claims Validation]_
@@ -251,9 +251,9 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.4[OAUTH-SHERIFF-8.4: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenClaimValidator.java[TokenClaimValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenHeaderValidator.java[TokenHeaderValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/IssuerConfig.java[IssuerConfig]
 
 The library provides comprehensive validation for standard JWT claims as defined in RFC 7519.
 
@@ -267,7 +267,7 @@ The library provides comprehensive validation for standard JWT claims as defined
 * Audience (aud) - validated by TokenClaimValidator if expected audience is provided
 * Authorized Party (azp) - validated by TokenClaimValidator if expected client ID is provided
 
-For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator] and link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator] classes.
+For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenClaimValidator.java[TokenClaimValidator] and link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenHeaderValidator.java[TokenHeaderValidator] classes.
 
 === Secure Communication
 _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.3[OAUTH-SHERIFF-8.3: Secure Communication]_
@@ -276,12 +276,12 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.3[OAUTH-SHERIFF-8.3: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecureSSLContextProvider.java[SecureSSLContextProvider]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/http/HttpJwksLoader.java[HttpJwksLoader]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/SecureSSLContextProvider.java[SecureSSLContextProvider]
 
 The library ensures secure communication for key retrieval by requiring TLS 1.2 or higher by default. The `SecureSSLContextProvider` class is an instance class that allows configuration of the minimum TLS version to be used. The `HttpJwksLoader` uses a builder pattern for creation, with the `SecureSSLContextProvider` instance as an optional parameter.
 
-For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] and link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecureSSLContextProvider.java[SecureSSLContextProvider] classes.
+For implementation details, see the JavaDoc of the link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/http/HttpJwksLoader.java[HttpJwksLoader] and link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/SecureSSLContextProvider.java[SecureSSLContextProvider] classes.
 
 Integration tests verify the implementation by connecting to a Keycloak server using HTTPS.
 
@@ -292,13 +292,13 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.5[OAUTH-SHERIFF-8.5: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[AlgorithmPreferences]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/JwkKeyHandler.java[JwkKeyHandler]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/KeyInfo.java[KeyInfo]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/SignatureAlgorithmPreferences.java[AlgorithmPreferences]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/JwkKeyHandler.java[JwkKeyHandler]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/key/KeyInfo.java[KeyInfo]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/JwksLoader.java[JwksLoader]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidator.java[TokenSignatureValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/IssuerConfig.java[IssuerConfig]
 
 The cryptographic agility features include:
 
@@ -311,23 +311,23 @@ The cryptographic agility features include:
 
 For implementation details, see the JavaDoc of the following classes:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SignatureAlgorithmPreferences.java[AlgorithmPreferences]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/JwkKeyHandler.java[JwkKeyHandler]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/KeyInfo.java[KeyInfo]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/IssuerConfig.java[IssuerConfig]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/SignatureAlgorithmPreferences.java[AlgorithmPreferences]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/JwkKeyHandler.java[JwkKeyHandler]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/key/KeyInfo.java[KeyInfo]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/JwksLoader.java[JwksLoader]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/key/JWKSKeyLoader.java[JWKSKeyLoader]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidator.java[TokenSignatureValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/IssuerConfig.java[IssuerConfig]
 
 The following tests verify the implementation:
 
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/JwkKeyHandlerTest.java[JwkKeyHandlerTest] - Comprehensive tests for the JwkKeyHandler class, including:
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/JwkKeyHandlerTest.java[JwkKeyHandlerTest] - Comprehensive tests for the JwkKeyHandler class, including:
 ** Parsing and validation of RSA keys
 ** Validation of EC key fields
 ** Base64 URL encoding validation
 ** Security tests for potential attacks
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/key/JWKSKeyLoaderTest.java[JWKSKeyLoaderTest] - Tests for the JWKSKeyLoader
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests for the TokenSignatureValidator
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/jwks/key/JWKSKeyLoaderTest.java[JWKSKeyLoaderTest] - Tests for the JWKSKeyLoader
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidatorTest.java[TokenSignatureValidatorTest] - Tests for the TokenSignatureValidator
 
 === Security Events Monitoring
 _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-7.3[OAUTH-SHERIFF-7.3: Security Events]_
@@ -336,13 +336,13 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-7.3[OAUTH-SHERIFF-7.3: 
 
 The following classes implement this specification:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/security/SecurityEventCounter.java[SecurityEventCounter]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/TokenValidator.java[TokenValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenBuilder.java[TokenBuilder]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidator.java[TokenClaimValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenHeaderValidator.java[TokenHeaderValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator]
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/security/SecurityEventCounter.java[SecurityEventCounter]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/TokenValidator.java[TokenValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/TokenBuilder.java[TokenBuilder]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenClaimValidator.java[TokenClaimValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenHeaderValidator.java[TokenHeaderValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidator.java[TokenSignatureValidator]
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/NonValidatingJwtParser.java[NonValidatingJwtParser]
 
 The library provides a mechanism to monitor and count security events that occur during token processing. This allows applications to track potential security issues and anomalies without duplicating logging functionality.
 
@@ -431,8 +431,8 @@ For example, the TOKEN_EXPIRED event type (ID: 134) is linked to JWTTokenLogMess
 
 The following tests verify the implementation:
 
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/SecurityEventCounterTest.java[SecurityEventCounterTest] - Tests for the SecurityEventCounter class
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest] - Tests for the integration with TokenValidator
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/SecurityEventCounterTest.java[SecurityEventCounterTest] - Tests for the SecurityEventCounter class
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/TokenValidatorSecurityEventTest.java[TokenValidatorSecurityEventTest] - Tests for the integration with TokenValidator
 
 === Standard JDK Cryptographic Providers
 _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-8.5[OAUTH-SHERIFF-8.5: Cryptographic Agility]_
@@ -445,12 +445,12 @@ The library uses standard JDK cryptographic providers for all cryptographic oper
 
 The following classes use standard JDK providers:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/key/JwkKeyHandler.java[JwkKeyHandler] - Uses standard JDK for:
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/key/JwkKeyHandler.java[JwkKeyHandler] - Uses standard JDK for:
 ** Retrieving EC curve parameters via `AlgorithmParameters.getInstance("EC")`
 ** Supporting standard elliptic curves (P-256, P-384, P-521) using `ECGenParameterSpec`
 ** Converting JWK curve names to standard JDK curve specifications
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/pipeline/TokenSignatureValidator.java[TokenSignatureValidator] - Uses standard JDK for:
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenSignatureValidator.java[TokenSignatureValidator] - Uses standard JDK for:
 ** Signature verification of JWT tokens via `Signature.getInstance(algorithm)`
 ** Supporting all RFC 7518 signature algorithms:
 *** RSA signatures (RS256, RS384, RS512)
@@ -496,6 +496,7 @@ The client confusion attack occurs when a token issued for one client is used wi
 * Validation of both claims is configurable through the `IssuerConfig` builder:
   * `expectedAudience()` - sets the expected audience for validation
   * `expectedClientId()` - sets the expected client ID for `azp` claim validation
+
 * For maximum security, both audience and client ID-Token should be enabled.
 
 [source,java]
@@ -564,16 +565,16 @@ _See Requirement xref:../Requirements.adoc#OAUTH-SHERIFF-12.1[OAUTH-SHERIFF-12.1
 [cols="2,3,1,2", options="header"]
 |===
 |Test Case |Description |Expected Outcome |Implementation
-|verify_audience_validation |Test token validation with valid audience claim |Success |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java#L158[verify_audience_validation_without_azp]
+|verify_audience_validation |Test token validation with valid audience claim |Success |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/ClientConfusionAttackTest.java#L158[verify_audience_validation_without_azp]
 |verify_audience_validation_failure |Test token validation with invalid audience claim |Failure |Not implemented yet
-|verify_azp_validation |Test token validation with valid azp claim |Success |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java#L58[verify_azp_validation]
-|verify_azp_validation_failure |Test token validation with invalid azp claim |Failure |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java#L114[verify_azp_validation_failure]
-|verify_different_client_token_rejected |Test token from a different client ID is rejected |Failure |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java#L136[verify_different_client_token_rejected]
+|verify_azp_validation |Test token validation with valid azp claim |Success |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/ClientConfusionAttackTest.java#L58[verify_azp_validation]
+|verify_azp_validation_failure |Test token validation with invalid azp claim |Failure |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/ClientConfusionAttackTest.java#L114[verify_azp_validation_failure]
+|verify_different_client_token_rejected |Test token from a different client ID is rejected |Failure |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/ClientConfusionAttackTest.java#L136[verify_different_client_token_rejected]
 |===
 
 ==== Implementation Requirements
 
-* Test class link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java[ClientConfusionAttackTest] has been implemented
+* Test class link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/ClientConfusionAttackTest.java[ClientConfusionAttackTest] has been implemented
 * Creates tokens with various client IDs and audience values
 * Tests with different validators configured for specific clients
 * Verifies cross-client token usage is rejected
@@ -603,11 +604,11 @@ This section details how the library addresses OAuth-specific security considera
 [cols="1,2,2,2", options="header"]
 |===
 |Vulnerability |Description |Mitigation Approach |Test Coverage
-|Client Confusion Attack |Using a token issued for one client with a different client |Validation of `azp` (authorized party) and `aud` (audience) claims; configuration through `IssuerConfig` builder |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/ClientConfusionAttackTest.java[ClientConfusionAttackTest]
+|Client Confusion Attack |Using a token issued for one client with a different client |Validation of `azp` (authorized party) and `aud` (audience) claims; configuration through `IssuerConfig` builder |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/ClientConfusionAttackTest.java[ClientConfusionAttackTest]
 |Scope Upgrade Attack |Adding additional scopes during token exchange |`ParsedAccessToken` class provides methods to verify token scopes; scope validation guidance in documentation |No specific tests
 |CSRF Attacks |Exploiting cross-site request forgery in OAuth flows |Out of scope for token validation library; documentation recommends using the `state` parameter |Out of scope
 |Redirect Attacks |Manipulating redirect URIs to steal authorization codes |Out of scope for token validation library; documentation recommends proper redirect URI validation |Out of scope
-|Mutable Claims Attack |Using changeable claims for user identification |Enforcing validation of the immutable `sub` claim; documentation recommends using `sub` for user identification |link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/pipeline/TokenClaimValidatorTest.java[TokenClaimValidatorTest]
+|Mutable Claims Attack |Using changeable claims for user identification |Enforcing validation of the immutable `sub` claim; documentation recommends using `sub` for user identification |link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/pipeline/validator/TokenClaimValidatorTest.java[TokenClaimValidatorTest]
 |Redirect Scheme Hijacking |Intercepting OAuth redirects in mobile apps |Out of scope for token validation library; documentation recommends using PKCE for mobile apps |Out of scope
 |===
 
@@ -701,11 +702,11 @@ The library implements a robust key management system for handling cryptographic
 
 The key management system is implemented through the following classes:
 
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/JwksLoader.java[JwksLoader] - Interface for loading JWKS (JSON Web Key Set)
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoader.java[HttpJwksLoader] - Implementation for loading JWKS from HTTP endpoints
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/file/FileSystemJwksLoader.java[FileSystemJwksLoader] - Implementation for loading JWKS from the file system
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/cache/CachedJwksLoader.java[CachedJwksLoader] - Implementation that adds caching to any JwksLoader
-* link:../../oauth-sheriff-core/src/main/java/de/cuioss/jwt/validation/jwks/multi/MultiSourceJwksLoader.java[MultiSourceJwksLoader] - Implementation that aggregates multiple JwksLoader instances
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/JwksLoader.java[JwksLoader] - Interface for loading JWKS (JSON Web Key Set)
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/http/HttpJwksLoader.java[HttpJwksLoader] - Implementation for loading JWKS from HTTP endpoints
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/file/FileSystemJwksLoader.java[FileSystemJwksLoader] - Implementation for loading JWKS from the file system
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/cache/CachedJwksLoader.java[CachedJwksLoader] - Implementation that adds caching to any JwksLoader
+* link:../../oauth-sheriff-core/src/main/java/de/cuioss/sheriff/oauth/core/jwks/multi/MultiSourceJwksLoader.java[MultiSourceJwksLoader] - Implementation that aggregates multiple JwksLoader instances
 
 The key management system supports:
 
@@ -730,10 +731,10 @@ The key management system includes the following security features:
 
 The key management system is thoroughly tested through:
 
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/http/HttpJwksLoaderTest.java[HttpJwksLoaderTest] - Tests for loading JWKS from HTTP endpoints
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/file/FileSystemJwksLoaderTest.java[FileSystemJwksLoaderTest] - Tests for loading JWKS from the file system
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/cache/CachedJwksLoaderTest.java[CachedJwksLoaderTest] - Tests for JWKS caching
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/jwks/multi/MultiSourceJwksLoaderTest.java[MultiSourceJwksLoaderTest] - Tests for multiple JWKS sources
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest] - Tests for protection against key ID injection attacks
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/EmbeddedJwkAttackTest.java[EmbeddedJwkAttackTest] - Tests for protection against embedded JWK attacks
-* link:../../oauth-sheriff-core/src/test/java/de/cuioss/jwt/validation/security/JkuX5uAttackTest.java[JkuX5uAttackTest] - Tests for protection against JKU/X5U header abuse
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/jwks/http/HttpJwksLoaderTest.java[HttpJwksLoaderTest] - Tests for loading JWKS from HTTP endpoints
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/jwks/file/FileSystemJwksLoaderTest.java[FileSystemJwksLoaderTest] - Tests for loading JWKS from the file system
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/jwks/cache/CachedJwksLoaderTest.java[CachedJwksLoaderTest] - Tests for JWKS caching
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/jwks/multi/MultiSourceJwksLoaderTest.java[MultiSourceJwksLoaderTest] - Tests for multiple JWKS sources
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/KeyInjectionAttackTest.java[KeyInjectionAttackTest] - Tests for protection against key ID injection attacks
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/EmbeddedJwkAttackTest.java[EmbeddedJwkAttackTest] - Tests for protection against embedded JWK attacks
+* link:../../oauth-sheriff-core/src/test/java/de/cuioss/sheriff/oauth/core/security/JkuX5uAttackTest.java[JkuX5uAttackTest] - Tests for protection against JKU/X5U header abuse

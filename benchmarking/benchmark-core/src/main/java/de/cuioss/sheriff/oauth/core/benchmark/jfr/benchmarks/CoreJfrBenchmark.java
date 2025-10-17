@@ -30,13 +30,16 @@ import java.util.concurrent.TimeUnit;
  * @author Oliver Wolff
  * @since 1.0
  */
-@State(Scope.Thread) @SuppressWarnings("java:S112") public class CoreJfrBenchmark extends AbstractJfrBenchmark {
+@State(Scope.Thread)
+@SuppressWarnings("java:S112")
+public class CoreJfrBenchmark extends AbstractJfrBenchmark {
 
     private static final String OPERATION_TYPE_VALIDATION = "validation";
 
     private CoreValidationDelegate coreValidationDelegate;
 
-    @Setup(Level.Trial) public void setup() {
+    @Setup(Level.Trial)
+    public void setup() {
         // Use base class setup
         setupJfrBase();
 
@@ -49,7 +52,10 @@ import java.util.concurrent.TimeUnit;
     /**
      * Measures average validation time for single-threaded token validation with JFR instrumentation using full token spectrum.
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureAverageTimeWithJfr() {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureAverageTimeWithJfr() {
         return performValidationWithJfr("measureAverageTimeWithJfr", "full_spectrum",
                 () -> coreValidationDelegate.validateWithFullSpectrum());
     }
@@ -57,7 +63,10 @@ import java.util.concurrent.TimeUnit;
     /**
      * Measures token validation throughput under concurrent load with JFR instrumentation using full token spectrum.
      */
-    @Benchmark @BenchmarkMode(Mode.Throughput) @OutputTimeUnit(TimeUnit.SECONDS) public AccessTokenContent measureThroughputWithJfr() {
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public AccessTokenContent measureThroughputWithJfr() {
         return performValidationWithJfr("measureThroughputWithJfr", "full_spectrum",
                 () -> coreValidationDelegate.validateWithFullSpectrum());
     }
@@ -65,7 +74,10 @@ import java.util.concurrent.TimeUnit;
     /**
      * Measures concurrent validation performance with token rotation and JFR instrumentation.
      */
-    @Benchmark @BenchmarkMode(Mode.AverageTime) @OutputTimeUnit(TimeUnit.MICROSECONDS) public AccessTokenContent measureConcurrentValidationWithJfr() {
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public AccessTokenContent measureConcurrentValidationWithJfr() {
         return performValidationWithJfr("measureConcurrentValidationWithJfr", "rotation",
                 () -> coreValidationDelegate.validateWithRotation());
     }
@@ -95,7 +107,8 @@ import java.util.concurrent.TimeUnit;
     /**
      * Functional interface for validation operations.
      */
-    @FunctionalInterface private interface ValidationSupplier {
+    @FunctionalInterface
+    private interface ValidationSupplier {
         AccessTokenContent validate();
     }
 }

@@ -1,5 +1,10 @@
 = JFR Instrumentation for Variance Analysis
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
 :source-highlighter: highlight.js
+
 
 == Quick Start
 
@@ -271,6 +276,7 @@ benchmarking/benchmark-core/target/
 
 |**No JFR file created**
 a|
+
 * Verify Java 11+ is used
 * Check Maven output for `-XX:StartFlightRecording` argument
 * Ensure `target/benchmark-jfr-results/` directory is created
@@ -278,18 +284,21 @@ a|
 
 |**Analyzer fails with ClassNotFoundException**
 a|
+
 * Run `./mvnw clean install -pl benchmarking/benchmarking-common` first
 * Ensure benchmark-core module is built: `./mvnw package -pl benchmarking/benchmark-core`
 * Verify correct profile usage: `-Panalyze-jfr`
 
 |**High JFR overhead affecting results**
 a|
+
 * Use lighter JFR settings: `-XX:StartFlightRecording=...,settings=default` (instead of `profile`)
 * Reduce statistics period in `JfrInstrumentation.java`
 * Run longer iterations to amortize overhead
 
 |**Analysis errors reading JFR file**
 a|
+
 * Verify file integrity: `jfr summary <file>`
 * Check file size (should be > 0 bytes)
 * Ensure benchmark completed (not killed mid-run)
@@ -297,12 +306,14 @@ a|
 
 |**Wrong analyzer Maven profile**
 a|
+
 * Use: `./mvnw verify -Panalyze-jfr -pl benchmarking/benchmark-core`
 * Provide JFR file path: `-Djfr.file=target/benchmark-jfr-results/jfr-benchmark.jfr`
 * The analyzer main class is in the `benchmarking-common` module
 
 |**JFR file not found**
 a|
+
 * Verify file exists: `ls -la benchmarking/benchmark-core/target/benchmark-jfr-results/`
 * **IMPORTANT**: Maven exec plugin requires absolute paths - use `$(pwd)/benchmarking/...` or full path
 * Relative paths will fail with `FileNotFoundException`
@@ -327,6 +338,7 @@ JFR instrumentation is implemented in:
   - `OperationEvent.java` - Individual operation events
   - `OperationStatisticsEvent.java` - Periodic statistics
   - `BenchmarkPhaseEvent.java` - Benchmark lifecycle phases
+
 * **Instrumentation**: `JfrInstrumentation.java` - Central recorder and statistics aggregator
 * **Runner**: `benchmarking/benchmark-core/src/main/java/.../JfrBenchmarkRunner.java`
 * **Benchmarks**: `benchmarking/benchmark-core/src/main/java/.../jfr/benchmarks/`

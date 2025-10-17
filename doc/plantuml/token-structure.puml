@@ -1,31 +1,30 @@
 @startuml
 !include plantuml.skin
 
-rectangle "JWT Token Structure" as JWT {
-  card "Header" as Header {
-    rectangle "alg: Algorithm" as alg
-    rectangle "typ: Token Type" as typ
-    rectangle "kid: Key ID" as kid
-  }
+title JWT Token Format: Header.Payload.Signature
 
-  card "Payload" as Payload {
-    rectangle "iss: Issuer" as iss
-    rectangle "sub: Subject" as sub
-    rectangle "aud: Audience" as aud
-    rectangle "exp: Expiration Time" as exp
-    rectangle "nbf: Not Before Time" as nbf
-    rectangle "iat: Issued At" as iat
-    rectangle "jti: JWT ID" as jti
-    rectangle "Other Claims..." as other
-  }
+left to right direction
 
-  card "Signature" as Signature {
-    rectangle "HMAC/RSA/ECDSA\nSignature" as sig
-  }
+package "Header" #E3F2FD {
+  node "alg: RS256\ntyp: JWT\nkid: key-123" as h1
 }
 
-Header -[hidden]-> Payload
-Payload -[hidden]-> Signature
+node "  **.**  " as dot1 #FFFFFF
+
+package "Payload" #FFF9C4 {
+  node "iss: auth.example.com\nsub: user@example.com\naud: api.example.com\nexp: 1735862400\nnbf: 1735776000\niat: 1735776000\njti: abc-123-xyz\n... custom claims" as p1
+}
+
+node "  **.**  " as dot2 #FFFFFF
+
+package "Signature" #FFEBEE {
+  node "HMAC-SHA256(\n  base64UrlEncode(header) + \".\" +\n  base64UrlEncode(payload),\n  secret\n)" as s1
+}
+
+Header -[hidden]-> dot1
+dot1 -[hidden]-> Payload
+Payload -[hidden]-> dot2
+dot2 -[hidden]-> Signature
 
 note bottom of Header
   Base64Url Encoded
@@ -37,15 +36,6 @@ end note
 
 note bottom of Signature
   Base64Url Encoded
-  Signature = Algorithm(
-    Base64UrlEncode(Header) + "." +
-    Base64UrlEncode(Payload),
-    Secret/Private Key
-  )
-end note
-
-note top of JWT
-  JWT Token Format: Header.Payload.Signature
 end note
 
 @enduml

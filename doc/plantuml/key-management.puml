@@ -1,82 +1,53 @@
 @startuml
 !include plantuml.skin
 
-participant "TokenValidator" as TokenValidator
-participant "JwksLoaderFactory" as JwksLoaderFactory
+participant "IssuerConfig" as IssuerConfig
 participant "HttpJwksLoader" as HttpLoader
-participant "FileJwksLoader" as FileLoader
-participant "InMemoryJwksLoader" as MemLoader
-database "JWKS Cache" as Cache
 participant "JWKS Endpoint" as Endpoint
+database "Current Keys\n<<in-memory>>" as CurrentKeys
+database "Retired Keys\n<<grace period>>" as RetiredKeys
 
 == Initialization ==
 
-TokenValidator -> JwksLoaderFactory : "createHttpJwksLoader(config)"
-JwksLoaderFactory -> HttpLoader : "new HttpJwksLoader(config)"
-HttpLoader -> HttpLoader : "scheduleRefresh()"
-
-TokenValidator -> JwksLoaderFactory : "createFileJwksLoader(path)"
-JwksLoaderFactory -> FileLoader : "new FileJwksLoader(path)"
-
-TokenValidator -> JwksLoaderFactory : "createInMemoryJwksLoader(content)"
-JwksLoaderFactory -> MemLoader : "new InMemoryJwksLoader(content)"
+IssuerConfig -> HttpLoader : "init()"
+activate HttpLoader
+HttpLoader -> Endpoint : "fetch JWKS"
+Endpoint --> HttpLoader : "public keys"
+HttpLoader -> CurrentKeys : "store keys"
+deactivate HttpLoader
 
 == Key Retrieval ==
 
-TokenValidator -> HttpLoader : "getKey(keyId)"
-HttpLoader -> Cache : "get(keyId)"
-Cache --> HttpLoader : "key (if exists)"
-
-alt Key not in cache
-    HttpLoader -> Endpoint : "fetch JWKS"
-    Endpoint --> HttpLoader : "JWKS data"
-    HttpLoader -> HttpLoader : "parse JWKS"
-    HttpLoader -> Cache : "store keys"
-    Cache --> HttpLoader : "confirmation"
-    HttpLoader -> HttpLoader : "find key by ID"
+IssuerConfig -> HttpLoader : "getKeyInfo(kid)"
+HttpLoader -> CurrentKeys : "lookup key"
+alt Key found in current
+    CurrentKeys --> HttpLoader : "KeyInfo"
+else Key not found, check retired
+    HttpLoader -> RetiredKeys : "lookup in grace period"
+    RetiredKeys --> HttpLoader : "KeyInfo (if valid)"
 end
-
-HttpLoader --> TokenValidator : "return key"
+HttpLoader --> IssuerConfig : "Optional<KeyInfo>"
 
 == Automatic Key Rotation ==
 
-HttpLoader -> HttpLoader : "refreshInterval elapsed"
+HttpLoader -> HttpLoader : "periodic refresh"
 activate HttpLoader
 HttpLoader -> Endpoint : "fetch JWKS"
-Endpoint --> HttpLoader : "JWKS data"
-HttpLoader -> HttpLoader : "parse JWKS"
-HttpLoader -> Cache : "update keys"
-Cache --> HttpLoader : "confirmation"
+Endpoint --> HttpLoader : "new keys"
+
+alt Keys changed
+    HttpLoader -> RetiredKeys : "move old keys to retired"
+    HttpLoader -> CurrentKeys : "update with new keys"
+    HttpLoader -> RetiredKeys : "cleanup expired keys"
+else Keys unchanged
+    note right: No rotation needed
+end
 deactivate HttpLoader
 
-== Key Selection ==
-
-TokenValidator -> HttpLoader : "getKey(keyId)"
-HttpLoader -> Cache : "get(keyId)"
-Cache --> HttpLoader : "key"
-HttpLoader --> TokenValidator : "return key"
-
-TokenValidator -> TokenValidator : "validate token\nwith key"
-
-note right of HttpLoader
-  Key rotation happens:
-  1. On a configurable schedule
-  2. When a key is not found
-  3. When validation fails with current key
-end note
-
-note right of Cache
-  The cache stores:
-  - JWK by Key ID (kid)
-  - Public keys by algorithm
-  - Mapping of key IDs to algorithms
-end note
-
-note right of JwksLoaderFactory
-  Factory creates appropriate loader:
-  - HttpJwksLoader: Remote JWKS endpoint
-  - FileJwksLoader: Local JWKS file
-  - InMemoryJwksLoader: Embedded JWKS
+note right of RetiredKeys
+  Grace Period (Issue #110):
+  Tokens signed with old keys remain
+  valid during grace period after rotation
 end note
 
 @enduml

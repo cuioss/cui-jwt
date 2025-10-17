@@ -2,6 +2,9 @@
 :toc: left
 :toclevels: 3
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 High-performance HTTP benchmarking for JWT validation endpoints using WRK, addressing JMH limitations for REST API testing.
 
@@ -197,14 +200,16 @@ The `skip.container.lifecycle` property optimizes benchmark iteration:
 * **Endpoint**: `/q/health/live`
 * **Script**: `health_check.lua`
 * **Purpose**: Baseline performance without authentication
-* **Expected**: 20,000+ req/s, <1ms latency
+* **Expected** (150 connections, stress profile): 70,000+ req/s, P50 <2ms latency
+* **Measured**: 77,600 req/s, P50 1.53ms (see link:../doc/Analysis-10.2025-Integration.adoc[Integration Analysis])
 
 === JWT Validation Benchmark
 
 * **Endpoint**: `/api/v1/jwt/extract`
 * **Script**: `jwt_benchmark.lua`
-* **Purpose**: Real JWT processing performance
-* **Expected**: 15,000+ req/s, 1-2ms latency
+* **Purpose**: Real JWT processing performance with cache
+* **Expected** (150 connections, stress profile): 20,000+ req/s, P50 <10ms latency
+* **Measured**: 21,900 req/s, P50 6.30ms (see link:../doc/Analysis-10.2025-Integration.adoc[Integration Analysis])
 
 == Output
 
@@ -274,14 +279,17 @@ diff <(jq '.performance' baseline/wrk-jwt-results.json) \
 .Optimal Settings (Based on Performance Investigation)
 [NOTE]
 ====
+
 * **Threads**: 5 (balanced for typical systems)
 * **Connections**: 50 (optimal performance without degradation)
 * **Duration**:
   - Quick mode: 30s (fast iteration)
   - Default: 60s (balanced results)
+
 * **Timeout**: 2s (local testing)
 
 **Performance Profile at 50 Connections:**
+
 * Health endpoint: P90 2.5ms, 37K ops/s
 * JWT validation: P90 5.8ms, 16K ops/s, CPU 75%
 ====

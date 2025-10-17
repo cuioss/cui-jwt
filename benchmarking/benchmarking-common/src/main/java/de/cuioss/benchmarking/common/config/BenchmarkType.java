@@ -23,7 +23,8 @@ import lombok.Getter;
  * Each type has different characteristics and requirements for badge generation,
  * metrics collection, and reporting.
  */
-@Getter public enum BenchmarkType {
+@Getter
+public enum BenchmarkType {
     /**
      * Micro benchmarks that test individual components or methods in isolation.
      * <p>

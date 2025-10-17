@@ -30,7 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class GitHubPagesGeneratorTest {
 
-    @Test void generateDeploymentAssetsShouldCreateAllRequiredFiles(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateDeploymentAssetsShouldCreateAllRequiredFiles(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
@@ -51,7 +52,8 @@ class GitHubPagesGeneratorTest {
         assertFalse(Files.readString(deployDir.resolve("sitemap.xml")).isEmpty(), "sitemap.xml should have content");
     }
 
-    @Test void generateDeploymentAssetsShould404PageContainErrorMessage(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateDeploymentAssetsShould404PageContainErrorMessage(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
@@ -67,7 +69,8 @@ class GitHubPagesGeneratorTest {
                 "404 page should contain 'not found' message");
     }
 
-    @Test void generateDeploymentAssetsShouldCreateDirectories(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateDeploymentAssetsShouldCreateDirectories(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
@@ -86,7 +89,8 @@ class GitHubPagesGeneratorTest {
         assertTrue(Files.exists(structure.getApiDir()), "API directory should be created");
     }
 
-    @Test void generateDeploymentAssetsShouldBeIdempotent(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateDeploymentAssetsShouldBeIdempotent(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
@@ -104,7 +108,8 @@ class GitHubPagesGeneratorTest {
     }
 
 
-    @Test void robotsTxtShouldContainBasicDirectives(@TempDir Path tempDir) throws Exception {
+    @Test
+    void robotsTxtShouldContainBasicDirectives(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);
@@ -119,7 +124,8 @@ class GitHubPagesGeneratorTest {
                 "robots.txt should contain User-agent directive");
     }
 
-    @Test void sitemapXmlShouldBeValidXml(@TempDir Path tempDir) throws Exception {
+    @Test
+    void sitemapXmlShouldBeValidXml(@TempDir Path tempDir) throws Exception {
         // Arrange
         Path benchmarkResultsDir = tempDir.resolve("benchmark-results");
         OutputDirectoryStructure structure = new OutputDirectoryStructure(benchmarkResultsDir);

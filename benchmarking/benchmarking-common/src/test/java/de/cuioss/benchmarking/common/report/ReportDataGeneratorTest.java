@@ -35,7 +35,8 @@ class ReportDataGeneratorTest {
 
     private static final Gson GSON = new Gson();
 
-    @Test void chartDataGenerationWithRealIntegrationBenchmarks() throws Exception {
+    @Test
+    void chartDataGenerationWithRealIntegrationBenchmarks() throws Exception {
         // TEST: Reproduce the issue where latency and percentiles are missing from chart data
         // Uses REAL benchmark data from integration tests that has thrpt mode WITH latency/percentiles
 

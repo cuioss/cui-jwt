@@ -177,3 +177,100 @@ Execute comprehensive quality verification and commit workflow for a specific mo
 - **NEVER commit with failing builds** - Only commit when everything passes
 - **NEVER commit with source artifacts** - Source directories must be clean of .class files
 - **ALWAYS fix issues systematically** - Address root causes, not symptoms
+
+## Slash Commands
+
+The project includes custom slash commands located in `.claude/commands/` (tracked in git, shared across the team):
+
+### /verify-project [push]
+
+Comprehensive project verification workflow that runs the full Maven build with pre-commit profile.
+
+- Reads execution duration from `doc/commands.md`
+- Runs: `./mvnw -Ppre-commit clean install`
+- Analyzes all errors, warnings, and OpenRewrite markers
+- Fixes issues and repeats until clean
+- Updates execution duration if changed >10%
+- Optional `push` parameter: automatically commits and pushes changes after successful verification
+
+**Usage:** `/verify-project` or `/verify-project push`
+
+### /verify-integration-tests
+
+Integration tests verification with comprehensive Quarkus/Keycloak log analysis.
+
+- Reads execution duration from `doc/commands.md`
+- Runs: `./mvnw clean verify -Pintegration-tests -pl oauth-sheriff-quarkus-parent/oauth-sheriff-quarkus-integration-tests`
+- Thoroughly analyzes Maven output AND all Quarkus/Keycloak logs in target directory
+- Checks warnings against acceptable list in `doc/commands.md`
+- **ASKS USER** before adding warnings to acceptable list
+- Fixes issues in any module and repeats until clean
+- Runs `/verify-project` if code changes were made
+- Updates execution duration if changed >10%
+
+**Usage:** `/verify-integration-tests`
+
+### /verify-micro-benchmark
+
+Micro-benchmark verification with comprehensive JMH results analysis.
+
+- Reads execution duration from `doc/commands.md`
+- Runs: `./mvnw clean verify -pl benchmarking/benchmark-core -Pbenchmark`
+- Analyzes Maven output for errors and warnings
+- **VALIDATES benchmark results** in `benchmarking/benchmark-core/target/benchmark-results`
+- Checks that benchmark files exist and contain valid results
+- Verifies all benchmarks completed successfully with no errors
+- **ASKS USER** before adding warnings to acceptable list
+- Fixes issues in any module and repeats until clean
+- Runs `/verify-project` if code changes were made
+- Updates execution duration if changed >10%
+
+**Usage:** `/verify-micro-benchmark`
+
+### /verify-integration-benchmark
+
+WRK-based integration benchmark verification with comprehensive result and log analysis.
+
+- Reads execution duration from `doc/commands.md`
+- Runs: `./mvnw clean verify -Pbenchmark -pl benchmarking/benchmark-integration-wrk`
+- Analyzes Maven output for errors and warnings
+- **VALIDATES benchmark results** in `benchmarking/benchmark-integration-wrk/target/benchmark-results`:
+  - `wrk-health-results.json` - Health endpoint performance
+  - `wrk-jwt-results.json` - JWT validation performance
+  - Raw WRK output files
+- **ANALYZES server logs** from `quarkus-logs.txt` for errors and warnings
+- Verifies reasonable performance numbers (req/s, latency)
+- Checks error counts (should be 0)
+- **ASKS USER** before adding warnings to acceptable list
+- Fixes issues in any module and repeats until clean
+- Runs `/verify-project` if code changes were made
+- Updates execution duration if changed >10%
+
+**Usage:** `/verify-integration-benchmark`
+
+### /verify-all [push]
+
+Comprehensive end-to-end verification that executes all verification commands in sequence.
+
+- **Reads durations** from `doc/commands.md` and displays estimated time at start
+- Executes in strict serial order (never parallel):
+  1. `/verify-project`
+  2. `/verify-integration-tests`
+  3. `/verify-micro-benchmark`
+  4. `/verify-integration-benchmark`
+- Each command must complete 100% before the next starts
+- Each command runs according to its exact definition (isolated execution)
+- Stops immediately if any command fails
+- Individual commands handle their own duration updates in `doc/commands.md`
+- Optional `push` parameter: automatically commits and pushes changes after all verifications succeed
+- Provides comprehensive summary report with:
+  - Estimated vs actual duration comparison
+  - Status of each command with individual durations
+  - Issues found and fixed across all commands
+  - Duration updates made by individual commands
+
+**Expected Total Duration**: Read from `doc/commands.md` at start (~19 minutes based on current durations)
+
+**Usage:** `/verify-all` or `/verify-all push`
+
+**Note:** Slash command files are tracked in git under `.claude/commands/` and shared across the team. User-local settings are in `.claude/settings.local.json` (gitignored).

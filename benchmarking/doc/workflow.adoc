@@ -1,5 +1,10 @@
 = Benchmark Workflow
+:toc: left
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
 :source-highlighter: highlight.js
+
 
 Complete workflow guide for running and processing benchmarks.
 
@@ -141,6 +146,7 @@ See xref:../../doc/Requirements.adoc#OAUTH-SHERIFF-9[Performance Requirements] f
 === No Artifacts Generated
 
 Check that:
+
 - Benchmarks completed successfully
 - No compilation errors in cui-benchmarking-common
 - Correct profile used (`-Pbenchmark`)
@@ -148,6 +154,7 @@ Check that:
 === Quality Gates Failing
 
 Review:
+
 - Performance thresholds in `SummaryGenerator`
 - Baseline comparison data availability
 - Resource constraints during benchmark run
@@ -155,6 +162,7 @@ Review:
 === Local Viewing Issues
 
 Ensure:
+
 - Python installed for `serve-reports.sh` (Python 3 or 2)
 - Port 8080 available (or use `./serve-reports.sh stop` to stop existing server)
 - Generated reports exist in `cui-benchmarking-common/target/benchmark-reports-preview/`

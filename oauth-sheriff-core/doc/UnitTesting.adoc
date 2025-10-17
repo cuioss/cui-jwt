@@ -6,6 +6,8 @@
 :sectnumlevels: 3
 :icons: font
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+
 
 == Overview
 

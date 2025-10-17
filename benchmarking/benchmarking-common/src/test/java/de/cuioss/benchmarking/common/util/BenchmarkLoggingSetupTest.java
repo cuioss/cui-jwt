@@ -29,7 +29,8 @@ class BenchmarkLoggingSetupTest {
     @TempDir
     Path tempDir;
 
-    @Test void configureLogging() {
+    @Test
+    void configureLogging() {
         String outputDir = tempDir.toString();
 
         // Configure logging
@@ -46,7 +47,8 @@ class BenchmarkLoggingSetupTest {
         assertNotNull(logger);
     }
 
-    @Test void configureLoggingWithInvalidPath() {
+    @Test
+    void configureLoggingWithInvalidPath() {
         // Should handle invalid paths gracefully
         String invalidPath = "/nonexistent/path/that/cannot/be/created/../../../root";
 
@@ -54,7 +56,8 @@ class BenchmarkLoggingSetupTest {
         assertDoesNotThrow(() -> BenchmarkLoggingSetup.configureLogging(invalidPath));
     }
 
-    @Test void configureLoggingCreatesDirectory() {
+    @Test
+    void configureLoggingCreatesDirectory() {
         Path nonExistentDir = tempDir.resolve("new/nested/directory");
         String outputDir = nonExistentDir.toString();
 
@@ -65,7 +68,8 @@ class BenchmarkLoggingSetupTest {
         assertTrue(Files.exists(nonExistentDir));
     }
 
-    @Test void multipleConfigureCalls() {
+    @Test
+    void multipleConfigureCalls() {
         String outputDir = tempDir.toString();
 
         // Configure logging multiple times should not cause issues

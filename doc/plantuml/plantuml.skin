@@ -1,83 +1,149 @@
-' PlantUML Skin File
-' This file contains common styling parameters for all PlantUML diagrams
+'' PlantUML Apple-Style Theme
+'' Inspired by Apple BigSur design language
+'' Uses SF Pro / Helvetica font family and Apple blue palette
 
-' Configure PlantUML to use its own rendering engine
-!pragma layout smetana
+'' Font: SF Pro Display (fallback to Helvetica, then SansSerif)
+skinparam defaultFontName SF Pro Display,Helvetica,SansSerif
+skinparam defaultFontSize 13
 
-' Common color definitions
-!define THREAT_COLOR #FF6347
-!define MITIGATION_COLOR #90EE90
-!define SECURITY_COLOR #4682B4
-!define COMPONENT_COLOR #ECF0F1
+'' General settings
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam Padding 8
+skinparam Margin 10
 
-' Make color constants available globally
-!global $THREAT_COLOR = "#FF6347"
-!global $MITIGATION_COLOR = "#90EE90"
-!global $SECURITY_COLOR = "#4682B4"
-!global $COMPONENT_COLOR = "#ECF0F1"
+'' Apple Blue Color Palette
+'' Primary: #007AFF (System Blue)
+'' Secondary: #5AC8FA (Light Blue)
+'' Tertiary: #0071E3 (Professional Blue)
+'' Gray: #8E8E93 (Medium Gray - for lifelines and stereotypes)
 
-' Common skinparam settings
-skinparam {
-  ' General settings
-  BackgroundColor #FFFFFF
-  ArrowColor #2C3E50
-  BorderColor #2C3E50
-  Padding 5
-  Margin 10
-  RoundCorner 10
-  DefaultTextAlignment center
-  MaxMessageSize 150
-  FontColor #000000
-  defaultFontName SansSerif
-  defaultFontSize 12
+'' Arrows - using blue palette
+skinparam ArrowColor #007AFF
+skinparam ArrowThickness 2
+skinparam ArrowFontColor #1C1C1E
+skinparam ArrowFontSize 12
 
-  ' Node and component settings
-  NodeBackgroundColor #ECF0F1
-  NodeBorderColor #2C3E50
-  NodeFontColor #000000
-  ComponentBackgroundColor #ECF0F1
-  ComponentBorderColor #2C3E50
-  ComponentFontColor #000000
+'' Component Diagram
+skinparam ComponentBackgroundColor #FFFFFF
+skinparam ComponentBorderColor #007AFF
+skinparam ComponentBorderThickness 2
+skinparam ComponentFontColor #1C1C1E
+skinparam ComponentFontSize 13
 
-  ' Database settings
-  DatabaseBackgroundColor #ECF0F1
-  DatabaseBorderColor #2C3E50
-  DatabaseFontColor #000000
+skinparam PackageBackgroundColor #F9F9F9
+skinparam PackageBorderColor #007AFF
+skinparam PackageBorderThickness 2
+skinparam PackageFontColor #1C1C1E
+skinparam PackageFontSize 14
+skinparam PackageFontStyle bold
 
-  ' Class diagram settings
-  ClassBackgroundColor #ECF0F1
-  ClassBorderColor #2C3E50
-  ClassFontColor #000000
-  ClassAttributeFontColor #000000
-  ClassStereotypeFontColor #000000
+skinparam NodeBackgroundColor #F5F5F7
+skinparam NodeBorderColor #5AC8FA
+skinparam NodeBorderThickness 2
+skinparam NodeFontColor #1C1C1E
 
-  ' Sequence diagram settings
-  SequenceBoxBackgroundColor #ECF0F1
-  SequenceBoxBorderColor #2C3E50
-  SequenceBoxFontColor #000000
-  SequenceArrowColor #2C3E50
-  SequenceLifeLineColor #2C3E50
+'' Sequence Diagram
+skinparam ActorBackgroundColor #FFFFFF
+skinparam ActorBorderColor #007AFF
+skinparam ActorBorderThickness 2
+skinparam ActorFontColor #1C1C1E
 
-  ' Cloud settings
-  CloudBackgroundColor #ECF0F1
-  CloudFontColor #000000
+skinparam ParticipantBackgroundColor #FFFFFF
+skinparam ParticipantBorderColor #5AC8FA
+skinparam ParticipantBorderThickness 2
+skinparam ParticipantFontColor #1C1C1E
 
-  ' Package settings
-  PackageBackgroundColor #FFFFFF
-  PackageFontColor #000000
+skinparam SequenceBoxBackgroundColor #F5F5F7
+skinparam SequenceBoxBorderColor #007AFF
+skinparam SequenceBoxBorderThickness 2
 
-  ' Rectangle settings
-  RectangleBackgroundColor #FFFFFF
-  RectangleFontColor #000000
+skinparam SequenceArrowColor #007AFF
+skinparam SequenceLifeLineColor #1C1C1E
+skinparam SequenceLifeLineBorderColor #1C1C1E
+skinparam SequenceLifeLineBorderThickness 5
+skinparam Linetype ortho
 
-  ' Actor settings
-  ActorBackgroundColor #ECF0F1
-  ActorFontColor #000000
-
-  ' Note settings
-  NoteBackgroundColor #90EE90
-  NoteFontColor #000000
-
-  ' Arrow settings
-  ArrowFontColor #000000
+<style>
+lifeLine {
+  LineThickness 3
+  LineColor #8E8E93
+  LineStyle dashed
 }
+
+group {
+  BackGroundColor #F5F5F7
+  LineColor #5AC8FA
+  LineThickness 2
+  FontColor #1C1C1E
+  FontStyle bold
+  header {
+    BackGroundColor #E5E5EA
+    FontColor #1C1C1E
+    FontStyle bold
+  }
+}
+</style>
+
+skinparam SequenceGroupBackgroundColor #F5F5F7
+skinparam SequenceGroupBorderColor #5AC8FA
+skinparam SequenceGroupBorderThickness 2
+skinparam SequenceGroupFontColor #1C1C1E
+skinparam SequenceGroupHeaderFontColor #1C1C1E
+skinparam SequenceGroupHeaderFontStyle bold
+skinparam SequenceGroupHeaderFontSize 12
+
+skinparam SequenceDividerBackgroundColor #F5F5F7
+skinparam SequenceDividerBorderColor #007AFF
+skinparam SequenceDividerBorderThickness 2
+skinparam SequenceDividerFontColor #1C1C1E
+skinparam SequenceDividerFontStyle bold
+
+skinparam NoteBackgroundColor #FFF9E6
+skinparam NoteBorderColor #E5E5EA
+skinparam NoteBorderThickness 2
+skinparam NoteFontColor #1C1C1E
+
+'' Class Diagram
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #007AFF
+skinparam ClassBorderThickness 2
+skinparam ClassFontColor #1C1C1E
+skinparam ClassAttributeFontColor #1C1C1E
+skinparam ClassFontSize 13
+skinparam ClassStereotypeFontColor #8E8E93
+
+skinparam InterfaceBackgroundColor #FFFFFF
+skinparam InterfaceBorderColor #5AC8FA
+skinparam InterfaceBorderThickness 2
+skinparam InterfaceFontColor #1C1C1E
+
+skinparam AbstractBackgroundColor #F9F9F9
+skinparam AbstractBorderColor #0071E3
+skinparam AbstractBorderThickness 2
+skinparam AbstractFontColor #1C1C1E
+
+'' Database
+skinparam DatabaseBackgroundColor #F5F5F7
+skinparam DatabaseBorderColor #5AC8FA
+skinparam DatabaseBorderThickness 2
+skinparam DatabaseFontColor #1C1C1E
+
+'' Cloud
+skinparam CloudBackgroundColor #F5F5F7
+skinparam CloudBorderColor #5AC8FA
+skinparam CloudBorderThickness 2
+skinparam CloudFontColor #1C1C1E
+
+'' Rectangle
+skinparam RectangleBackgroundColor #FFFFFF
+skinparam RectangleBorderColor #D1D1D6
+skinparam RectangleBorderThickness 2
+skinparam RectangleFontColor #1C1C1E
+
+'' Card
+skinparam CardBackgroundColor #F9F9F9
+skinparam CardBorderColor #007AFF
+skinparam CardBorderThickness 2
+skinparam CardFontColor #1C1C1E

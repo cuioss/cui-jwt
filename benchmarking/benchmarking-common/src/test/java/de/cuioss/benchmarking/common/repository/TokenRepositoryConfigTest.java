@@ -21,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TokenRepositoryConfigTest {
 
-    @Test void builderWithAllRequiredValues() {
+    @Test
+    void builderWithAllRequiredValues() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://localhost:1443")
                 .realm("benchmark")
@@ -45,7 +46,8 @@ class TokenRepositoryConfigTest {
         assertEquals(180, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test void customValues() {
+    @Test
+    void customValues() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://auth.example.com")
                 .realm("test-realm")
@@ -73,7 +75,8 @@ class TokenRepositoryConfigTest {
         assertEquals(300, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test void builderWithAllRequiredFields() {
+    @Test
+    void builderWithAllRequiredFields() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://partial.com")
                 .realm("partial-realm")
@@ -94,7 +97,8 @@ class TokenRepositoryConfigTest {
         assertEquals(50, config.getTokenPoolSize());
     }
 
-    @Test void equalsAndHashCode() {
+    @Test
+    void equalsAndHashCode() {
         TokenRepositoryConfig config1 = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://test.com")
                 .realm("test")
@@ -115,7 +119,8 @@ class TokenRepositoryConfigTest {
         assertNotEquals(config1, config3);
     }
 
-    @Test void testToString() {
+    @Test
+    void testToString() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://test.com")
                 .realm("test-realm")

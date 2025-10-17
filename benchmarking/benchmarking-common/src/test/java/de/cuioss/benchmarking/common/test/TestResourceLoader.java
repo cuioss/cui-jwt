@@ -68,7 +68,8 @@ public final class TestResourceLoader {
      * @return The deserialized object
      * @throws IOException If the resource cannot be loaded
      */
-    @SuppressWarnings("unchecked") public static <T> T loadJsonResource(String resourcePath, Type type) throws IOException {
+    @SuppressWarnings("unchecked")
+    public static <T> T loadJsonResource(String resourcePath, Type type) throws IOException {
         try (InputStream stream = TestResourceLoader.class.getResourceAsStream(resourcePath)) {
             if (stream == null) {
                 throw new IOException("Resource not found: " + resourcePath);
@@ -173,7 +174,8 @@ public final class TestResourceLoader {
      * @return The loaded benchmark result as a Map
      * @throws IOException If the resource cannot be loaded
      */
-    @SuppressWarnings("unchecked") public static Map<String, Object> loadLibraryBenchmarkResult() throws IOException {
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> loadLibraryBenchmarkResult() throws IOException {
         return loadJsonResource("/library-benchmark-results/micro-result.json", Map.class);
     }
 
@@ -183,7 +185,8 @@ public final class TestResourceLoader {
      * @return The loaded benchmark result as a Map
      * @throws IOException If the resource cannot be loaded
      */
-    @SuppressWarnings("unchecked") public static Map<String, Object> loadIntegrationBenchmarkResult() throws IOException {
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> loadIntegrationBenchmarkResult() throws IOException {
         return loadJsonResource("/integration-benchmark-results/integration-result.json", Map.class);
     }
 
@@ -193,7 +196,8 @@ public final class TestResourceLoader {
      * @return The loaded metrics as a Map
      * @throws IOException If the resource cannot be loaded
      */
-    @SuppressWarnings("unchecked") public static Map<String, Object> loadHttpMetrics() throws IOException {
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> loadHttpMetrics() throws IOException {
         return loadJsonResource("/integration-benchmark-results/http-metrics.json", Map.class);
     }
 
@@ -203,7 +207,8 @@ public final class TestResourceLoader {
      * @return The loaded metrics as a Map
      * @throws IOException If the resource cannot be loaded
      */
-    @SuppressWarnings("unchecked") public static Map<String, Object> loadIntegrationMetrics() throws IOException {
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> loadIntegrationMetrics() throws IOException {
         return loadJsonResource("/integration-benchmark-results/integration-metrics.json", Map.class);
     }
 }

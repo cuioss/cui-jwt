@@ -2,23 +2,47 @@
 !include plantuml.skin
 
 package "JWT Token Handling" {
-  [TokenValidator] ..> [ParserConfig]
-  [TokenValidator] ..> [IssuerConfig]
-  [TokenValidator] ..> [NonValidatingJwtParser]
-  [TokenValidator] ..> [TokenHeaderValidator]
-  [TokenValidator] ..> [TokenSignatureValidator]
-  [TokenValidator] ..> [TokenBuilder]
-  [TokenValidator] ..> [TokenClaimValidator]
-  [TokenValidator] ..> [TokenContent]
-  [TokenSignatureValidator] ..> [JwksLoader]
-  [IssuerConfig] ..> [JwksLoader]
-  [JwksLoader] <.. [JwksLoaderFactory]
-  [TokenBuilder] ..> [AccessTokenContent]
-  [TokenBuilder] ..> [IdTokenContent]
-  [TokenBuilder] ..> [RefreshTokenContent]
-  [AccessTokenContent] --|> [BaseTokenContent]
-  [IdTokenContent] --|> [BaseTokenContent]
-  [BaseTokenContent] ..|> [TokenContent]
-  [RefreshTokenContent] ..|> [MinimalTokenContent]
+
+  package "Main Entry Point" {
+    [TokenValidator]
+  }
+
+  package "Validation Pipelines" {
+    [AccessTokenValidationPipeline]
+    [IdTokenValidationPipeline]
+    [RefreshTokenValidationPipeline]
+  }
+
+  package "Pipeline Components" {
+  }
+
+  package "Configuration" {
+  }
+
+  package "Key Management" {
+  }
+
+  package "Monitoring & Security" {
+  }
+
+  package "Token Content" {
+  }
+
+  ' Main entry point to pipelines
+  [TokenValidator] ..> [AccessTokenValidationPipeline]
+  [TokenValidator] ..> [IdTokenValidationPipeline]
+  [TokenValidator] ..> [RefreshTokenValidationPipeline]
+
+  ' Pipelines to other packages
+  [AccessTokenValidationPipeline] ..> "Pipeline Components"
+  [IdTokenValidationPipeline] ..> "Pipeline Components"
+  [RefreshTokenValidationPipeline] ..> "Pipeline Components"
+
+  [TokenValidator] ..> "Configuration"
+  "Pipeline Components" ..> "Configuration"
+  "Pipeline Components" ..> "Key Management"
+  [TokenValidator] ..> "Monitoring & Security"
+  [AccessTokenValidationPipeline] ..> "Monitoring & Security"
+  "Pipeline Components" ..> "Token Content"
 }
 @enduml

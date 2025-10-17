@@ -34,11 +34,13 @@ class JmhBenchmarkConverterTest {
     @TempDir
     Path tempDir;
 
-    @BeforeEach void setUp() {
+    @BeforeEach
+    void setUp() {
         converter = new JmhBenchmarkConverter(BenchmarkType.INTEGRATION);
     }
 
-    @Test void shouldConvertThroughputBenchmarkWithOpsPerMs() throws IOException {
+    @Test
+    void shouldConvertThroughputBenchmarkWithOpsPerMs() throws IOException {
         // Real data from actual JMH benchmark results
         String jmhResultJson = """
                 [
@@ -127,7 +129,8 @@ class JmhBenchmarkConverterTest {
         assertEquals("healthCheckThroughput", overview.getThroughputBenchmarkName());
     }
 
-    @Test void shouldConvertLatencyBenchmarkWithMsPerOp() throws IOException {
+    @Test
+    void shouldConvertLatencyBenchmarkWithMsPerOp() throws IOException {
         // Real data from actual JMH benchmark results
         String jmhResultJson = """
                 [
@@ -174,7 +177,8 @@ class JmhBenchmarkConverterTest {
         assertNull(latencyBenchmark.getThroughput());
     }
 
-    @Test void shouldHandleOpsPerSecondWithoutConversion() throws IOException {
+    @Test
+    void shouldHandleOpsPerSecondWithoutConversion() throws IOException {
         // Test data with ops/s (should remain unchanged)
         String jmhResultJson = """
                 [
@@ -206,7 +210,8 @@ class JmhBenchmarkConverterTest {
         assertEquals("1,0K ops/s", benchmark.getScore());
     }
 
-    @Test void canConvertDetectsJmhFiles() {
+    @Test
+    void canConvertDetectsJmhFiles() {
         assertTrue(converter.canConvert(Path.of("jmh-result.json")));
         assertTrue(converter.canConvert(Path.of("benchmark-result.json")));
         assertTrue(converter.canConvert(Path.of("test-jmh-output.json")));
@@ -214,7 +219,8 @@ class JmhBenchmarkConverterTest {
         assertFalse(converter.canConvert(Path.of("some-file.xml")));
     }
 
-    @Test void shouldConvertMicrosecondLatencyToMillisecondsInOverview() throws IOException {
+    @Test
+    void shouldConvertMicrosecondLatencyToMillisecondsInOverview() throws IOException {
         // BUG FIX TEST: Verify that latency in us/op is converted to ms/op in the overview
         // This test ensures that the badge generator receives latency in milliseconds
         String jmhResultJson = """
@@ -293,7 +299,8 @@ class JmhBenchmarkConverterTest {
                 If F, latency was not converted (867.4 ms).""");
     }
 
-    @Test void shouldCalculatePerformanceScoreAccordingToDocumentation() throws IOException {
+    @Test
+    void shouldCalculatePerformanceScoreAccordingToDocumentation() throws IOException {
         Path realResultFile = Path.of("src/test/resources/library-benchmark-results/micro-result-scoring-test.json");
         assertTrue(Files.exists(realResultFile), "Real benchmark result file should exist");
 

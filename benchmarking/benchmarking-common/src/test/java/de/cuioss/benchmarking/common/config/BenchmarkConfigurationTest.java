@@ -50,7 +50,8 @@ class BenchmarkConfigurationTest {
         System.clearProperty("jmh.result.format");
     }
 
-    @Test void defaults() {
+    @Test
+    void defaults() {
         // defaults() now returns an empty builder without any default values
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
                 .withBenchmarkType(BenchmarkType.MICRO)
@@ -75,7 +76,8 @@ class BenchmarkConfigurationTest {
         // Integration URLs are now handled by IntegrationConfiguration
     }
 
-    @Test void customValues() {
+    @Test
+    void customValues() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
                 .withThroughputBenchmarkName("customThroughput")
@@ -100,7 +102,8 @@ class BenchmarkConfigurationTest {
         // Integration URLs are now handled by IntegrationConfiguration
     }
 
-    @Test void builderWithSystemProperties() {
+    @Test
+    void builderWithSystemProperties() {
         // Set all required system properties
         System.setProperty("jmh.include", ".*SystemTest.*");
         System.setProperty("jmh.result.format", "TEXT");
@@ -126,7 +129,8 @@ class BenchmarkConfigurationTest {
         clearSystemProperties();
     }
 
-    @Test void toBuilder() {
+    @Test
+    void toBuilder() {
         BenchmarkConfiguration original = BenchmarkConfiguration.defaults()
                 .withBenchmarkType(BenchmarkType.MICRO)
                 .withThroughputBenchmarkName("origThroughput")
@@ -156,7 +160,8 @@ class BenchmarkConfigurationTest {
         assertEquals(12, modified.threads()); // new
     }
 
-    @Test void toJmhOptions() {
+    @Test
+    void toJmhOptions() {
         BenchmarkConfiguration config = BenchmarkConfiguration.defaults()
                 .withBenchmarkType(BenchmarkType.MICRO)
                 .withThroughputBenchmarkName("jmhThroughput")
@@ -182,7 +187,8 @@ class BenchmarkConfigurationTest {
         assertEquals(ResultFormatType.JSON, config.reportConfig().resultFormat(), "Result format should be JSON");
     }
 
-    @Test void threadCountParsing() {
+    @Test
+    void threadCountParsing() {
         setRequiredSystemProperties();
         System.setProperty("jmh.threads", "MAX");
         BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -204,7 +210,8 @@ class BenchmarkConfigurationTest {
         clearSystemProperties();
     }
 
-    @Test void timeValueParsing() {
+    @Test
+    void timeValueParsing() {
         setRequiredSystemProperties();
         System.setProperty("jmh.time", "5s");
         System.setProperty("jmh.warmupTime", "2m");
@@ -218,7 +225,8 @@ class BenchmarkConfigurationTest {
         clearSystemProperties();
     }
 
-    @Test void resultFileGeneration() {
+    @Test
+    void resultFileGeneration() {
         setRequiredSystemProperties();
         BenchmarkConfiguration config = BenchmarkConfiguration.builder()
                 .withBenchmarkType(BenchmarkType.INTEGRATION)
@@ -254,7 +262,8 @@ class BenchmarkConfigurationTest {
         clearSystemProperties();
     }
 
-    @Test void invalidResultFormat() {
+    @Test
+    void invalidResultFormat() {
         setRequiredSystemProperties();
         System.setProperty("jmh.result.format", "INVALID");
         BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -267,7 +276,8 @@ class BenchmarkConfigurationTest {
         clearSystemProperties();
     }
 
-    @Test void timeValueParsingEdgeCases() {
+    @Test
+    void timeValueParsingEdgeCases() {
         setRequiredSystemProperties();
         System.setProperty("jmh.time", "1h");
         BenchmarkConfiguration config = BenchmarkConfiguration.builder()
@@ -293,7 +303,8 @@ class BenchmarkConfigurationTest {
         // so that case is removed. Empty values are not allowed anymore
     }
 
-    @Test void allSystemProperties() {
+    @Test
+    void allSystemProperties() {
         // Set all supported system properties
         System.setProperty("jmh.include", ".*AllTest.*");
         System.setProperty("jmh.result.format", "CSV");
@@ -339,7 +350,8 @@ class BenchmarkConfigurationTest {
         System.clearProperty("quarkus.metrics.url");
     }
 
-    @Test void recordEquality() {
+    @Test
+    void recordEquality() {
         BenchmarkConfiguration config1 = BenchmarkConfiguration.defaults()
                 .withBenchmarkType(BenchmarkType.MICRO)
                 .withThroughputBenchmarkName("eqThroughput")
@@ -369,7 +381,8 @@ class BenchmarkConfigurationTest {
         assertEquals(config1.hashCode(), config2.hashCode());
     }
 
-    @Test void requiredFieldValidation() {
+    @Test
+    void requiredFieldValidation() {
         // Missing benchmark type
         var builder1 = BenchmarkConfiguration.defaults()
                 .withThroughputBenchmarkName("throughput")

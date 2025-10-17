@@ -3,6 +3,8 @@
 :toclevels: 3
 :sectnums:
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+
 
 Common issues and solutions when integrating the CUI JWT library with Keycloak.
 

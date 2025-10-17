@@ -13,28 +13,37 @@ interface "TokenContent" as TokenContent {
   +getClaims(): Map<String, ClaimValue>
   +getClaimOption(name: ClaimName): Optional<ClaimValue>
   +getIssuer(): String
-  +getSubject(): String
+  +getSubject(): Optional<String>
   +getExpirationTime(): OffsetDateTime
   +getIssuedAtTime(): OffsetDateTime
   +getNotBefore(): Optional<OffsetDateTime>
-  +isExpired(): boolean
+  +isExpired(context: ValidationContext): boolean
 }
 
 abstract class "BaseTokenContent" as BaseTokenContent {
   -claims: Map<String, ClaimValue>
   -rawToken: String
   -tokenType: TokenType
+  -rawPayload: MapRepresentation
 }
 
 class "AccessTokenContent" as AccessTokenContent {
   -email: String
   +getAudience(): Optional<List<String>>
   +getScopes(): List<String>
+  +getRoles(): List<String>
+  +getGroups(): List<String>
   +getEmail(): Optional<String>
   +getPreferredUsername(): Optional<String>
   +providesScopes(expectedScopes: Collection<String>): boolean
-  +providesScopesAndDebugIfScopesAreMissing(expectedScopes: Collection<String>, logContext: String, logger: CuiLogger): boolean
+  +providesRoles(expectedRoles: Collection<String>): boolean
+  +providesGroups(expectedGroups: Collection<String>): boolean
+  +providesScopesAndDebugIfScopesAreMissing(...): boolean
+  +providesRolesAndDebugIfRolesMissing(...): boolean
+  +providesGroupsAndDebugIfGroupsMissing(...): boolean
   +determineMissingScopes(expectedScopes: Collection<String>): Set<String>
+  +determineMissingRoles(expectedRoles: Collection<String>): Set<String>
+  +determineMissingGroups(expectedGroups: Collection<String>): Set<String>
 }
 
 class "IdTokenContent" as IdTokenContent {
@@ -63,20 +72,5 @@ TokenContent <|.. BaseTokenContent
 MinimalTokenContent <|.. RefreshTokenContent
 BaseTokenContent <|-- AccessTokenContent
 BaseTokenContent <|-- IdTokenContent
-
-note bottom of AccessTokenContent
-  OAuth2 Access Token
-  Used for authorization
-end note
-
-note bottom of IdTokenContent
-  OpenID Connect ID Token
-  Used for authentication
-end note
-
-note bottom of RefreshTokenContent
-  OAuth2 Refresh Token
-  Used to obtain new access tokens
-end note
 
 @enduml

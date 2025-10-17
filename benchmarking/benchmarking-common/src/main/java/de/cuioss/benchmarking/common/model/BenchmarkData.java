@@ -25,12 +25,16 @@ import java.util.Map;
  * Central benchmark data model that can be populated from various sources
  * (JMH, WRK, custom benchmarks) and used by the reporting infrastructure.
  */
-@Data @Builder public class BenchmarkData {
+@Data
+@Builder
+public class BenchmarkData {
 
     /**
      * Metadata about the benchmark run
      */
-    @Data @Builder public static class Metadata {
+    @Data
+    @Builder
+    public static class Metadata {
         private String timestamp;
         private String displayTimestamp;
         private String benchmarkType;
@@ -40,7 +44,9 @@ import java.util.Map;
     /**
      * Overview metrics for quick summary
      */
-    @Data @Builder public static class Overview {
+    @Data
+    @Builder
+    public static class Overview {
         private String throughput;              // Formatted display value (e.g., "140,0K ops/s")
         private String latency;                 // Formatted display value (e.g., "952,0 us/op")
         private Double throughputOpsPerSec;     // Numeric value: operations per second
@@ -55,7 +61,9 @@ import java.util.Map;
     /**
      * Individual benchmark result
      */
-    @Data @Builder public static class Benchmark {
+    @Data
+    @Builder
+    public static class Benchmark {
         private String name;
         private String fullName;
         private String mode; // thrpt, avgt, sample, etc.

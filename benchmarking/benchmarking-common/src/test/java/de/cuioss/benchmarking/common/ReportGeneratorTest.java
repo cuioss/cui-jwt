@@ -37,7 +37,8 @@ class ReportGeneratorTest {
 
     private static final Gson gson = new Gson();
 
-    @Test void generateDataJsonWithResults(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateDataJsonWithResults(@TempDir Path tempDir) throws Exception {
         // Use real micro benchmark test data
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
@@ -80,7 +81,8 @@ class ReportGeneratorTest {
         assertFalse(benchmarkArray.isEmpty(), "Should have benchmark results");
     }
 
-    @Test void generateIndexPage(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateIndexPage(@TempDir Path tempDir) throws Exception {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -104,7 +106,8 @@ class ReportGeneratorTest {
         assertTrue(htmlContent.contains("data-loader.js"));
     }
 
-    @Test void generateIndexPageIntegrationBenchmark(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateIndexPageIntegrationBenchmark(@TempDir Path tempDir) throws Exception {
         Path sourceJson = Path.of("src/test/resources/integration-benchmark-results/integration-result.json");
         Path jsonFile = tempDir.resolve("integration-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -129,7 +132,8 @@ class ReportGeneratorTest {
         assertEquals("Integration Performance", metadata.get("benchmarkType").getAsString());
     }
 
-    @Test void generateTrendsPage(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateTrendsPage(@TempDir Path tempDir) throws Exception {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -151,7 +155,8 @@ class ReportGeneratorTest {
         assertTrue(htmlContent.contains("Performance Trends"));
     }
 
-    @Test void generateDetailedPage(@TempDir Path tempDir) throws Exception {
+    @Test
+    void generateDetailedPage(@TempDir Path tempDir) throws Exception {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -173,7 +178,8 @@ class ReportGeneratorTest {
         assertTrue(htmlContent.contains("Interactive JMH Visualizer"));
     }
 
-    @Test void copySupportFiles(@TempDir Path tempDir) throws Exception {
+    @Test
+    void copySupportFiles(@TempDir Path tempDir) throws Exception {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);
@@ -204,7 +210,8 @@ class ReportGeneratorTest {
         assertTrue(Files.exists(sitemapFile), "sitemap.xml should be copied");
     }
 
-    @Test void verifyChartDataStructure(@TempDir Path tempDir) throws Exception {
+    @Test
+    void verifyChartDataStructure(@TempDir Path tempDir) throws Exception {
         Path sourceJson = Path.of("src/test/resources/library-benchmark-results/micro-result.json");
         Path jsonFile = tempDir.resolve("micro-result.json");
         Files.copy(sourceJson, jsonFile);

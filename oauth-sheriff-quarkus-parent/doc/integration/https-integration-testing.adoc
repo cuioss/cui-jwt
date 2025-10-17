@@ -2,6 +2,9 @@
 :toc: left
 :toclevels: 3
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 This document explains the HTTPS certificate handling approach for JWT Quarkus integration tests.
 

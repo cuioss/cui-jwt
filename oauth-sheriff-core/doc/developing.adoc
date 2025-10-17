@@ -3,6 +3,8 @@
 :toclevels: 3
 :sectnums:
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+
 
 This guide provides information for developers extending or integrating with the oauth-sheriff-core library.
 

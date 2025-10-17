@@ -26,7 +26,8 @@ class MetricConversionUtilTest {
 
     private static final double DELTA = 0.0001;
 
-    @Test void convertToMillisecondsPerOpFromMicroseconds() {
+    @Test
+    void convertToMillisecondsPerOpFromMicroseconds() {
         // Test case from actual data: 802.9 us/op should convert to 0.8029 ms/op
         double score = 802.9010071674597;
         String unit = US_PER_OP;
@@ -37,7 +38,8 @@ class MetricConversionUtilTest {
                 "802.9 us/op should convert to 0.8029 ms/op");
     }
 
-    @Test void convertToMillisecondsPerOpFromOpsPerSecond() {
+    @Test
+    void convertToMillisecondsPerOpFromOpsPerSecond() {
         // Test case from actual data: 103380.87 ops/s should convert to ~0.00967 ms/op
         double score = 103380.86760034731;
         String unit = OPS_PER_SEC;
@@ -48,7 +50,8 @@ class MetricConversionUtilTest {
                 "103380.87 ops/s should convert to ~0.00967 ms/op");
     }
 
-    @Test void convertToMillisecondsPerOpAllUnits() {
+    @Test
+    void convertToMillisecondsPerOpAllUnits() {
         // Test all supported units
         
         // Latency units
@@ -72,7 +75,8 @@ class MetricConversionUtilTest {
                 "0.000001 ops/ns = 1 ms/op");
     }
 
-    @Test void convertToOpsPerSecondAllUnits() {
+    @Test
+    void convertToOpsPerSecondAllUnits() {
         // Throughput units
         assertEquals(1000.0, MetricConversionUtil.convertToOpsPerSecond(1000.0, OPS_PER_SEC),
                 "ops/s should return unchanged");
@@ -88,7 +92,8 @@ class MetricConversionUtilTest {
                 "1 s/op = 1 ops/s");
     }
 
-    @Test void realWorldScenarioMixedUnits() {
+    @Test
+    void realWorldScenarioMixedUnits() {
         // Test with actual benchmark data
         double[] scores = {
                 103380.86760034731,  // ops/s
@@ -120,7 +125,8 @@ class MetricConversionUtilTest {
                 "Average latency should be more than 0.3 ms, got: " + averageLatencyMs);
     }
 
-    @Test void performanceGrade() {
+    @Test
+    void performanceGrade() {
         assertEquals(A_PLUS, MetricConversionUtil.calculatePerformanceGrade(1_000_000),
                 "1M ops/s = A+");
         assertEquals(A, MetricConversionUtil.calculatePerformanceGrade(100_000),
@@ -133,13 +139,15 @@ class MetricConversionUtilTest {
                 "100 ops/s = D");
     }
 
-    @Test void unknownUnit() {
+    @Test
+    void unknownUnit() {
         // Unknown unit should return 0 for filtering
         assertEquals(0, MetricConversionUtil.convertToMillisecondsPerOp(100, "unknown"),
                 "Unknown unit should return 0");
     }
 
-    @Test void formatForDisplayWithDifferentValues() {
+    @Test
+    void formatForDisplayWithDifferentValues() {
         // Values < 2: 2 fraction digits
         assertEquals("0.50", MetricConversionUtil.formatForDisplay(0.5));
         assertEquals("1.25", MetricConversionUtil.formatForDisplay(1.25));
@@ -158,7 +166,8 @@ class MetricConversionUtilTest {
         assertEquals("123457", MetricConversionUtil.formatForDisplay(123456.789));
     }
 
-    @Test void formatForDisplayEdgeCases() {
+    @Test
+    void formatForDisplayEdgeCases() {
         // Test exact boundaries
         assertEquals("2.0", MetricConversionUtil.formatForDisplay(2.0));
         assertEquals("10", MetricConversionUtil.formatForDisplay(10.0));

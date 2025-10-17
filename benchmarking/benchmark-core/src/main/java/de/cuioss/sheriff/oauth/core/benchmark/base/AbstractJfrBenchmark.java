@@ -56,7 +56,8 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Records JFR phase information at the start of each iteration.
      */
-    @Setup(Level.Iteration) public void setupIteration() {
+    @Setup(Level.Iteration)
+    public void setupIteration() {
         // Record benchmark phase event at iteration start
         String benchmarkName = this.getClass().getSimpleName();
         int threads = Thread.activeCount();
@@ -67,7 +68,9 @@ public abstract class AbstractJfrBenchmark extends AbstractBenchmark {
     /**
      * Shuts down JFR instrumentation and exports metrics at the end of the trial.
      */
-    @Override @TearDown(Level.Trial) public void exportBenchmarkMetrics() {
+    @Override
+    @TearDown(Level.Trial)
+    public void exportBenchmarkMetrics() {
         // Shutdown JFR instrumentation
         if (jfrInstrumentation != null) {
             jfrInstrumentation.shutdown();

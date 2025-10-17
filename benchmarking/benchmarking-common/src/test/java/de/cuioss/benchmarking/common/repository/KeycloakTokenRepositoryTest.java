@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class KeycloakTokenRepositoryTest {
 
-    @Test void constructorWithNullConfig() {
+    @Test
+    void constructorWithNullConfig() {
         assertThrows(NullPointerException.class, () -> new KeycloakTokenRepository(null));
     }
 
-    @Test void tokenFetchException() {
+    @Test
+    void tokenFetchException() {
         // Test the custom exception
         KeycloakTokenRepository.TokenFetchException ex = new KeycloakTokenRepository.TokenFetchException("Test error");
         assertEquals("Test error", ex.getMessage());
@@ -36,7 +38,8 @@ class KeycloakTokenRepositoryTest {
         assertEquals(cause, exWithCause.getCause());
     }
 
-    @Test void configBuilderWithRequiredFields() {
+    @Test
+    void configBuilderWithRequiredFields() {
         // Test that we can build a config with all required fields
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://localhost:1443")
@@ -60,7 +63,8 @@ class KeycloakTokenRepositoryTest {
         assertEquals(180, config.getTokenRefreshThresholdSeconds());
     }
 
-    @Test void configBuilderCustomValues() {
+    @Test
+    void configBuilderCustomValues() {
         TokenRepositoryConfig config = TokenRepositoryConfig.builder()
                 .keycloakBaseUrl("https://auth.example.com")
                 .realm("custom-realm")
