@@ -181,6 +181,7 @@ http://localhost:8080/q/dev-ui/
 . Locate the "CUI JWT" card in the extensions section
 
 . Access the following pages:
+
 - **JWT Validation Status**: Real-time monitoring and statistics
 - **JWKS Endpoints**: Endpoint health and connectivity
 - **Token Debugger**: Interactive token validation testing
@@ -189,8 +190,11 @@ http://localhost:8080/q/dev-ui/
 === Development Workflow
 
 . **Configuration Debugging**: Use the Configuration page to verify extension settings
+
 . **Endpoint Monitoring**: Monitor JWKS connectivity through the JWKS Endpoints page
+
 . **Token Testing**: Validate JWT tokens using the Token Debugger
+
 . **Status Monitoring**: Track validation performance via the Validation Status page
 
 == Implementation Notes

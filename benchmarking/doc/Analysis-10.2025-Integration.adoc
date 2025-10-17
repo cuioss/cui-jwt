@@ -1,6 +1,6 @@
 = JWT Validation Performance Analysis
 :toc: left
-:toclevels: 2
+:toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
 :source-highlighter: highlight.js
@@ -162,6 +162,7 @@ Testing inside Docker network (container-to-container) vs host-to-container reve
 === JWT Validation Performance Breakdown
 
 **Measured validation time:** 0.21ms average (application metric, from Prometheus)
+
 - Total validations: 280,303 (latest benchmark run)
 - Cache hit rate: 100%
 - **Validation accounts for 12% of total latency** (0.21ms out of 1.72ms P50)
@@ -175,6 +176,7 @@ JWT P50 Total:                           1.72ms (100%)
 ```
 
 **The 68% unexplained latency likely comes from:**
+
 - Response serialization (5-10x larger payload than health endpoint)
 - CDI request-scoped producer overhead
 - Token claims extraction and response building
@@ -193,6 +195,7 @@ For detailed performance gap analysis, see: link:Performance-Gap-Analysis.md[Per
 **Throughput gap explanation:**
 
 The 3.5x throughput difference (77K health vs 22K JWT) is primarily due to:
+
 - **5x latency difference** (1.72ms JWT vs 0.345ms health)
 - **1.86x more threads** (67 JWT vs 36 health) with worse per-thread efficiency
 - **13% more CPU usage** (78% JWT vs 69% health)

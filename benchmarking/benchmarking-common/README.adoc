@@ -1,7 +1,9 @@
 = CUI Benchmarking Common Infrastructure
-:source-highlighter: highlight.js
+:toc: left
+:toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 
 Common utilities and infrastructure for JMH benchmark modules.

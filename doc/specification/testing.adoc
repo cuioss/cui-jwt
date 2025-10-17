@@ -35,17 +35,20 @@ This section outlines how the JWT Token Validation library testing should comply
 The CUI Testing Core Standards define the following key principles:
 
 ==== Core Testing Principles
+
 * *Test Coverage*: All public methods must have unit tests, with at least 80% line coverage
 * *Test Independence*: Tests must be independent, not rely on execution order, and clean up after themselves
 * *Test Clarity*: Tests should follow the Arrange-Act-Assert pattern and clearly describe what is being tested
 * *Test Maintenance*: Tests must be maintained alongside production code and fixed promptly when failing
 
 ==== Test Types
+
 * *Unit Tests*: Focus on testing a single unit of code in isolation with mocked dependencies
 * *Integration Tests*: Test interaction between components, may use real dependencies
 * *System Tests*: Test the entire system as a whole, verifying end-to-end functionality
 
 ==== Best Practices
+
 * *Test Organization*: Group related tests, use descriptive names, follow consistent conventions
 * *Test Data*: Use meaningful test data, avoid hardcoded values, consider edge cases
 * *Assertions*: Use specific assertions with meaningful error messages
@@ -55,11 +58,13 @@ The CUI Testing Core Standards define the following key principles:
 The CUI Quality Standards and Testing Framework defines:
 
 ==== Core Testing Standards
+
 * *Test Structure*: Follow AAA pattern, one logical assertion per test, clear naming
 * *Coverage Requirements*: Minimum 80% line and branch coverage, critical paths must have 100% coverage
 * *Testing Tools*: Use JUnit 5, CUI testing utilities (cui-test-generator, cui-test-value-objects, etc.)
 
 ==== Quality Verification
+
 * *Quality Analysis Tools*: SonarCloud, JUnit, mutation testing, code reviews
 * *Quality Metrics*: Code coverage, duplication, complexity, issue density, technical debt
 * *Parameterized Tests Best Practices*: Minimum 3 test cases, descriptive method names, clear documentation
@@ -67,6 +72,7 @@ The CUI Quality Standards and Testing Framework defines:
 * *Review Process*: Regular reviews after major features, before PRs, during code review
 
 ==== Success Criteria
+
 * *Test Coverage*: All coverage requirements met, critical paths fully covered
 * *Quality Analysis*: All quality gates passed, new issues addressed
 * *Security*: No critical vulnerabilities, security hotspots reviewed
@@ -251,6 +257,7 @@ The implementation follows CUI logging test requirements:
      * assertLogMessagePresent: For exact matches
      * assertLogMessagePresentContaining: For partial matches
      * assertNoLogMessagePresent: For absence checks
+
 5. Tests both successful and error scenarios
 6. Uses LogRecord#resolveIdentifierString for message verification
 
@@ -410,6 +417,7 @@ Compliance test classes will follow this naming pattern:
 `<Standard><Feature>ComplianceTest`
 
 Where:
+
 * `<Standard>` is the identifier of the standard or specification (e.g., RFC7519, OAuth2)
 * `<Feature>` is the specific feature or aspect being tested (e.g., JWT, TokenValidation)
 

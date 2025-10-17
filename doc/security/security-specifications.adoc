@@ -496,6 +496,7 @@ The client confusion attack occurs when a token issued for one client is used wi
 * Validation of both claims is configurable through the `IssuerConfig` builder:
   * `expectedAudience()` - sets the expected audience for validation
   * `expectedClientId()` - sets the expected client ID for `azp` claim validation
+
 * For maximum security, both audience and client ID-Token should be enabled.
 
 [source,java]

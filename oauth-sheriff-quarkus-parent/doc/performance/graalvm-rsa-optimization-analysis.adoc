@@ -238,18 +238,21 @@ native-image -march=native -O2
 == Implementation Roadmap
 
 === Phase 1: Algorithm Performance Verification (1-2 days)
+
 1. **ES256 Testing**: Configure Keycloak with ECDSA
 2. **Benchmark Execution**: Run JFR-enabled performance tests
 3. **Performance Analysis**: Measure improvement vs RS256
 4. **Compatibility Validation**: Verify end-to-end functionality
 
 === Phase 2: EdDSA Evaluation (2-3 days)
+
 1. **Ed25519 Configuration**: Update Keycloak and JWT library
 2. **Performance Comparison**: Benchmark against ES256 and RS256
 3. **Security Analysis**: Validate security level and compliance
 4. **Production Readiness**: Assess deployment requirements
 
 === Phase 3: JCA Provider Optimization (if needed)
+
 1. **BouncyCastle Integration**: Configure and test
 2. **Enterprise Evaluation**: Test Jipher JCE if accessible
 3. **Performance Comparison**: Benchmark all options

@@ -179,6 +179,7 @@ No specific tests for redirect scheme hijacking as it's out of scope for the tok
 |===
 
 ==== Implementation Plan
+
 1. Enhance `TokenClaimValidatorTest` to include specific tests for subject claim validation
 2. Verify that tokens without valid subject claims are rejected
 

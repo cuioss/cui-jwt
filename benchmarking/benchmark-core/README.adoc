@@ -1,7 +1,9 @@
 = JWT Library Benchmarks
-:source-highlighter: highlight.js
+:toc: left
+:toclevels: 3
 :toc-title: Table of Contents
 :sectnums:
+:source-highlighter: highlight.js
 
 
 Performance benchmarking for JWT token validation core library using JMH.
@@ -62,12 +64,14 @@ Performance benchmarking for JWT token validation core library using JMH.
 == Benchmarks
 
 === Standard Benchmarks
+
 * `SimpleCoreValidationBenchmark` - Core JWT validation performance (throughput and latency)
 * `SimpleErrorLoadBenchmark` - Streamlined error handling scenarios
 * `ErrorLoadBenchmark` - Comprehensive error scenario testing with various token failures
 * `PerformanceIndicatorBenchmark` - Performance scoring metrics
 
 === JFR-Enabled Benchmarks
+
 * `UnifiedJfrBenchmark` - Combined benchmark with Java Flight Recorder integration
 * `CoreJfrBenchmark` - Core validation with JFR profiling
 * `ErrorJfrBenchmark` - Error scenarios with JFR profiling

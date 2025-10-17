@@ -279,14 +279,17 @@ diff <(jq '.performance' baseline/wrk-jwt-results.json) \
 .Optimal Settings (Based on Performance Investigation)
 [NOTE]
 ====
+
 * **Threads**: 5 (balanced for typical systems)
 * **Connections**: 50 (optimal performance without degradation)
 * **Duration**:
   - Quick mode: 30s (fast iteration)
   - Default: 60s (balanced results)
+
 * **Timeout**: 2s (local testing)
 
 **Performance Profile at 50 Connections:**
+
 * Health endpoint: P90 2.5ms, 37K ops/s
 * JWT validation: P90 5.8ms, 16K ops/s, CPU 75%
 ====

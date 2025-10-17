@@ -252,6 +252,7 @@ This document analyzes the coverage of threats, mitigations, and recommendations
 == Summary of Findings
 
 === Well-Covered Threats
+
 1. *Signature Validation*: The library has comprehensive coverage for signature validation, including protection against algorithm confusion attacks, key confusion attacks, and "none" algorithm attacks.
 2. *Token Size Limits*: The library implements and tests token size limits to prevent denial of service attacks.
 3. *Safe Parsing*: The library implements secure parsing practices to prevent JSON parsing attacks and other parsing vulnerabilities.
@@ -261,6 +262,7 @@ This document analyzes the coverage of threats, mitigations, and recommendations
 7. *Security Event Monitoring*: The library provides a mechanism to monitor and count security events during token processing.
 
 === Areas for Improvement
+
 1. *Token Blacklisting*: The library does not implement token blacklisting for revoked tokens, which could be added in future versions.
 2. *Rate Limiting*: The library does not implement rate limiting for token validation attempts, which could be added in future versions.
 3. *JWK Thumbprint Validation*: The library does not implement JWK thumbprint validation for JWKS endpoints, which could be added in future versions.

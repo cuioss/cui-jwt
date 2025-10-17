@@ -196,6 +196,7 @@ This structure validates both Keycloak realms (benchmark and integration) with d
 The integration tests use **two Keycloak realms** to validate different JWT configuration patterns:
 
 ==== Benchmark Realm (Well-Known Discovery)
+
 * **Realm**: `benchmark`
 * **Client**: `benchmark-client` (public client)
 * **User**: `benchmark-user` / `benchmark-password`
@@ -209,6 +210,7 @@ sheriff.oauth.issuers.keycloak.jwks.http.well-known-url=http://keycloak:8080/rea
 ----
 
 ==== Integration Realm (Direct JWKS)
+
 * **Realm**: `integration`
 * **Client**: `integration-client` / `integration-secret` (confidential client)
 * **User**: `integration-user` / `integration-password`
@@ -258,6 +260,7 @@ sheriff.oauth.issuers.integration.jwks.http.url=https://keycloak:8443/realms/int
 === HTTPS Setup
 
 Self-signed certificates via `generate-certificates.sh`:
+
 * Keystore/Truststore: `*.p12` (password: `integration-test`)
 * Subject: `CN=localhost`
 * SAN: `dns:localhost,ip:127.0.0.1`

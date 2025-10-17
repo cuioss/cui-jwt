@@ -27,8 +27,10 @@ The `OAuthSheriffProcessor` class handles build-time processing for the extensio
 * Sets up reflection for configuration classes:
   ** `JwtValidationConfig` and its nested classes
   ** Core JWT validation classes like `TokenValidator`, `IssuerConfig`, etc.
+
 * Registers classes that need runtime initialization:
   ** `HttpJwksLoader` for proper native image support
+
 * Configures DevUI components for development mode
 
 ==== OAuthSheriffRecorder

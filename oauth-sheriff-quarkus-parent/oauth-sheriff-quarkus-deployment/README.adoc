@@ -16,18 +16,21 @@ For Maven dependency information, see xref:../README.adoc#maven-coordinates[Mave
 == Core Concepts
 
 === Build-Time Processing
+
 * Automatic reflection registration for JWT validation classes
 * Native image configuration for GraalVM compatibility
 * Runtime initialization setup for HTTP-based JWKS loaders
 * Integration with Quarkus deployment pipeline
 
 === DevUI Integration
+
 * Development-time debugging interface for JWT validation
 * JSON-RPC services for interactive token analysis
 * Web components for JWT configuration inspection
 * See xref:../doc/development/devui-implementation.adoc[DevUI Implementation Documentation] for comprehensive technical details
 
 === Extension Architecture
+
 * Follows Quarkus extension patterns with separate deployment and runtime modules
 * Provides build items for configuration and reflection setup
 * Integrates with Quarkus development mode features
@@ -115,16 +118,19 @@ For detailed configuration, reflection classes, and testing information, see xre
 == Technical Details
 
 === Thread Safety
+
 * All deployment processors are thread-safe
 * DevUI services handle concurrent requests appropriately
 * Build items are immutable and safe for parallel processing
 
 === Performance Characteristics
+
 * Minimal runtime overhead - most processing occurs at build time
 * DevUI components only active in development mode
 * Efficient reflection registration reduces startup time
 
 === Dependencies
+
 * Requires Quarkus 3.x framework
 * Integrates with Quarkus security, health, and DevUI modules
 * Compatible with GraalVM native image compilation
