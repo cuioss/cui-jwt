@@ -2,6 +2,9 @@
 :toc: left
 :toclevels: 3
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 This guide helps navigate the comprehensive documentation across all CUI JWT modules.
 

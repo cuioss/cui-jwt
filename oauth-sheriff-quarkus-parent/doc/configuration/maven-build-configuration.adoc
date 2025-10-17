@@ -3,6 +3,8 @@
 :toclevels: 3
 :sectnums:
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+
 
 Maven build configuration for the CUI JWT Quarkus extension project.
 

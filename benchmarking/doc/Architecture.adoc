@@ -3,6 +3,9 @@
 :toclevels: 2
 :sectnums:
 :icons: font
+:toc-title: Table of Contents
+:source-highlighter: highlight.js
+
 
 [NOTE]
 ====

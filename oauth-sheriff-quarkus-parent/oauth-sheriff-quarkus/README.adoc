@@ -3,6 +3,9 @@
 :toclevels: 3
 :sectnumlevels: 1
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 Runtime module for Quarkus integration providing JWT token validation with CDI integration, configuration management, health checks, and metrics collection.
 

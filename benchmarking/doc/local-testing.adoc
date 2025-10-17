@@ -1,5 +1,8 @@
 = Local Testing Guide
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 == Quick Start
 

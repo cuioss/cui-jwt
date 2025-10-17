@@ -1,6 +1,10 @@
 = CUI JWT Benchmarking
 :toc:
 :toclevels: 2
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
 
 Comprehensive performance testing infrastructure for JWT validation.
 

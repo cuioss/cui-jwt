@@ -2,6 +2,9 @@
 :toc: left
 :toclevels: 3
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 The library provides built-in support for role-based and group-based access control through the "roles" and "groups" claims. These claims are common in many JWT implementations but are not part of the core JWT or OpenID Connect specifications.
 

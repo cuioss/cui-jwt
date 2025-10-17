@@ -3,6 +3,9 @@
 :toclevels: 3
 :sectnumlevels: 1
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 A Quarkus extension for the CUI JWT validation library, consisting of:
 

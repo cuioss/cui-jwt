@@ -1,5 +1,8 @@
 = JWT Library Benchmarks
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 Performance benchmarking for JWT token validation core library using JMH.
 

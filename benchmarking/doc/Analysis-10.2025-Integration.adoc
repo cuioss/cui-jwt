@@ -1,6 +1,10 @@
 = JWT Validation Performance Analysis
 :toc: left
 :toclevels: 2
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
 
 == Executive Summary
 

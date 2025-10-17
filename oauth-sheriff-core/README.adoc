@@ -2,6 +2,9 @@
 :toc: left
 :toclevels: 2
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 Comprehensive JWT token validation library for multi-issuer environments with type-safe parsing and flexible configuration.
 

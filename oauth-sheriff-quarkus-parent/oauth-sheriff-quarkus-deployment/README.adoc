@@ -3,6 +3,9 @@
 :toclevels: 3
 :sectnumlevels: 1
 :source-highlighter: highlight.js
+:toc-title: Table of Contents
+:sectnums:
+
 
 Deployment module for Quarkus integration providing build-time processing and DevUI components for JWT token validation.
 

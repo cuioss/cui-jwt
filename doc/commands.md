@@ -61,3 +61,20 @@
 ### Notes
 - This duration represents the time to wait for CI and SonarCloud checks to complete
 - Includes buffer time for queue delays
+
+## docs-adoc
+
+### Skipped Files
+
+Files excluded from AsciiDoc validation processing:
+
+(No skipped files documented yet)
+
+### Acceptable Warnings
+
+Known warnings that are acceptable and should not trigger fixes:
+
+(No acceptable warnings documented yet)
+
+### Last Updated
+2025-10-17

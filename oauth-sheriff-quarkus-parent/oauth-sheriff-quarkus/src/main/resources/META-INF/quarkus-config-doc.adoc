@@ -1,4 +1,8 @@
 = CUI JWT Quarkus Extension Configuration Reference
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
 
 This document describes the configuration options available for the CUI JWT Quarkus extension.
 

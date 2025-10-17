@@ -1,6 +1,10 @@
 = JWT Library Performance Analysis (Micro-Benchmarks)
 :toc: left
 :toclevels: 2
+:toc-title: Table of Contents
+:sectnums:
+:source-highlighter: highlight.js
+
 
 == Executive Summary
 

@@ -1,7 +1,10 @@
 = oauth-sheriff-core
 :toc: macro
 :toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
 :sectnumlevels: 1
+:source-highlighter: highlight.js
 
 [.discrete]
 == Status
